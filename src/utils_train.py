@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 import torch
+import torch.nn as nn
 import time
 
 # from src.utils_data import dy_arrInput
@@ -9,30 +10,43 @@ import time
 from src.utils_config import ModelConfig
 from src.utils_models import ESRNN
 
-def pinball_loss(y, y_hat, tau=0.5):
-  """Computes the pinball loss between y and y_hat.
-  y: actual values
-  y_hat: predicted values
-  tau: a float between 0 and 1 the slope of the pinball loss. In the context
-  of quantile regression, the value of alpha determine the conditional
-  quantile level.
-  return: pinball_loss
-  """
-  # delta_y = y - y_hat
-  #pinball = dy.bmax(tau * delta_y, (tau - 1) * delta_y)
-  #pinball = dy.mean_elems(pinball)
-  # return pinball
-  pass
+class PinballLoss(nn.Module):
+    """Computes the pinball loss between y and y_hat.
+    y: actual values in torch tensor.
+    y_hat: predicted values in torch tensor.
+    tau: a float between 0 and 1 the slope of the pinball loss. In the context
+    of quantile regression, the value of alpha determine the conditional
+    quantile level.
+    return: pinball_loss
+    """
+  def __init__(self, tau=0.5):
+    super(PinballLoss, self).__init__()
+    self.tau = tau
+  
+  def forward(self, y, y_hat):
+    delta_y = torch.sub(y, y_hat)
+    pinball = torch.max(torch.mul(tau, delta_y), torch.mul((tau-1), delta_y))
+    pinball = pinball.mean()
+    return pinball
 
-def level_variability_loss(y, level_variability_penalty):
-  # level_var_loss = []
-  # for i in range(1, len(y)):
-  #     diff_ex = y[i]-y[i-1]
-  #     level_var_loss.append(diff_ex*diff_ex)
-  # level_var_loss_ex = dy.average(level_var_loss)
-  # level_var_loss_ex *= level_variability_penalty
-  # return level_var_loss_ex
-  pass
+class LevelVAriabilityLoss(nn.Module):
+    """Computes the variability penalty for the level.
+    y: level values in torch tensor.
+    level_variability_penalty: 
+    return: level_var_loss
+    """
+    def __init__(self, level_variability_penalty):
+      super(LevelVAriabilityLoss, self).__init__()
+      self.level_variability_penalty = level_variability_penalty
+
+    def forward(self, y):
+      y_prev = y[:-1]
+      y_next = y[1:]
+      diff =  torch.sub(y_prev, y_next)
+      level_var_loss = diff**2
+      level_var_loss = level_var_loss.mean() * self.level_variability_penalty
+    return level_var_loss
+
 
 def train(mc, all_series):
     print(10*'='+' Training {}'.format(mc.dataset_name) + 10*'=')
