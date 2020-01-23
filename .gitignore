@@ -1,0 +1,17 @@
+*.pyc
+*.DS_Store
+*.vscode
+*.ipynb_checkpoints
+data/
+!results/
+results/*
+!results/attacks/
+plots/
+statistics/
+dynet/
+theory/
+*.so
+*.dll
+*.exe
+*.c
+build/
