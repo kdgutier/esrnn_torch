@@ -9,6 +9,13 @@ import time
 from src.utils_config import ModelConfig
 from src.utils_models import ES
 
+def gaussian_noise(input_data, std=0.2):
+  #shape = input_data.shape
+  #noise = torch.autograd.Variable(torch.randn(shape).cuda() * std)
+  size = input_data.size()
+  noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
+  return input_data + noise
+
 class PinballLoss(nn.Module):
   """Computes the pinball loss between y and y_hat.
   y: actual values in torch tensor.
