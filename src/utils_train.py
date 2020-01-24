@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,7 +9,7 @@ import time
 # from src.utils_data import dy_arrInput
 
 from src.utils_config import ModelConfig
-from src.utils_models import ES
+from src.utils_models import ESRNN
 
 
 class PinballLoss(nn.Module):
@@ -105,7 +107,7 @@ def train(mc, all_series):
     start = time.time()
     
     losses = []
-    for j in range(10):
+    for j in range(len(all_series)):
       es_optimizer.zero_grad()
       rnn_optimizer.zero_grad()
 
