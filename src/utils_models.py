@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from pathlib import Path
+from src.DRNN import DRNN
 
 
 
@@ -59,25 +60,53 @@ class ES(nn.Module):
 
     return levels, seasonalities, log_diff_of_levels
 
-class LSTM(object):
+class RNN(nn.Module):
   def __init__(self, mc):
+    super(RNN, self).__init__()
     self.mc = mc
-    input_size = mc.input_size
-    state_hsize= mc.state_hsize 
-    output_size = mc.output_size
-    dilations = mc.dilations
-    exogenous_size = mc.exogenous_size
     self.layers = len(mc.dilations)
+
+    layers = []
+    for l in range(1, self.layers):
+      if l == 0:
+          input_size = mc.input_size + mc.exogenous_size
+      else:
+          input_size = mc.state_hsize
+      layer = DRNN(input_size,
+                  mc.state_hsize,
+                  n_layers=1,
+                  dilations=mc.dilations[l],
+                  cell_type='LSTM')
+      layers.append(layer)
+    
+    self.rnn_stack = nn.Sequential(*layers)
+
+    if self.mc.add_nl_layer:
+      self.MLPW  = nn.Linear(mc.state_hsize, mc.state_hsize)
+      self.MLPB  = torch.nn.Parameter(torch.ones(mc.state_hsize))
+
+    self.adapterW  = nn.Linear(mc.output_size, mc.state_hsize)
+    self.adapterB  = torch.nn.Parameter(torch.ones(mc.output_size))
   
-  def forward(self, sequence):
-    output = sequence
-    return output
+  def forward(self, y):
+    for layer_num in range(len(self.rnn_stack)):
+        residual = y
+        y, _ = self.rnn_stack[layer_num](y)
+        if layer_num > 0:
+            out += residual
+    
+    if self.mc.add_nl_layer:
+      y = torch.mul(self.MLPW, y) + self.MLPB
+      y = torch.tanh(y)
+
+    y = torch.mul(self.adapterW, rnn_ex) + self.adapterB
+    return y
 
 
 class ESRNN(object):
   def __init__(self, mc):
     self.es = ES(mc)
-    self.rnn = LSTM(mc)
+    self.rnn = RNN(mc)
     self.mc = mc
 
   def compute_levels_seasons(self, ts_objects):
@@ -111,10 +140,8 @@ class ESRNN(object):
     es_filepath = os.path.join(model_dir, "es.model")
 
     print('Saving model to:\n {}'.format(model_dir)+'\n')
-    #self.es.pc.save(es_filepath)
-    #self.rnn.pc.save(rnn_filepath)
     torch.save({'model_state_dict': self.es.state_dict()}, es_filepath)
-    #torch.save({'model_state_dict': self.rnn.state_dict()}, rnn_filepath)
+    torch.save({'model_state_dict': self.rnn.state_dict()}, rnn_filepath)
 
   def load(self, model_dir=None, copy=None):
     if copy is not None:
@@ -130,14 +157,13 @@ class ESRNN(object):
 
     if path.is_file():
       print('Loading model from:\n {}'.format(model_dir)+'\n')
-      #self.rnn.pc.populate(rnn_filepath)
-      #self.es.pc.populate(es_filepath)
+
       checkpoint = torch.load(es_filepath, map_location=self.mc.device)
       self.es.load_state_dict(checkpoint['model_state_dict'])
       self.es.to(self.mc.device)
       
-      #checkpoint = torch.load(rnn_filepath, map_location=self.mc.device)
-      #self.rnn.load_state_dict(checkpoint['model_state_dict'])
-      #self.rnn.to(self.mc.device)
+      checkpoint = torch.load(rnn_filepath, map_location=self.mc.device)
+      self.rnn.load_state_dict(checkpoint['model_state_dict'])
+      self.rnn.to(self.mc.device)
     else:
       print('Model path {} does not exist'.format(path))
