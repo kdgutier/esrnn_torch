@@ -79,15 +79,12 @@ class SmylLoss(nn.Module):
     return smyl_loss
 
 
-def train(mc, model, all_series):
+def train(mc, esrnn, all_series):
   print(10*'='+' Training {} '.format(mc.dataset_name) + 10*'=')
   
   # Random Seeds
   torch.manual_seed(mc.copy)
   np.random.seed(mc.copy)
-
-  # Model
-  esrnn = ESRNN(mc)
 
   # Optimizers
   es_optimizer = optim.Adam(params=esrnn.es.parameters(),
