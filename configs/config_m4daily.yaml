@@ -28,6 +28,6 @@ data_parameters:
 model_parameters:
   state_hsize: 40
   lback: 0 #LBACK 0 means final mode: learning on all data and forecasting. LBACK=1 would move back by OUTPUT_SIZE, and forecast last known OUTPUT_SIZE points, for backtesting. LBACK could be a larger integer, but then number of series shrinks.
-  dilations: [1, 7, 28] #Each vector represents one chunk of Dilateed LSTMS, connected in standard resnNet fashion
+  dilations: [[1, 7, 28]] #Each vector represents one chunk of Dilateed LSTMS, connected in standard resnNet fashion
   add_nl_layer: TRUE  #whether to insert a tanh() layer between the RNN stack and the linear adaptor (output) layers
   averaging_level: 5 #number of model versions to ensamble
