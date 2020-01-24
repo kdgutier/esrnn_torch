@@ -31,6 +31,7 @@ class ModelConfig(object):
       self.training_percentile = config['train_parameters']['training_percentile']
       self.tau = self.percentile / 100.
       self.training_tau = self.training_percentile / 100.
+      self.batch_size = int(config['train_parameters']['batch_size'])
 
       # Model Parameters
       self.state_hsize = config['model_parameters']['state_hsize']

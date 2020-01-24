@@ -16,6 +16,7 @@ train_parameters:
   c_state_penalty: 0
   percentile: 50 #we always use Pinball loss, although on normalized values. When forecasting point value, we actually forecast median, so PERCENTILE=50.
   training_percentile: 45 #the program has a tendency for positive bias. So, we can reduce it by running smaller TRAINING_PERCENTILE.
+  batch_size: 1
 data_parameters:
   seasonality: 4
   input_size: 4
