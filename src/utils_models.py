@@ -36,34 +36,43 @@ class ES(nn.Module):
     idxs = ts_object.idxs
     n_series, n_time = y.shape
 
-    # Lookup embeddings
-    lev_sms = self.logistic(self.lev_sms[idxs])
-    seas_sms = self.logistic(self.lev_sms[idxs])
-    init_seas = torch.exp(self.init_seas[idxs, :])
+    # Lookup Smoothing parameterss
+    init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
+    lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
+
+    init_seas_sms = [self.seas_sms[idx] for idx in idxs]
+    seas_sms = self.logistic(torch.stack(init_seas_sms).squeeze(1))
+
+    init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
+    init_seas = torch.stack(init_seas_list)
 
     # Initialize seasonalities, levels and log_diff_of_levels
-    seasonalities = torch.zeros((n_series, self.seasonality+n_time))
-    levels = torch.zeros((n_series, n_time))
+    seasonalities = []
+    levels =[]
 
-    seasonalities[:, :self.seasonality+1] = torch.cat((init_seas, init_seas[:,[0]]), 1)
-    levels[:, 0] = y[:, 0] / seasonalities[:, 0]
+    for i in range(self.seasonality):
+      seasonalities.append(init_seas[:,i])
+    seasonalities.append(init_seas[:,0])
+    levels.append(y[:,0]/seasonalities[0])
 
     for t in range(1, n_time):
-      levels[:, [t]] = lev_sms * (y[:, [t]] / seasonalities[:, [t]]) + (1-lev_sms) * levels[:, [t-1]]
-      seasonalities[:, [t+self.seasonality]] = seas_sms * (y[:, [t]] / levels[:, [t]]) + (1-seas_sms) * seasonalities[:, [t]]
+      newlev = lev_sms * (y[:,t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
+      newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
+      levels.append(newlev)
+      seasonalities.append(newseason)
 
-      #seasonalities[:, [t+self.seasonality]] = newseason
-      #levels[:, [t]] = newlev
+    seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
+    levels_stacked = torch.stack(levels).transpose(1,0)
 
     # Completion of seasonalities if prediction horizon is larger than seasonality
     # Naive2 like prediction, to avoid recursive forecasting
     if self.output_size > self.seasonality:
-      start_seasonality_ext = len(seasonalities) - self.seasonality
+      start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
       end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
-      seasonalities = torch.cat((seasonalities,
-                                 seasonalities[:, start_seasonality_ext:end_seasonality_ext]), 1)
+      seasonalities = torch.cat((seasonalities_stacked,
+                                 seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
 
-    return levels, seasonalities
+    return levels_stacked, seasonalities_stacked
 
 
 class RNN(nn.Module):
@@ -93,7 +102,6 @@ class RNN(nn.Module):
     self.adapterW  = nn.Linear(mc.state_hsize, mc.output_size)
   
   def forward(self, input_data):
-    print("input_data.dtype", input_data.dtype)
     for layer_num in range(len(self.rnn_stack)):
         residual = input_data
         output, _ = self.rnn_stack[layer_num](input_data)
@@ -165,10 +173,6 @@ class ESRNN(nn.Module):
       windows_x[i, :, :] += x
       windows_y[i, :, :] += y
     
-    ################################################################################################################################################################################
-    ################################################################################################################################################################################
-    ################################################################################################################################################################################
-    ################################################################################################################################################################################
     windows_y_hat = self.rnn(windows_x)
     return windows_y, windows_y_hat, levels
   

@@ -15,6 +15,7 @@ conda install -c anaconda seaborn==0.9.0
 # pytorch
 #conda install pytorch=1.2.0 torchvision cudatoolkit=10.0 -c pytorch
 conda install pytorch=1.2.0 -c pytorch
+#conda install -c anaconda tensorflow=1.13.1
 
 conda install -c conda-forge jupyterlab
 ipython kernel install --user --name=esrnn_torch

@@ -75,3 +75,59 @@ class SmylLoss(nn.Module):
       log_diff_of_levels = self.level_variability_loss(levels) 
       smyl_loss += log_diff_of_levels
     return smyl_loss
+
+
+def train(mc, all_series):
+  print(10*'='+' Training {} '.format(mc.dataset_name) + 10*'=')
+  
+  # Random Seeds
+  torch.manual_seed(mc.copy)
+  np.random.seed(mc.copy)
+
+  # Model
+  esrnn = ESRNN(mc)
+
+  # Optimizers
+  es_optimizer = optim.Adam(params=esrnn.es.parameters(),
+                            lr=mc.learning_rate*mc.per_series_lr_multip, 
+                            betas=(0.9, 0.999), eps=mc.gradient_eps)
+
+  rnn_optimizer = optim.Adam(params=esrnn.rnn.parameters(),
+                        lr=mc.learning_rate,
+                        betas=(0.9, 0.999), eps=mc.gradient_eps)
+  
+  # Loss Functions
+  smyl_loss = SmylLoss(tau=mc.tau,
+                        level_variability_penalty=mc.level_variability_penalty)
+
+  # training code
+  for epoch in range(mc.max_epochs):
+    start = time.time()
+    
+    losses = []
+    for j in range(10):
+      es_optimizer.zero_grad()
+      rnn_optimizer.zero_grad()
+
+      ts_object = all_series[j]
+      windows_y, windows_y_hat, levels = esrnn(ts_object)
+      
+      loss = smyl_loss(windows_y, windows_y_hat, levels)
+      losses.append(loss.data.numpy())
+      loss.backward()
+      torch.nn.utils.clip_grad_value_(esrnn.rnn.parameters(),
+                                clip_value=mc.gradient_clipping_threshold)
+      torch.nn.utils.clip_grad_value_(esrnn.es.parameters(),
+                                clip_value=mc.gradient_clipping_threshold)
+      rnn_optimizer.step()
+      es_optimizer.step()
+    
+    if epoch >= (mc.max_epochs-mc.averaging_level):
+      copy = epoch+mc.averaging_level-mc.max_epochs
+      esrnn.save(copy=copy)
+
+    print("========= Epoch {} finished =========".format(epoch))
+    print("Training time: {}".format(time.time()-start))
+    print("Forecast loss: {}".format(np.mean(losses)))
+
+  print('Train finished!')
