@@ -72,16 +72,16 @@ class RNN(nn.Module):
     self.layers = len(mc.dilations)
 
     layers = []
-    for l in range(1, self.layers):
-      if l == 0:
+    for grp_num in range(len(mc.dilations)):
+      if grp_num == 0:
           input_size = mc.input_size + mc.exogenous_size
       else:
           input_size = mc.state_hsize
       layer = DRNN(input_size,
-                  mc.state_hsize,
-                  n_layers=1,
-                  dilations=mc.dilations[l],
-                  cell_type='LSTM')
+                   mc.state_hsize,
+                   n_layers=1,
+                   dilations=mc.dilations[grp_num],
+                   cell_type='LSTM')
       layers.append(layer)
     
     self.rnn_stack = nn.Sequential(*layers)
