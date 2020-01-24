@@ -3,7 +3,6 @@ import pandas as pd
 
 import torch
 
-
 # def dy_arrInput(np_arr):
 #   """
 #   np_arr: numpy array
@@ -18,6 +17,9 @@ class M4TS():
   def __init__(self, mc, category, y, id):
     self.id = id
     n = len(y)
+    y = np.float32([y])
+    y = torch.tensor(y, dtype=torch.float64)
+    self.idxs = [id]
     if mc.lback>0:
       if (n - mc.lback * mc.output_size_i > 0):
         first = n - mc.lback * mc.output_size_i
@@ -31,8 +33,9 @@ class M4TS():
 
     category_dict = {'Demographic': 0, 'Finance': 1, 'Industry': 2,
                     'Macro': 3, 'Micro': 4, 'Other': 5}
-    self.categories_vect = np.zeros((6,1))
-    self.categories_vect[category_dict[category]] = 1
+    self.categories_vect = np.zeros((1,6))
+    self.categories_vect[0,category_dict[category]] = 1
+    self.categories_vect = torch.from_numpy(self.categories_vect)
 
 def get_m4_all_series(mc, data='train'):
     m4_info = pd.read_csv(mc.data_dir+'M4-info.csv', usecols=['M4id','category'])

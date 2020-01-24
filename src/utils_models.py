@@ -27,7 +27,12 @@ class ES(nn.Module):
     self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
     self.logistic = nn.Sigmoid()
 
-  def forward(self, y, idxs):
+  def forward(self, ts_object):
+    # Parse ts_object
+    y = ts_object.y
+    idxs = ts_object.idxs
+    n_series, n_time = y.shape
+
     # Lookup embeddings
     lev_sms = self.logistic(self.lev_sms[idxs])
     seas_sms = self.logistic(self.lev_sms[idxs])
