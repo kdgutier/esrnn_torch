@@ -5,8 +5,6 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.utils_models import ES, VanillaLSTM
-
 
 class ModelConfig(object):
   def __init__(self, config_file, root_dir, copy=1):
@@ -65,6 +63,7 @@ class ModelConfig(object):
 
       self.root_dir = root_dir
       self.copy = copy
+      self.device = "cpu"
   
   # def get_model(self):
   #   """
