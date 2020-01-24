@@ -18,7 +18,7 @@ class M4TS():
     self.id = id
     n = len(y)
     y = np.float32([y])
-    y = torch.tensor(y, dtype=torch.float64)
+    y = torch.tensor(y).float()
     self.idxs = [id]
     if mc.lback>0:
       if (n - mc.lback * mc.output_size_i > 0):
@@ -35,7 +35,7 @@ class M4TS():
                     'Macro': 3, 'Micro': 4, 'Other': 5}
     self.categories_vect = np.zeros((1,6))
     self.categories_vect[0,category_dict[category]] = 1
-    self.categories_vect = torch.from_numpy(self.categories_vect)
+    self.categories_vect = torch.from_numpy(self.categories_vect).float()
 
 def get_m4_all_series(mc, data='train'):
     m4_info = pd.read_csv(mc.data_dir+'M4-info.csv', usecols=['M4id','category'])
