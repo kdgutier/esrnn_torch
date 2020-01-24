@@ -79,7 +79,7 @@ class SmylLoss(nn.Module):
     return smyl_loss
 
 
-def train(mc, all_series):
+def train(mc, model, all_series):
   print(10*'='+' Training {} '.format(mc.dataset_name) + 10*'=')
   
   # Random Seeds

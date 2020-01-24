@@ -69,7 +69,7 @@ class ES(nn.Module):
     if self.output_size > self.seasonality:
       start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
       end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
-      seasonalities = torch.cat((seasonalities_stacked,
+      seasonalities_stacked = torch.cat((seasonalities_stacked,
                                  seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
 
     return levels_stacked, seasonalities_stacked
@@ -124,14 +124,12 @@ class ESRNN(nn.Module):
     self.rnn = RNN(mc)
     self.mc = mc
   
-  def gaussian_noise(self, input_data, is_training, std=0.2):
-    if is_training:
-      size = input_data.size()
-      noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
-      return input_data + noise
-    else: return input_data
+  def gaussian_noise(self, input_data, std=0.2):
+    size = input_data.size()
+    noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
+    return input_data + noise
   
-  def forward(self, ts_object, is_training=False):
+  def forward(self, ts_object):
     # parse mc
     batch_size = self.mc.batch_size
     input_size = self.mc.input_size
@@ -157,7 +155,7 @@ class ESRNN(nn.Module):
       # Deseasonalization and normalization
       x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
       x = x / levels[:, x_end]
-      x = self.gaussian_noise(torch.log(x), is_training, std=noise_std)
+      x = self.gaussian_noise(torch.log(x), std=noise_std)
 
       # Concatenate categories
       categories = ts_object.categories_vect
@@ -175,6 +173,47 @@ class ESRNN(nn.Module):
     
     windows_y_hat = self.rnn(windows_x)
     return windows_y, windows_y_hat, levels
+  
+  def predict(self, ts_object):
+    # evaluation mode
+    self.eval()
+
+    # parse mc
+    batch_size = self.mc.batch_size
+    input_size = self.mc.input_size
+    output_size = self.mc.output_size
+    exogenous_size = self.mc.exogenous_size
+
+    # parse ts_object
+    y_ts = ts_object.y
+    idxs = ts_object.idxs
+    n_series, n_time = y_ts.shape
+
+    # Initialize windows, levels and seasonalities
+    levels, seasonalities = self.es(ts_object)
+    
+    x_start = n_time - input_size
+    x_end = n_time
+
+    # Deseasonalization and normalization
+    x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
+    x = x / levels[:, x_end-1]
+    x = torch.log(x)
+
+    # Concatenate categories
+    categories = ts_object.categories_vect
+    x = torch.cat((x, categories), 1)
+    windows_x = torch.unsqueeze(x, 0)
+
+    windows_y_hat = self.rnn(windows_x)
+    y_hat = torch.squeeze(windows_y_hat, 0)
+
+    # Return seasons and levels
+    y_hat = torch.exp(y_hat)
+    y_hat = y_hat * levels[:, n_time-1]
+    y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
+    y_hat = y_hat.data.numpy()
+    return y_hat
   
   def get_dir_name(self, root_dir=None):
     if not root_dir:
