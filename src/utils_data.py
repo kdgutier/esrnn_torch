@@ -3,16 +3,6 @@ import pandas as pd
 
 import torch
 
-# def dy_arrInput(np_arr):
-#   """
-#   np_arr: numpy array
-#   return: array expression for dynet
-#   """
-#   dim = np_arr.shape[0]
-#   arr_ex = dy.vecInput(dim)
-#   arr_ex.set(np_arr)
-#   return arr_ex
-
 class M4TS():
   def __init__(self, mc, category, y, id):
     self.id = id
