@@ -29,7 +29,7 @@ class _ES(nn.Module):
         idxs = ts_object.idxs
         n_series, n_time = y.shape
 
-        # Lookup Smoothing parameterss
+        # Lookup Smoothing parameters per serie
         init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
         lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
 
@@ -39,7 +39,7 @@ class _ES(nn.Module):
         init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
         init_seas = torch.stack(init_seas_list)
 
-        # Initialize seasonalities, levels and log_diff_of_levels
+        # Initialize seasonalities and levels
         seasonalities = []
         levels =[]
 
@@ -48,6 +48,7 @@ class _ES(nn.Module):
         seasonalities.append(init_seas[:,0])
         levels.append(y[:,0]/seasonalities[0])
 
+        # Recursive seasonalities and levels
         for t in range(1, n_time):
             newlev = lev_sms * (y[:,t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
             newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
@@ -66,6 +67,7 @@ class _ES(nn.Module):
                                         seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
 
         return levels_stacked, seasonalities_stacked
+
 
 class _RNN(nn.Module):
     def __init__(self, mc):
@@ -107,6 +109,7 @@ class _RNN(nn.Module):
 
         input_data = self.adapterW(input_data)
         return input_data
+
 
 class _ESRNN(nn.Module):
     def __init__(self, mc):
@@ -155,7 +158,7 @@ class _ESRNN(nn.Module):
             y_start = x_end
             y_end = x_end+output_size
 
-            # Deseasonalization and normalization
+            # Deseasonalization and normalization (inverse)
             y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
             y = torch.log(y) / levels[:, x_end]
 
