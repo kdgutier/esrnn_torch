@@ -183,7 +183,7 @@ class _ESRNN(nn.Module):
         # evaluation mode
         self.eval()
 
-         with torch.no_grad():
+        with torch.no_grad():
           # Initialize windows, levels and seasonalities
           levels, seasonalities = self.es(ts_object)
 
