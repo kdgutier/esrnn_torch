@@ -183,29 +183,30 @@ class _ESRNN(nn.Module):
         # evaluation mode
         self.eval()
 
-        # Initialize windows, levels and seasonalities
-        levels, seasonalities = self.es(ts_object)
+         with torch.no_grad():
+          # Initialize windows, levels and seasonalities
+          levels, seasonalities = self.es(ts_object)
 
-        x_start = n_time - input_size
-        x_end = n_time
+          x_start = n_time - input_size
+          x_end = n_time
 
-        # Deseasonalization and normalization
-        x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-        x = x / levels[:, x_end-1]
-        x = torch.log(x)
+          # Deseasonalization and normalization
+          x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
+          x = x / levels[:, x_end-1]
+          x = torch.log(x)
 
-        # Concatenate categories
-        if exogenous_size>0:
-            x = torch.cat((x, ts_object.categories), 1)
+          # Concatenate categories
+          if exogenous_size>0:
+              x = torch.cat((x, ts_object.categories), 1)
 
-        windows_x = torch.unsqueeze(x, 0)
+          windows_x = torch.unsqueeze(x, 0)
 
-        windows_y_hat = self.rnn(windows_x)
-        y_hat = torch.squeeze(windows_y_hat, 0)
+          windows_y_hat = self.rnn(windows_x)
+          y_hat = torch.squeeze(windows_y_hat, 0)
 
-        # Return seasons and levels
-        y_hat = torch.exp(y_hat)
-        y_hat = y_hat * levels[:, n_time-1]
-        y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
-        y_hat = y_hat.data.numpy()
+          # Return seasons and levels
+          y_hat = torch.exp(y_hat)
+          y_hat = y_hat * levels[:, n_time-1]
+          y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
+          y_hat = y_hat.data.numpy()
         return y_hat
