@@ -73,6 +73,8 @@ class ESRNN(object):
         print('Train finished!')
     
     def fit(self, X, y, random_seed=1):
+        assert len(X)==len(y)
+        assert X.shape[1]>=2
         
         # Random Seeds
         torch.manual_seed(random_seed)
@@ -95,7 +97,7 @@ class ESRNN(object):
         # Train model
         self.train(dataloader=self.dataloader, random_seed=random_seed)
 
-    def predict(self, X):
+    def predict(self, X=None):
         """
             Predictions for all stored time series
         Returns:
@@ -105,16 +107,17 @@ class ESRNN(object):
             unique_id: Corresponding list of unique_id
         """
         # TODO: receive X
+        self.dataloader.batch_size = 1
+        self.dataloader.n_batches = self.dataloader.n_series
+        sorted_unique_idxs = self.dataloader.sort_key['unique_id']
 
         # Predictions for panel.
-        Y_hat_panel = pd.DataFrame(columns=["unique_id", "ts", "y_hat"])
+        Y_hat_panel = pd.DataFrame(columns=["unique_id", "y_hat"])
 
-        for i, idx in enumerate(self.sort_key):
+        for j in range(self.dataloader.n_batches):
+
             # Corresponding train ts_object
-            ts_object = self.batches[i]
-
-            # Asserts
-            assert ts_object.idxs[0] == idx
+            ts_object = self.dataloader.get_batch()
 
             # Declare y_hat_id placeholder
             Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
@@ -125,9 +128,9 @@ class ESRNN(object):
             Y_hat_id.iloc[:, 0] = y_hat
 
             # Serie prediction
-            Y_hat_id["unique_id"] = idx
-            ts = date_range = pd.date_range(start=ts_object.last_ts, periods=self.mc.output_size+1, freq=self.mc.frequency)
-            Y_hat_id["ts"] = ts[1:]
+            Y_hat_id["unique_id"] = sorted_unique_idxs[j]
+            #ts = date_range = pd.date_range(start=ts_object.last_ts, periods=self.mc.output_size+1, freq=self.mc.frequency)
+            #Y_hat_id["ts"] = ts[1:]
             Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
 
         return Y_hat_panel

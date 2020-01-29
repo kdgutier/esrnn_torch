@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
-
 def plot_prediction(y, y_hat, forecast=True):
     """
     """

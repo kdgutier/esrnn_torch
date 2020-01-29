@@ -69,16 +69,15 @@ class Iterator(object):
         self.n_batches = int(self.n_series / self.batch_size)
 
     def shuffle_dataset(self):
-        """Return the examples in the dataset in order, or shuffled."""
-        if self.shuffle:
-          sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
-          self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
-                            'sort_key': sort_key}
-          self.X = self.X[sort_key]
-          self.y = self.y[sort_key]
-        else:
-          self.sort_key = {'unique_id': self.unique_idxs,
-                      'sort_key': list(range(self.n_series))}
+      """Return the examples in the dataset in order, or shuffled."""
+      if self.shuffle:
+        sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
+        self.X = self.X[sort_key]
+        self.y = self.y[sort_key]
+      else:
+        sort_key = list(range(self.n_series))
+      self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
+                        'sort_key': sort_key}
 
     def get_trim_batch(self):
       # Compute the indexes of the minibatch.
@@ -103,7 +102,7 @@ class Iterator(object):
       #print("batch_y \n", batch_y)
 
       assert batch_y.shape[0] == len(batch_idxs) == len(batch_categories)
-      assert batch_y.shape[1]>2
+      assert batch_y.shape[1]>=1
       
       # Feed to Batch
       batch = Batch(mc=self.mc, y=batch_y, categories=batch_categories, idxs=batch_idxs)
