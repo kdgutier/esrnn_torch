@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd
-
 import torch
 
 def long_to_wide(data):
@@ -18,8 +16,8 @@ def long_to_wide(data):
     df_wide = df_wide.reset_index().rename_axis(None, axis=1)
     
     ts_cols = data.ts_map.unique().tolist()
-    y = df_wide.filter(items=['unique_id'] + ts_cols)
-    X = df_wide.filter(items=['unique_id', 'x', 'last_ts'])
+    X = df_wide.filter(items=['unique_id', 'x', 'last_ts']).values
+    y = df_wide.filter(items=ts_cols).values
     return X, y
 
 
@@ -57,58 +55,64 @@ class Iterator(object):
         self.shuffle = shuffle
         
         self.random_seed = random_seed
-        self.unique_idxs = self.X['unique_id'].unique()
+        self.unique_idxs = np.unique(self.X[:, 0])
+        assert len(self.unique_idxs)==len(self.X)
         self.n_series = len(self.unique_idxs)
         
+        # Initialize batch iterator
         self.shuffle_dataset()
+        self.b = 0
+        self.n_batches = int(self.n_series / self.batch_size)
 
     def shuffle_dataset(self):
         """Return the examples in the dataset in order, or shuffled."""
         if self.shuffle:
-            print("self.shuffle", self.shuffle)
-            sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
-            sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
-                        'sort_key': list(range(self.n_series))}
-            self.sort_key = pd.DataFrame.from_dict(sort_key)
-            self.X = self.sort_key.merge(self.X, on=['unique_id'])
-            self.y = self.sort_key.merge(self.y, on=['unique_id'])
+          sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
+          self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
+                            'sort_key': sort_key}
+          self.X = self.X[sort_key]
+          self.y = self.y[sort_key]
         else:
-            print("self.shuffle", self.shuffle)
-            sort_key = {'unique_id': self.unique_idxs,
-                        'sort_key': list(range(self.n_series))}
-            self.sort_key = pd.DataFrame.from_dict(sort_key)
-            self.X = self.sort_key.merge(self.X, on=['unique_id'])
-            self.y = self.sort_key.merge(self.y, on=['unique_id'])
+          self.sort_key = {'unique_id': self.unique_idxs,
+                      'sort_key': list(range(self.n_series))}
+
+    def get_trim_batch(self):
+      # Compute the indexes of the minibatch.
+      first = (self.b * self.batch_size)
+      last = min((first + self.batch_size), self.n_series)
+
+      # Extract values for batch
+      batch_idxs = self.sort_key['sort_key'][first:last]
+
+      batch_y = self.y[first:last]
+      batch_categories = self.X[first:last, 1]
+      batch_last_ts = self.X[first:last, 2]
+
+      last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
+      min_len = min(last_numeric)
+
+      # Trimming to match min_len
+      #print("batch_y \n", batch_y)
+      y_b = np.zeros((batch_y.shape[0], min_len))
+      for i in range(batch_y.shape[0]):
+          y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
+      batch_y = y_b
+      #print("batch_y \n", batch_y)
+
+      assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ts) == len(batch_categories)
+      assert batch_y.shape[1]>2
+      
+      # Feed to Batch
+      batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
+                        categories=batch_categories, idxs=batch_idxs)
+      self.b = (self.b + 1) % self.n_batches
+      return batch
     
-    def panel_to_batches(self):
-        """
-        Receives panel and creates batches list wit ts objects.
-        Parameters:
-            X: SORTED array-like or sparse matrix, shape (n_samples, n_features)
-                Test or validation data for panel, with column 'unique_id', date stamp 'ds' and 'y'.
-        Returns:
-            tsobject_list : list of ts objects
-        """
-        n_batches = int(self.n_series / self.batch_size)
+    def get_batch(self):
+      return self.get_trim_batch()
 
-        batches = []
-        for b in range(n_batches):
-            # Compute the offset of the minibatch.
-            offset = (b * self.batch_size) % self.n_series
-            
-            # Extract values for batch
-            batch_idxs = self.sort_key.iloc[offset:(offset + self.batch_size)]['sort_key'].values
-            batch_y = self.y.iloc[offset:(offset + self.batch_size), 2:].values
-
-            batch_categories = self.X.iloc[offset:(offset + self.batch_size)]['x'].values
-            batch_last_ts = self.X.iloc[offset:(offset + self.batch_size)]['last_ts'].values
-
-            assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ts) == len(batch_categories)
-            assert batch_y.shape[1]>2
-            
-            # Feed to Batch
-            batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
-                              categories=batch_categories, idxs=batch_idxs)
-
-            batches.append(batch)
-        return batches
+    def __len__(self):
+      return self.n_batches
+    
+    def __iter__(self):
+      pass
