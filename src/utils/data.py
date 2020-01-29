@@ -47,7 +47,7 @@ class Batch():
 
 
 class Iterator(object):
-    def __init__(self, mc, X, y, batch_size, device=None,
+    def __init__(self, mc, X, y, device=None,
                 shuffle=False, random_seed=1):
         self.mc = mc
         self.X, self.y = X, y

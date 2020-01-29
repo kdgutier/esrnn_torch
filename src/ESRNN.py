@@ -13,7 +13,7 @@ from pathlib import Path
 from src.utils.config import ModelConfig
 from src.utils.ESRNN import _ESRNN
 from src.utils.losses import SmylLoss
-from src.utils.data import tsObject
+from src.utils.data import Iterator
 
 
 class ESRNN(object):
@@ -27,34 +27,6 @@ class ESRNN(object):
                               state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer, 
                               seasonality=seasonality, input_size=input_size, output_size=output_size,
                               frequency=frequency, max_periods=max_periods, root_dir=root_dir)
-
-    def panel_to_batches(self):
-        """
-        Receives panel and creates ts_object list.
-        Parameters:
-            X: SORTED array-like or sparse matrix, shape (n_samples, n_features)
-                Test or validation data for panel, with column 'unique_id', date stamp 'ds' and 'y'.
-        Returns:
-            tsobject_list : list of ts objects
-        """
-
-        # ts_object list panel
-        batches = []
-        for i, idx in enumerate(self.unique_idxs):
-            # Fast filter X and y by id.
-            top_row = np.asscalar(self.X['unique_id'].searchsorted(idx, 'left'))
-            bottom_row = np.asscalar(self.X['unique_id'].searchsorted(idx, 'right'))
-            y = self.X[top_row:bottom_row]['y'].values
-            ts = self.X[top_row:bottom_row]['ts'].values
-            if self.mc.exogenous_size>0:
-                categories=self.X['x'][top_row]
-            else:
-                categories=None
-            
-            ts_object = tsObject(mc=self.mc, y=y, ts=ts, categories=[categories], idxs=[i]) # TODO should be list
-            batches.append(ts_object)
-
-        return batches
 
     def train(self, batches, random_seed):
         print(10*'='+' Training ESRNN ' + 10*'=')
@@ -110,9 +82,7 @@ class ESRNN(object):
 
         # Sort X by unique_id for faster loop
         X.loc[:, 'y'] = y
-        X = X.sort_values(by=['unique_id', 'ts']).reset_index(drop=True)
-        self.X = X
-        self.unique_idxs = self.X["unique_id"].unique()
+        self.X = X.sort_values(by=['unique_id']).reset_index(drop=True)
 
         # Exogenous variables
         if 'x' in X.columns:
@@ -123,7 +93,9 @@ class ESRNN(object):
             self.mc.exogenous_size = 0
 
         # Create batches
-        self.batches = self.panel_to_batches()
+        iterator = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
+        self.batches = iterator.panel_to_batches()
+        self.sort_key = iterator.sort_key['sort_key'].values
 
         # Initialize model
         self.mc.num_series = X['unique_id'].nunique()
@@ -146,12 +118,12 @@ class ESRNN(object):
         # Predictions for panel.
         Y_hat_panel = pd.DataFrame(columns=["unique_id", "ts", "y_hat"])
 
-        for i, idx in enumerate(self.unique_idxs):
+        for i, idx in enumerate(self.sort_key):
             # Corresponding train ts_object
             ts_object = self.batches[i]
 
             # Asserts
-            assert ts_object.idxs[0] == i
+            assert ts_object.idxs[0] == idx
 
             # Declare y_hat_id placeholder
             Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])

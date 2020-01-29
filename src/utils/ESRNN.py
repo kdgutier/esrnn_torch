@@ -178,6 +178,7 @@ class _ESRNN(nn.Module):
         # parse ts_object
         y_ts = ts_object.y
         idxs = ts_object.idxs
+        print("y_ts.shape", y_ts.shape)
         n_series, n_time = y_ts.shape
 
         # evaluation mode
