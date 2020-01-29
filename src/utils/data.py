@@ -17,7 +17,7 @@ def long_to_wide(data):
     df_wide['last_ts'] = last_ts
     df_wide = df_wide.reset_index().rename_axis(None, axis=1)
     
-    ts_cols = data.ts.unique().tolist()
+    ts_cols = data.ts_map.unique().tolist()
     y = df_wide.filter(items=['unique_id'] + ts_cols)
     X = df_wide.filter(items=['unique_id', 'x', 'last_ts'])
     return X, y
@@ -82,7 +82,7 @@ class Iterator(object):
     
     def panel_to_batches(self):
         """
-        Receives panel and creates ts_object list.
+        Receives panel and creates batches list wit ts objects.
         Parameters:
             X: SORTED array-like or sparse matrix, shape (n_samples, n_features)
                 Test or validation data for panel, with column 'unique_id', date stamp 'ds' and 'y'.
@@ -96,14 +96,17 @@ class Iterator(object):
             # Compute the offset of the current minibatch in the data.
             offset = (b * self.batch_size) % self.n_series
             
-            # Extract values of batch
+            # Extract values for batch
             batch_idxs = self.sort_key.iloc[offset:(offset + self.batch_size)]['sort_key'].values
             batch_y = self.y.iloc[offset:(offset + self.batch_size), 2:].values
             batch_categories = self.X.iloc[offset:(offset + self.batch_size)]['x'].values
             batch_last_ts = self.X.iloc[offset:(offset + self.batch_size)]['last_ts'].values
+
+            assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ts) == len(batch_categories)
+            assert batch_y.shape[1]>2
             
             # Feed to Batch
-            ts_object = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
+            batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
                               categories=batch_categories, idxs=batch_idxs)
-            batches.append(ts_object)
+            batches.append(batch)
         return batches
