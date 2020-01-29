@@ -116,7 +116,7 @@ class ESRNN(object):
       # Obtain unique_ids to predict
       predict_unique_idxs = X_df['unique_id'].unique()
 
-      # Predictions for panel.
+      # Predictions for panel
       Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
 
       for unique_id in predict_unique_idxs:
@@ -164,57 +164,57 @@ class ESRNN(object):
       return X, y
   
     def get_dir_name(self, root_dir=None):
-        if not root_dir:
-            assert self.mc.root_dir
-            root_dir = self.mc.root_dir
+      if not root_dir:
+        assert self.mc.root_dir
+        root_dir = self.mc.root_dir
 
-        data_dir = self.mc.dataset_name
-        model_parent_dir = os.path.join(root_dir, data_dir)
-        model_path = ['num_series_{}'.format(self.mc.num_series),
-                        'lr_{}'.format(self.mc.learning_rate),
-                        str(self.mc.copy)]
-        model_dir = os.path.join(model_parent_dir, '_'.join(model_path))
-        return model_dir
+      data_dir = self.mc.dataset_name
+      model_parent_dir = os.path.join(root_dir, data_dir)
+      model_path = ['num_series_{}'.format(self.mc.num_series),
+                      'lr_{}'.format(self.mc.learning_rate),
+                      str(self.mc.copy)]
+      model_dir = os.path.join(model_parent_dir, '_'.join(model_path))
+      return model_dir
 
     def save(self, model_dir=None, copy=None):
-        if copy is not None:
-            self.mc.copy = copy
+      if copy is not None:
+          self.mc.copy = copy
 
-        if not model_dir:
-            assert self.mc.root_dir
-            model_dir = self.get_dir_name()
+      if not model_dir:
+        assert self.mc.root_dir
+        model_dir = self.get_dir_name()
 
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
+      if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
 
-        rnn_filepath = os.path.join(model_dir, "rnn.model")
-        es_filepath = os.path.join(model_dir, "es.model")
+      rnn_filepath = os.path.join(model_dir, "rnn.model")
+      es_filepath = os.path.join(model_dir, "es.model")
 
-        print('Saving model to:\n {}'.format(model_dir)+'\n')
-        torch.save({'model_state_dict': self.es.state_dict()}, es_filepath)
-        torch.save({'model_state_dict': self.rnn.state_dict()}, rnn_filepath)
+      print('Saving model to:\n {}'.format(model_dir)+'\n')
+      torch.save({'model_state_dict': self.es.state_dict()}, es_filepath)
+      torch.save({'model_state_dict': self.rnn.state_dict()}, rnn_filepath)
 
     def load(self, model_dir=None, copy=None):
-        if copy is not None:
-            self.mc.copy = copy
+      if copy is not None:
+        self.mc.copy = copy
 
-        if not model_dir:
-            assert self.mc.root_dir
-            model_dir = self.get_dir_name()
+      if not model_dir:
+        assert self.mc.root_dir
+        model_dir = self.get_dir_name()
 
-        rnn_filepath = os.path.join(model_dir, "rnn.model")
-        es_filepath = os.path.join(model_dir, "es.model")
-        path = Path(es_filepath)
+      rnn_filepath = os.path.join(model_dir, "rnn.model")
+      es_filepath = os.path.join(model_dir, "es.model")
+      path = Path(es_filepath)
 
-        if path.is_file():
-            print('Loading model from:\n {}'.format(model_dir)+'\n')
+      if path.is_file():
+        print('Loading model from:\n {}'.format(model_dir)+'\n')
 
-            checkpoint = torch.load(es_filepath, map_location=self.mc.device)
-            self.es.load_state_dict(checkpoint['model_state_dict'])
-            self.es.to(self.mc.device)
-            
-            checkpoint = torch.load(rnn_filepath, map_location=self.mc.device)
-            self.rnn.load_state_dict(checkpoint['model_state_dict'])
-            self.rnn.to(self.mc.device)
-        else:
-            print('Model path {} does not exist'.format(path))
+        checkpoint = torch.load(es_filepath, map_location=self.mc.device)
+        self.es.load_state_dict(checkpoint['model_state_dict'])
+        self.es.to(self.mc.device)
+        
+        checkpoint = torch.load(rnn_filepath, map_location=self.mc.device)
+        self.rnn.load_state_dict(checkpoint['model_state_dict'])
+        self.rnn.to(self.mc.device)
+      else:
+        print('Model path {} does not exist'.format(path))
