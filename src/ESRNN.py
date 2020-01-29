@@ -29,111 +29,135 @@ class ESRNN(object):
                               frequency=frequency, max_periods=max_periods, root_dir=root_dir)
 
     def train(self, dataloader, random_seed):
-        print(10*'='+' Training ESRNN ' + 10*'=')
+      print(10*'='+' Training ESRNN ' + 10*'=' + '\n')
 
-        # Optimizers
-        # TODO scheduler
-        es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
-                                    lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
-                                    betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+      # Optimizers
+      # TODO scheduler
+      es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
+                                  lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
+                                  betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
-        rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
-                                   lr=self.mc.learning_rate,
-                                   betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+      rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
+                                  lr=self.mc.learning_rate,
+                                  betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+      
+      # Loss Functions
+      smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
+
+      # training code
+      for epoch in range(self.mc.max_epochs):
+        start = time.time()
         
-        # Loss Functions
-        smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
+        losses = []
+        for j in range(dataloader.n_batches):
+          es_optimizer.zero_grad()
+          rnn_optimizer.zero_grad()
 
-        # training code
-        for epoch in range(self.mc.max_epochs):
-            start = time.time()
-            
-            losses = []
-            for j in range(dataloader.n_batches):
-                es_optimizer.zero_grad()
-                rnn_optimizer.zero_grad()
+          ts_object = dataloader.get_batch()
+          windows_y, windows_y_hat, levels = self.esrnn(ts_object)
+          
+          loss = smyl_loss(windows_y, windows_y_hat, levels)
+          losses.append(loss.data.numpy())
+          loss.backward()
+          torch.nn.utils.clip_grad_value_(self.esrnn.rnn.parameters(),
+                                      clip_value=self.mc.gradient_clipping_threshold)
+          torch.nn.utils.clip_grad_value_(self.esrnn.es.parameters(),
+                                      clip_value=self.mc.gradient_clipping_threshold)
+          rnn_optimizer.step()
+          es_optimizer.step()
 
-                ts_object = dataloader.get_batch()
-                windows_y, windows_y_hat, levels = self.esrnn(ts_object)
-                
-                loss = smyl_loss(windows_y, windows_y_hat, levels)
-                losses.append(loss.data.numpy())
-                loss.backward()
-                torch.nn.utils.clip_grad_value_(self.esrnn.rnn.parameters(),
-                                            clip_value=self.mc.gradient_clipping_threshold)
-                torch.nn.utils.clip_grad_value_(self.esrnn.es.parameters(),
-                                            clip_value=self.mc.gradient_clipping_threshold)
-                rnn_optimizer.step()
-                es_optimizer.step()
+        print("========= Epoch {} finished =========".format(epoch))
+        print("Training time: {}".format(time.time()-start))
+        print("Forecast loss: {}".format(np.mean(losses)))
 
-            print("========= Epoch {} finished =========".format(epoch))
-            print("Training time: {}".format(time.time()-start))
-            print("Forecast loss: {}".format(np.mean(losses)))
-
-        print('Train finished!')
+      print('Train finished!')
     
-    def fit(self, X, y, random_seed=1):
-        assert len(X)==len(y)
-        assert X.shape[1]>=2
-        
-        # Random Seeds
-        torch.manual_seed(random_seed)
-        np.random.seed(random_seed)
+    def fit(self, X_df, y_df, random_seed=1):
+      # Transform long dfs to wide numpy
 
-        # Exogenous variables
-        unique_categories = np.unique(X[:, 1])
-        self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
-        self.mc.exogenous_size = len(unique_categories)
+      X, y = self.long_to_wide(X_df, y_df)
+      assert len(X)==len(y)
+      assert X.shape[1]>=3
+      
+      # Random Seeds
+      torch.manual_seed(random_seed)
+      np.random.seed(random_seed)
 
-        # Create batches
-        self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
-        self.sort_key = self.dataloader.sort_key 
+      # Exogenous variables
+      unique_categories = np.unique(X[:, 1])
+      self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
+      self.mc.exogenous_size = len(unique_categories)
 
-        # Initialize model
-        self.mc.n_series = self.dataloader.n_series
+      # Create batches
+      self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
+      self.sort_key = self.dataloader.sort_key
 
-        self.esrnn = _ESRNN(self.mc)
+      # Initialize model
+      self.mc.n_series = self.dataloader.n_series
 
-        # Train model
-        self.train(dataloader=self.dataloader, random_seed=random_seed)
+      self.esrnn = _ESRNN(self.mc)
 
-    def predict(self, X=None):
-        """
-            Predictions for all stored time series
-        Returns:
-            Y_hat_panel : array-like (n_samples, 1).
-                Predicted values for models in Family for ids in Panel.
-            ds: Corresponding list of date stamps
-            unique_id: Corresponding list of unique_id
-        """
-        # TODO: receive X
-        self.dataloader.batch_size = 1
-        self.dataloader.n_batches = self.dataloader.n_series
-        sorted_unique_idxs = self.dataloader.sort_key['unique_id']
+      # Train model
+      self.train(dataloader=self.dataloader, random_seed=random_seed)
 
-        # Predictions for panel.
-        Y_hat_panel = pd.DataFrame(columns=["unique_id", "y_hat"])
+    def predict(self, X_df=None):
+      """
+          Predictions for all stored time series
+      Returns:
+          Y_hat_panel : array-like (n_samples, 1).
+              Predicted values for models in Family for ids in Panel.
+          ds: Corresponding list of date stamps
+          unique_id: Corresponding list of unique_id
+      """
+      # Obtain unique_ids to predict
+      predict_unique_idxs = X_df['unique_id'].unique()
 
-        for j in range(self.dataloader.n_batches):
+      # Predictions for panel.
+      Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
 
-            # Corresponding train ts_object
-            ts_object = self.dataloader.get_batch()
+      for unique_id in predict_unique_idxs:
+        # Corresponding train ts_object
+        ts_object = self.dataloader.get_batch(unique_id=unique_id)
 
-            # Declare y_hat_id placeholder
-            Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
+        # Declare y_hat_id placeholder
+        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
 
-            # Prediction
-            y_hat = self.esrnn.predict(ts_object)
-            y_hat = y_hat.squeeze()
-            Y_hat_id.iloc[:, 0] = y_hat
+        # Prediction
+        y_hat = self.esrnn.predict(ts_object)
+        y_hat = y_hat.squeeze()
+        Y_hat_id.iloc[:, 0] = y_hat
 
-            # Serie prediction
-            Y_hat_id["unique_id"] = sorted_unique_idxs[j]
-            #ts = date_range = pd.date_range(start=ts_object.last_ts, periods=self.mc.output_size+1, freq=self.mc.frequency)
-            #Y_hat_id["ts"] = ts[1:]
-            Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
+        # Serie prediction
+        Y_hat_id["unique_id"] = unique_id
+        ts = date_range = pd.date_range(start=ts_object.last_ts[0],
+                                        periods=self.mc.output_size+1, freq=self.mc.frequency)
+        Y_hat_id["ts"] = ts[1:]
+        Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
 
-        return Y_hat_panel
+      return Y_hat_panel
+    
+    def long_to_wide(self, X_df, y_df):
+      data = X_df
+      data['y'] = y_df['y']
+      ts_map = {}
+      for tmap, t in enumerate(data['ts'].unique()):
+          ts_map[t] = tmap
+      data['ts_map'] = data['ts'].map(ts_map)
+      df_wide = data.pivot(index='unique_id', columns='ts_map')['y']
+      
+      x_unique = data[['unique_id', 'x']].groupby('unique_id').first()
+      last_ts =  data[['unique_id', 'ts']].groupby('unique_id').last()
+      assert len(x_unique)==len(data.unique_id.unique())
+      df_wide['x'] = x_unique
+      df_wide['last_ts'] = last_ts
+      df_wide = df_wide.reset_index().rename_axis(None, axis=1)
+      
+      ts_cols = data.ts_map.unique().tolist()
+      X = df_wide.filter(items=['unique_id', 'x', 'last_ts']).values
+      y = df_wide.filter(items=ts_cols).values
+
+      # TODO: assert "completeness" of the series (frequency-wise)
+      return X, y
   
     def get_dir_name(self, root_dir=None):
         if not root_dir:

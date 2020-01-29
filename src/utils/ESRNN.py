@@ -192,7 +192,7 @@ class _ESRNN(nn.Module):
 
           # Deseasonalization and normalization
           x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-          x = x / levels[:, x_end-1]
+          x = x / levels[:, [x_end-1]]
           x = torch.log(x)
 
           # Concatenate categories
@@ -206,7 +206,7 @@ class _ESRNN(nn.Module):
 
           # Return seasons and levels
           y_hat = torch.exp(y_hat)
-          y_hat = y_hat * levels[:, n_time-1]
+          y_hat = y_hat * levels[:, [n_time-1]]
           y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
           y_hat = y_hat.data.numpy()
         return y_hat

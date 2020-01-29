@@ -16,7 +16,9 @@ def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
     dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
     dataset.drop(columns=['M4id'], inplace=True)
     dataset = dataset.rename(columns={'category': 'x'})
-    return dataset
+    X_df = dataset.filter(items=['unique_id', 'ts', 'x'])
+    y_df = dataset.filter(items=['unique_id', 'ts', 'y'])
+    return X_df, y_df
 
 def main():
     dataset  = M4_parser(dataset_name='Quartely', mode='train')
