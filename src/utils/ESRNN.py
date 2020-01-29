@@ -6,17 +6,17 @@ class _ES(nn.Module):
     def __init__(self, mc):
         super(_ES, self).__init__()
         self.mc = mc
-        self.max_num_series = self.mc.num_series
+        self.n_series = self.mc.n_series
         self.seasonality = self.mc.seasonality
         self.output_size = self.mc.output_size
 
         # Level and Seasonality Smoothing parameters
-        init_lev_sms = torch.ones((self.max_num_series, 1)) * 0.5
-        init_seas_sms = torch.ones((self.max_num_series, 1)) * 0.5
+        init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
+        init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
         self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
         self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
 
-        init_seas = torch.ones((self.max_num_series, self.seasonality)) * 0.5
+        init_seas = torch.ones((self.n_series, self.seasonality)) * 0.5
         self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
         self.logistic = nn.Sigmoid()
 
@@ -148,7 +148,7 @@ class _ESRNN(nn.Module):
 
             # Deseasonalization and normalization
             x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-            x = x / levels[:, x_end]
+            x = x / levels[:, [x_end]]
             x = self.gaussian_noise(torch.log(x), std=noise_std)
 
             # Concatenate categories
@@ -160,7 +160,7 @@ class _ESRNN(nn.Module):
 
             # Deseasonalization and normalization (inverse)
             y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
-            y = torch.log(y) / levels[:, x_end]
+            y = torch.log(y) / levels[:, [x_end]]
 
             windows_x[i, :, :] += x
             windows_y[i, :, :] += y

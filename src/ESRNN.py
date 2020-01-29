@@ -28,7 +28,7 @@ class ESRNN(object):
                               seasonality=seasonality, input_size=input_size, output_size=output_size,
                               frequency=frequency, max_periods=max_periods, root_dir=root_dir)
 
-    def train(self, batches, random_seed):
+    def train(self, dataloader, random_seed):
         print(10*'='+' Training ESRNN ' + 10*'=')
 
         # Optimizers
@@ -49,11 +49,11 @@ class ESRNN(object):
             start = time.time()
             
             losses = []
-            for j in range(len(batches)):
+            for j in range(dataloader.n_batches):
                 es_optimizer.zero_grad()
                 rnn_optimizer.zero_grad()
 
-                ts_object = batches[j]
+                ts_object = dataloader.get_batch()
                 windows_y, windows_y_hat, levels = self.esrnn(ts_object)
                 
                 loss = smyl_loss(windows_y, windows_y_hat, levels)
@@ -78,33 +78,24 @@ class ESRNN(object):
         torch.manual_seed(random_seed)
         np.random.seed(random_seed)
 
-        assert len(X)==len(y)
-
-        # Sort X by unique_id for faster loop
-        X.loc[:, 'y'] = y
-        self.X = X.sort_values(by=['unique_id']).reset_index(drop=True)
-
         # Exogenous variables
-        if 'x' in X.columns:
-            unique_categories = X['x'].unique()
-            self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
-            self.mc.exogenous_size = len(unique_categories)
-        else:
-            self.mc.exogenous_size = 0
+        unique_categories = np.unique(X[:, 1])
+        self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
+        self.mc.exogenous_size = len(unique_categories)
 
         # Create batches
-        iterator = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
-        self.batches = iterator.panel_to_batches()
-        self.sort_key = iterator.sort_key['sort_key'].values
+        self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
+        self.sort_key = self.dataloader.sort_key 
 
         # Initialize model
-        self.mc.num_series = X['unique_id'].nunique()
+        self.mc.n_series = self.dataloader.n_series
+
         self.esrnn = _ESRNN(self.mc)
 
         # Train model
-        self.train(self.batches, random_seed)
+        self.train(dataloader=self.dataloader, random_seed=random_seed)
 
-    def predict(self, X=None):
+    def predict(self, X):
         """
             Predictions for all stored time series
         Returns:

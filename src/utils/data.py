@@ -12,17 +12,17 @@ def long_to_wide(data):
     last_ts =  data[['unique_id', 'ts']].groupby('unique_id').last()
     assert len(x_unique)==len(data.unique_id.unique())
     df_wide['x'] = x_unique
-    df_wide['last_ts'] = last_ts
+    #df_wide['last_ts'] = last_ts
     df_wide = df_wide.reset_index().rename_axis(None, axis=1)
     
     ts_cols = data.ts_map.unique().tolist()
-    X = df_wide.filter(items=['unique_id', 'x', 'last_ts']).values
+    X = df_wide.filter(items=['unique_id', 'x']).values
     y = df_wide.filter(items=ts_cols).values
     return X, y
 
 
 class Batch():
-    def __init__(self, mc, y, last_ts, categories, idxs):
+    def __init__(self, mc, y, categories, idxs):
         self.id = id
         n = len(y)
         y = np.float32(y)        
@@ -31,7 +31,7 @@ class Batch():
         if (self.y.shape[1] > mc.max_series_length):
             self.y = y[:, -mc.max_series_length:]
 
-        self.last_ts = last_ts
+        #self.last_ts = last_ts
 
         # Parse categoric data to 
         if mc.exogenous_size >0:
@@ -41,7 +41,7 @@ class Batch():
             self.categories[rows_idx, cols_idx] = 1
             self.categories = torch.from_numpy(self.categories).float()
         
-        y = torch.tensor(y).float()
+        self.y = torch.tensor(y).float()
 
 
 class Iterator(object):
@@ -54,7 +54,11 @@ class Iterator(object):
         self.batch_size = mc.batch_size
         self.shuffle = shuffle
         
+        # Random Seeds
         self.random_seed = random_seed
+        torch.manual_seed(random_seed)
+        np.random.seed(random_seed)
+
         self.unique_idxs = np.unique(self.X[:, 0])
         assert len(self.unique_idxs)==len(self.X)
         self.n_series = len(self.unique_idxs)
@@ -86,7 +90,6 @@ class Iterator(object):
 
       batch_y = self.y[first:last]
       batch_categories = self.X[first:last, 1]
-      batch_last_ts = self.X[first:last, 2]
 
       last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
       min_len = min(last_numeric)
@@ -99,12 +102,11 @@ class Iterator(object):
       batch_y = y_b
       #print("batch_y \n", batch_y)
 
-      assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ts) == len(batch_categories)
+      assert batch_y.shape[0] == len(batch_idxs) == len(batch_categories)
       assert batch_y.shape[1]>2
       
       # Feed to Batch
-      batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
-                        categories=batch_categories, idxs=batch_idxs)
+      batch = Batch(mc=self.mc, y=batch_y, categories=batch_categories, idxs=batch_idxs)
       self.b = (self.b + 1) % self.n_batches
       return batch
     
