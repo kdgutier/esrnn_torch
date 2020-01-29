@@ -3,7 +3,7 @@ import torch
 
 
 class Batch():
-    def __init__(self, mc, y, last_ts, categories, idxs):
+    def __init__(self, mc, y, last_ds, categories, idxs):
         n = len(y)
         y = np.float32(y)        
         self.idxs = idxs
@@ -11,7 +11,7 @@ class Batch():
         if (self.y.shape[1] > mc.max_series_length):
             self.y = y[:, -mc.max_series_length:]
 
-        self.last_ts = last_ts
+        self.last_ds = last_ds
 
         # Parse categoric data to 
         if mc.exogenous_size >0:
@@ -75,7 +75,7 @@ class Iterator(object):
 
       batch_y = self.y[first:last]
       batch_categories = self.X[first:last, 1]
-      batch_last_ts = self.X[first:last, 2]
+      batch_last_ds = self.X[first:last, 2]
 
       last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
       min_len = min(last_numeric)
@@ -86,11 +86,11 @@ class Iterator(object):
           y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
       batch_y = y_b
 
-      assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ts) == len(batch_categories)
+      assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ds) == len(batch_categories)
       assert batch_y.shape[1]>=1
       
       # Feed to Batch
-      batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, categories=batch_categories, idxs=batch_idxs)
+      batch = Batch(mc=self.mc, y=batch_y, last_ds=batch_last_ds, categories=batch_categories, idxs=batch_idxs)
       self.b = (self.b + 1) % self.n_batches
       return batch
     

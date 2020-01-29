@@ -53,8 +53,8 @@ class ESRNN(object):
           es_optimizer.zero_grad()
           rnn_optimizer.zero_grad()
 
-          ts_object = dataloader.get_batch()
-          windows_y, windows_y_hat, levels = self.esrnn(ts_object)
+          batch = dataloader.get_batch()
+          windows_y, windows_y_hat, levels = self.esrnn(batch)
           
           loss = smyl_loss(windows_y, windows_y_hat, levels)
           losses.append(loss.data.numpy())
@@ -76,9 +76,9 @@ class ESRNN(object):
       # Transform long dfs to wide numpy
       assert type(X_df) == pd.core.frame.DataFrame
       assert type(y_df) == pd.core.frame.DataFrame
-      assert all([(col in X_df) for col in ['unique_id', 'ts', 'x']])
-      assert all([(col in y_df) for col in ['unique_id', 'ts', 'y']])
-      
+      assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
+      assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
+
       X, y = self.long_to_wide(X_df, y_df)
       assert len(X)==len(y)
       assert X.shape[1]>=3
@@ -120,20 +120,20 @@ class ESRNN(object):
       Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
 
       for unique_id in predict_unique_idxs:
-        # Corresponding train ts_object
-        ts_object = self.dataloader.get_batch(unique_id=unique_id)
+        # Corresponding train batch
+        batch = self.dataloader.get_batch(unique_id=unique_id)
 
         # Declare y_hat_id placeholder
         Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
 
         # Prediction
-        y_hat = self.esrnn.predict(ts_object)
+        y_hat = self.esrnn.predict(batch)
         y_hat = y_hat.squeeze()
         Y_hat_id.iloc[:, 0] = y_hat
 
         # Serie prediction
         Y_hat_id["unique_id"] = unique_id
-        ts = date_range = pd.date_range(start=ts_object.last_ts[0],
+        ts = date_range = pd.date_range(start=batch.last_ds[0],
                                         periods=self.mc.output_size+1, freq=self.mc.frequency)
         Y_hat_id["ts"] = ts[1:]
         Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
@@ -143,22 +143,22 @@ class ESRNN(object):
     def long_to_wide(self, X_df, y_df):
       data = X_df
       data['y'] = y_df['y']
-      ts_map = {}
-      for tmap, t in enumerate(data['ts'].unique()):
-          ts_map[t] = tmap
-      data['ts_map'] = data['ts'].map(ts_map)
-      df_wide = data.pivot(index='unique_id', columns='ts_map')['y']
+      ds_map = {}
+      for dmap, t in enumerate(data['ds'].unique()):
+          ds_map[t] = dmap
+      data['ds_map'] = data['ds'].map(ds_map)
+      df_wide = data.pivot(index='unique_id', columns='ds_map')['y']
       
       x_unique = data[['unique_id', 'x']].groupby('unique_id').first()
-      last_ts =  data[['unique_id', 'ts']].groupby('unique_id').last()
+      last_ds =  data[['unique_id', 'ds']].groupby('unique_id').last()
       assert len(x_unique)==len(data.unique_id.unique())
       df_wide['x'] = x_unique
-      df_wide['last_ts'] = last_ts
+      df_wide['last_ds'] = last_ds
       df_wide = df_wide.reset_index().rename_axis(None, axis=1)
       
-      ts_cols = data.ts_map.unique().tolist()
-      X = df_wide.filter(items=['unique_id', 'x', 'last_ts']).values
-      y = df_wide.filter(items=ts_cols).values
+      ds_cols = data.ds_map.unique().tolist()
+      X = df_wide.filter(items=['unique_id', 'x', 'last_ds']).values
+      y = df_wide.filter(items=ds_cols).values
 
       # TODO: assert "completeness" of the series (frequency-wise)
       return X, y
