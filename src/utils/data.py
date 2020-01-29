@@ -27,7 +27,7 @@ class Batch():
     def __init__(self, mc, y, last_ts, categories, idxs):
         self.id = id
         n = len(y)
-        y = np.float32([y])        
+        y = np.float32(y)        
         self.idxs = idxs
         self.y = y
         if (self.y.shape[1] > mc.max_series_length):
@@ -93,12 +93,13 @@ class Iterator(object):
 
         batches = []
         for b in range(n_batches):
-            # Compute the offset of the current minibatch in the data.
+            # Compute the offset of the minibatch.
             offset = (b * self.batch_size) % self.n_series
             
             # Extract values for batch
             batch_idxs = self.sort_key.iloc[offset:(offset + self.batch_size)]['sort_key'].values
             batch_y = self.y.iloc[offset:(offset + self.batch_size), 2:].values
+
             batch_categories = self.X.iloc[offset:(offset + self.batch_size)]['x'].values
             batch_last_ts = self.X.iloc[offset:(offset + self.batch_size)]['last_ts'].values
 
@@ -108,5 +109,6 @@ class Iterator(object):
             # Feed to Batch
             batch = Batch(mc=self.mc, y=batch_y, last_ts=batch_last_ts, 
                               categories=batch_categories, idxs=batch_idxs)
+
             batches.append(batch)
         return batches
