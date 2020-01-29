@@ -100,7 +100,7 @@ class ESRNN(object):
       # Train model
       self.train(dataloader=self.dataloader, random_seed=random_seed)
 
-    def predict(self, X_df=None):
+    def predict(self, X_df):
       """
           Predictions for all stored time series
       Returns:
