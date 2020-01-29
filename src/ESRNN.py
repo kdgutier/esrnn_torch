@@ -74,7 +74,8 @@ class ESRNN(object):
     
     def fit(self, X_df, y_df, random_seed=1):
       # Transform long dfs to wide numpy
-
+      assert type(X_df) == pd.core.frame.DataFrame
+      assert type(y_df) == pd.core.frame.DataFrame
       X, y = self.long_to_wide(X_df, y_df)
       assert len(X)==len(y)
       assert X.shape[1]>=3

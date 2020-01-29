@@ -4,7 +4,6 @@ import torch
 
 class Batch():
     def __init__(self, mc, y, last_ts, categories, idxs):
-        self.id = id
         n = len(y)
         y = np.float32(y)        
         self.idxs = idxs
