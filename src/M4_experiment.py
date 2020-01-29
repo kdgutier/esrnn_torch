@@ -14,13 +14,12 @@ def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
     dataset = dataset.dropna()
     dataset.loc[:,'ts'] = pd.to_datetime(dataset['ts']-1, unit='d')
     dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-    X = dataset[['unique_id', 'ts', 'category']]
-    X = X.rename(columns={'category':'x'})
-    y = dataset['y']
-    return X, y
+    dataset.drop(columns=['M4id'], inplace=True)
+    dataset = dataset.rename(columns={'category': 'x'})
+    return dataset
 
 def main():
-    X, y = M4_parser(dataset_name='Quartely', mode='train')
+    dataset  = M4_parser(dataset_name='Quartely', mode='train')
 
 if __name__ == '__main__':
     main()
