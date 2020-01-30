@@ -55,26 +55,27 @@ class _ES(nn.Module):
             newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
             levels.append(newlev)
             seasonalities.append(newseason)
-
-        seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
+        
         levels_stacked = torch.stack(levels).transpose(1,0)
+        seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
 
         # Completion of seasonalities if prediction horizon is larger than seasonality
         # Naive2 like prediction, to avoid recursive forecasting
+        # TODO: check condition
         if self.output_size > self.seasonality:
             start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
             end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
 
-            print('self.seasonality', self.seasonality)
-            print('self.output_size', self.output_size)
-            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
-            print('start_seasonality_ext', start_seasonality_ext)
-            print('end_seasonality_ext', end_seasonality_ext)
+            #print('self.seasonality', self.seasonality)
+            #print('self.output_size', self.output_size)
+            #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+            #print('start_seasonality_ext', start_seasonality_ext)
+            #print('end_seasonality_ext', end_seasonality_ext)
 
             seasonalities_stacked = torch.cat((seasonalities_stacked,
                                         seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
 
-            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+            #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
 
 
         return levels_stacked, seasonalities_stacked
@@ -160,7 +161,7 @@ class _ESRNN(nn.Module):
             # Deseasonalization and normalization
             x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
             x = x / levels[:, [x_end]]
-            x = self.gaussian_noise(torch.log(x), std=noise_std)
+            x = self.gaussian_noise(x, std=noise_std)
 
             # Concatenate categories
             if exogenous_size>0:
@@ -169,9 +170,9 @@ class _ESRNN(nn.Module):
             y_start = x_end
             y_end = x_end+output_size
 
-            # Deseasonalization and normalization (inverse)
+            # Deseasonalization and normalization
             y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
-            y = torch.log(y) / levels[:, [x_end]]
+            y = y / levels[:, [x_end]]
 
             windows_x[i, :, :] += x
             windows_y[i, :, :] += y
@@ -204,7 +205,6 @@ class _ESRNN(nn.Module):
           # Deseasonalization and normalization
           x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
           x = x / levels[:, [x_end-1]]
-          x = torch.log(x)
 
           # Concatenate categories
           if exogenous_size>0:
@@ -220,9 +220,7 @@ class _ESRNN(nn.Module):
           print('n_time', n_time)
           print('output_size', output_size)
 
-          # Return seasons and levels
-          y_hat = torch.exp(y_hat)
-          print('y_hat', y_hat)
+          # Deseasonalization and normalization (inverse)
           y_hat = y_hat * levels[:, [n_time-1]]
           print('y_hat', y_hat)
           print('levels[:, [n_time-1]', levels[:, [n_time-1]])
@@ -230,4 +228,5 @@ class _ESRNN(nn.Module):
           print('y_hat', y_hat)
           print('seasonalities[:, n_time:(n_time+output_size)]', seasonalities[:, n_time:(n_time+output_size)])
           y_hat = y_hat.data.numpy()
+
         return y_hat
