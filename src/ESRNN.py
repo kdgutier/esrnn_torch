@@ -19,14 +19,14 @@ from src.utils.data import Iterator
 class ESRNN(object):
     def __init__(self, max_epochs=15, batch_size=1, learning_rate=1e-3, per_series_lr_multip=1, gradient_eps=1e-6, gradient_clipping_threshold=20,
                  noise_std=0.001, level_variability_penalty=80, tau=0.5, state_hsize=40, dilations=[[1, 2], [4, 8]], add_nl_layer=False, 
-                 seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, root_dir='./'):
+                 seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
       super(ESRNN, self).__init__()
       self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, learning_rate=learning_rate, per_series_lr_multip=per_series_lr_multip, 
                             gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, 
                             noise_std=noise_std, level_variability_penalty=level_variability_penalty, tau=tau,
                             state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer, 
                             seasonality=seasonality, input_size=input_size, output_size=output_size,
-                            frequency=frequency, max_periods=max_periods, root_dir=root_dir)
+                            frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
 
     def train(self, dataloader, random_seed):
       print(10*'='+' Training ESRNN ' + 10*'=' + '\n')
@@ -92,14 +92,13 @@ class ESRNN(object):
       self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
       self.mc.exogenous_size = len(unique_categories)
 
-      # Create batches
+      # Create batches (device in mc)
       self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
       self.sort_key = self.dataloader.sort_key
 
       # Initialize model
       self.mc.n_series = self.dataloader.n_series
-
-      self.esrnn = _ESRNN(self.mc)
+      self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
       # Train model
       self.train(dataloader=self.dataloader, random_seed=random_seed)

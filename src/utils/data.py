@@ -3,102 +3,111 @@ import torch
 
 
 class Batch():
-    def __init__(self, mc, y, last_ds, categories, idxs):
-        n = len(y)
-        y = np.float32(y)        
-        self.idxs = idxs
-        self.y = y
-        if (self.y.shape[1] > mc.max_series_length):
-            self.y = y[:, -mc.max_series_length:]
+  def __init__(self, mc, y, last_ds, categories, idxs):
+    # Parse Model config
+    exogenous_size = mc.exogenous_size
+    device = mc.device
 
-        self.last_ds = last_ds
+    # y: time series values
+    n = len(y)
+    y = np.float32(y)        
+    self.idxs = idxs
+    self.y = y
+    if (self.y.shape[1] > mc.max_series_length):
+        self.y = y[:, -mc.max_series_length:]
+    self.y = torch.tensor(y).float()
 
-        # Parse categoric data to 
-        if mc.exogenous_size >0:
-            self.categories = np.zeros((len(idxs), mc.exogenous_size))
-            cols_idx = np.array([mc.category_to_idx[category] for category in categories])
-            rows_idx = np.array(range(len(cols_idx)))
-            self.categories[rows_idx, cols_idx] = 1
-            self.categories = torch.from_numpy(self.categories).float()
-        
-        self.y = torch.tensor(y).float()
+    # last_ds: last time for prediction purposes
+    self.last_ds = last_ds
+
+    # categories: exogenous categoric data
+    if exogenous_size >0:
+      self.categories = np.zeros((len(idxs), exogenous_size))
+      cols_idx = np.array([mc.category_to_idx[category] for category in categories])
+      rows_idx = np.array(range(len(cols_idx)))
+      self.categories[rows_idx, cols_idx] = 1
+      self.categories = torch.from_numpy(self.categories).float()
+
+    self.y.to(device)
+    self.categories.to(device)
 
 
 class Iterator(object):
-    def __init__(self, mc, X, y, device=None,
-                shuffle=False, random_seed=1):
-        self.mc = mc
-        self.X, self.y = X, y
-        assert len(X)==len(y)
-        
-        self.batch_size = mc.batch_size
-        self.shuffle = shuffle
-        
-        # Random Seeds
-        self.random_seed = random_seed
-        torch.manual_seed(random_seed)
-        np.random.seed(random_seed)
-
-        self.unique_idxs = np.unique(self.X[:, 0])
-        assert len(self.unique_idxs)==len(self.X)
-        self.n_series = len(self.unique_idxs)
-        
-        # Initialize batch iterator
-        self.shuffle_dataset()
-        self.b = 0
-        self.n_batches = int(self.n_series / self.batch_size)
-
-    def shuffle_dataset(self):
-      """Return the examples in the dataset in order, or shuffled."""
-      if self.shuffle:
-        sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
-        self.X = self.X[sort_key]
-        self.y = self.y[sort_key]
-      else:
-        sort_key = list(range(self.n_series))
-      self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
-                        'sort_key': sort_key}
-
-    def get_trim_batch(self, unique_id):
-      if unique_id==None:
-        # Compute the indexes of the minibatch.
-        first = (self.b * self.batch_size)
-        last = min((first + self.batch_size), self.n_series)
-      else:
-        # Obtain unique_id index
-        assert unique_id in self.sort_key['unique_id'], "unique_id, not fitted"
-        first = self.sort_key['unique_id'].index(unique_id)
-        last = first+1
-
-      # Extract values for batch
-      batch_idxs = self.sort_key['sort_key'][first:last]
-
-      batch_y = self.y[first:last]
-      batch_categories = self.X[first:last, 1]
-      batch_last_ds = self.X[first:last, 2]
-
-      last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
-      min_len = min(last_numeric)
-
-      # Trimming to match min_len
-      y_b = np.zeros((batch_y.shape[0], min_len))
-      for i in range(batch_y.shape[0]):
-          y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
-      batch_y = y_b
-
-      assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ds) == len(batch_categories)
-      assert batch_y.shape[1]>=1
-      
-      # Feed to Batch
-      batch = Batch(mc=self.mc, y=batch_y, last_ds=batch_last_ds, categories=batch_categories, idxs=batch_idxs)
-      self.b = (self.b + 1) % self.n_batches
-      return batch
+  def __init__(self, mc, X, y, shuffle=False, random_seed=1):
+    self.X, self.y = X, y
+    assert len(X)==len(y)
     
-    def get_batch(self, unique_id=None):
-      return self.get_trim_batch(unique_id)
-
-    def __len__(self):
-      return self.n_batches
+    # Parse Model config
+    self.mc = mc
+    self.batch_size = mc.batch_size
+    self.shuffle = shuffle
     
-    def __iter__(self):
-      pass
+    # Random Seeds
+    self.random_seed = random_seed
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
+
+    self.unique_idxs = np.unique(self.X[:, 0])
+    assert len(self.unique_idxs)==len(self.X)
+    self.n_series = len(self.unique_idxs)
+    
+    # Initialize batch iterator
+    self.shuffle_dataset()
+    self.b = 0
+    self.n_batches = int(self.n_series / self.batch_size)
+
+  def shuffle_dataset(self):
+    """Return the examples in the dataset in order, or shuffled."""
+    if self.shuffle:
+      sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
+      self.X = self.X[sort_key]
+      self.y = self.y[sort_key]
+    else:
+      sort_key = list(range(self.n_series))
+    self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
+                      'sort_key': sort_key}
+
+  def get_trim_batch(self, unique_id):
+    if unique_id==None:
+      # Compute the indexes of the minibatch.
+      first = (self.b * self.batch_size)
+      last = min((first + self.batch_size), self.n_series)
+    else:
+      # Obtain unique_id index
+      assert unique_id in self.sort_key['unique_id'], "unique_id, not fitted"
+      first = self.sort_key['unique_id'].index(unique_id)
+      last = first+1
+
+    # Extract values for batch
+    batch_idxs = self.sort_key['sort_key'][first:last]
+
+    batch_y = self.y[first:last]
+    batch_categories = self.X[first:last, 1]
+    batch_last_ds = self.X[first:last, 2]
+
+    last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
+    min_len = min(last_numeric)
+
+    # Trimming to match min_len
+    y_b = np.zeros((batch_y.shape[0], min_len))
+    for i in range(batch_y.shape[0]):
+        y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
+    batch_y = y_b
+
+    assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ds) == len(batch_categories)
+    assert batch_y.shape[1]>=1
+    
+    # Feed to Batch
+    batch = Batch(mc=self.mc, y=batch_y, last_ds=batch_last_ds,
+                  categories=batch_categories, idxs=batch_idxs)
+    self.b = (self.b + 1) % self.n_batches
+    return batch
+    
+  def get_batch(self, unique_id=None):
+    return self.get_trim_batch(unique_id)
+
+  def __len__(self):
+    return self.n_batches
+    
+  def __iter__(self):
+    pass

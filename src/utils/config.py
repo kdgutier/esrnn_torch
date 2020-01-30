@@ -1,7 +1,7 @@
 class ModelConfig(object):
     def __init__(self, max_epochs, batch_size, learning_rate, per_series_lr_multip, gradient_eps, gradient_clipping_threshold, noise_std, 
                  level_variability_penalty, tau, state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
-                 frequency, max_periods, root_dir):
+                 frequency, max_periods, device, root_dir):
 
         # Train Parameters
         self.max_epochs = max_epochs
@@ -13,6 +13,7 @@ class ModelConfig(object):
         self.noise_std = noise_std
         self.level_variability_penalty = level_variability_penalty
         self.tau = tau
+        self.device = device
 
         # Model Parameters
         self.state_hsize = state_hsize
