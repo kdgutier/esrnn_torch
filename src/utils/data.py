@@ -89,15 +89,24 @@ class Iterator(object):
     min_len = min(len_series)
     last_numeric = (~np.isnan(batch_y)).cumsum(1).argmax(1)+1
 
+    if self.sort_key['unique_id'][first:last][0] == 'baf_2013':
+      print('batch_y', batch_y)
+      print('batch_y.shape', batch_y.shape)
+      print(last_numeric)
+      print(min_len)
+    
     # Trimming to match min_len
     y_b = np.zeros((batch_y.shape[0], min_len))
     for i in range(batch_y.shape[0]):
         y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
     batch_y = y_b
 
+    if self.sort_key['unique_id'][first:last][0] == 'baf_2013':
+      print('batch_y', batch_y)
+
     assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ds) == len(batch_categories)
     assert batch_y.shape[1]>=1
-    
+
     # Feed to Batch
     batch = Batch(mc=self.mc, y=batch_y, last_ds=batch_last_ds,
                   categories=batch_categories, idxs=batch_idxs)
