@@ -161,7 +161,7 @@ class _ESRNN(nn.Module):
             # Deseasonalization and normalization
             x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
             x = x / levels[:, [x_end]]
-            x = self.gaussian_noise(torch.log(x), std=noise_std)
+            x = self.gaussian_noise(x, std=noise_std)
 
             # Concatenate categories
             if exogenous_size>0:
@@ -172,7 +172,7 @@ class _ESRNN(nn.Module):
 
             # Deseasonalization and normalization (inverse)
             y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
-            y = torch.log(y) / levels[:, [x_end]]
+            y = y / levels[:, [x_end]]
 
             windows_x[i, :, :] += x
             windows_y[i, :, :] += y
