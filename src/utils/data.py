@@ -85,8 +85,9 @@ class Iterator(object):
     batch_categories = self.X[first:last, 1]
     batch_last_ds = self.X[first:last, 2]
 
-    last_numeric = np.count_nonzero(~np.isnan(batch_y), axis=1)
-    min_len = min(last_numeric)
+    len_series = np.count_nonzero(~np.isnan(batch_y), axis=1)
+    min_len = min(len_series)
+    last_numeric = (~np.isnan(batch_y)).cumsum(1).argmax(1)+1
 
     # Trimming to match min_len
     y_b = np.zeros((batch_y.shape[0], min_len))

@@ -57,12 +57,13 @@ class ESRNN(object):
         windows_y, windows_y_hat, levels = self.esrnn(batch)
         
         loss = smyl_loss(windows_y, windows_y_hat, levels)
+        # print(loss.data.numpy())
+        # print(batch.idxs)
+        # print("levels.data.numpy()", levels.data.numpy())
         losses.append(loss.data.numpy())
         loss.backward()
-        torch.nn.utils.clip_grad_value_(self.esrnn.rnn.parameters(),
-                                    clip_value=self.mc.gradient_clipping_threshold)
-        torch.nn.utils.clip_grad_value_(self.esrnn.es.parameters(),
-                                    clip_value=self.mc.gradient_clipping_threshold)
+        torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
+        torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), self.mc.gradient_clipping_threshold)
         rnn_optimizer.step()
         es_optimizer.step()
 
@@ -140,8 +141,8 @@ class ESRNN(object):
     return Y_hat_panel
   
   def long_to_wide(self, X_df, y_df):
-    data = X_df
-    data['y'] = y_df['y']
+    data = X_df.copy()
+    data['y'] = y_df['y'].copy()
     ds_map = {}
     for dmap, t in enumerate(data['ds'].unique()):
         ds_map[t] = dmap
