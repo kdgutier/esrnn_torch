@@ -79,6 +79,7 @@ class Iterator(object):
       last = first+1
 
     # Extract values for batch
+    unique_idxs = self.sort_key['unique_id'][first:last]
     batch_idxs = self.sort_key['sort_key'][first:last]
 
     batch_y = self.y[first:last]
@@ -88,14 +89,16 @@ class Iterator(object):
     len_series = np.count_nonzero(~np.isnan(batch_y), axis=1)
     min_len = min(len_series)
     last_numeric = (~np.isnan(batch_y)).cumsum(1).argmax(1)+1
-    
+
     # Trimming to match min_len
     y_b = np.zeros((batch_y.shape[0], min_len))
     for i in range(batch_y.shape[0]):
-        y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
+      y_b[i] = batch_y[i,(last_numeric[i]-min_len):last_numeric[i]]
     batch_y = y_b
 
-    assert batch_y.shape[0] == len(batch_idxs) == len(batch_last_ds) == len(batch_categories)
+    assert not np.isnan(batch_y).any(), \
+           "clean np.nan's from unique_idxs: {}".format(unique_idxs)
+    assert batch_y.shape[0]==len(batch_idxs)==len(batch_last_ds)==len(batch_categories)
     assert batch_y.shape[1]>=1
 
     # Feed to Batch
