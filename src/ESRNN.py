@@ -18,11 +18,11 @@ from src.utils.data import Iterator
 
 class ESRNN(object):
   def __init__(self, max_epochs=15, batch_size=1, learning_rate=1e-3, per_series_lr_multip=1, gradient_eps=1e-6, gradient_clipping_threshold=20,
-                noise_std=0.001, level_variability_penalty=80, tau=0.5, state_hsize=40, dilations=[[1, 2], [4, 8]], add_nl_layer=False, 
-                seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
+                lr_scheduler_step_size=9, noise_std=0.001, level_variability_penalty=80, tau=0.5, state_hsize=40, dilations=[[1, 2], [4, 8]],
+                add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, learning_rate=learning_rate, per_series_lr_multip=per_series_lr_multip, 
-                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, 
+                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, lr_scheduler_step_size=lr_scheduler_step_size, 
                           noise_std=noise_std, level_variability_penalty=level_variability_penalty, tau=tau,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer, 
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
@@ -41,9 +41,17 @@ class ESRNN(object):
                               lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
                               betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
+    es_scheduler = StepLR(optimizer=es_optimizer,
+                    step_size=self.mc.lr_scheduler_step_size,
+                    gamma=0.9)
+
     rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
                                 lr=self.mc.learning_rate,
                                 betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+
+    rnn_scheduler = StepLR(optimizer=rnn_optimizer,
+                    step_size=self.mc.lr_scheduler_step_size,
+                    gamma=0.9)
     
     # Loss Functions
     smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
@@ -68,6 +76,10 @@ class ESRNN(object):
         torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), self.mc.gradient_clipping_threshold)
         rnn_optimizer.step()
         es_optimizer.step()
+
+      # Decay learning rate
+      es_scheduler.step()
+      rnn_scheduler.step()
 
       print("========= Epoch {} finished =========".format(epoch))
       print("Training time: {}".format(time.time()-start))

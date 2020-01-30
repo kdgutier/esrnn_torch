@@ -1,5 +1,6 @@
 class ModelConfig(object):
-  def __init__(self, max_epochs, batch_size, learning_rate, per_series_lr_multip, gradient_eps, gradient_clipping_threshold, noise_std, 
+  def __init__(self, max_epochs, batch_size, learning_rate, per_series_lr_multip, gradient_eps, gradient_clipping_threshold, 
+                lr_scheduler_step_size, noise_std, 
                 level_variability_penalty, tau, state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                 frequency, max_periods, device, root_dir):
 
@@ -11,6 +12,7 @@ class ModelConfig(object):
     self.gradient_eps = gradient_eps
     self.gradient_clipping_threshold = gradient_clipping_threshold
     self.noise_std = noise_std
+    self.lr_scheduler_step_size = lr_scheduler_step_size
     self.level_variability_penalty = level_variability_penalty
     self.tau = tau
     self.device = device
@@ -33,7 +35,6 @@ class ModelConfig(object):
 
     #self.dataset_name = config['dataset_name']
     #self.freq_of_test = config['train_parameters']['freq_of_test']
-    #self.lr_scheduler_step_size = config['train_parameters']['lr_scheduler_step_size']
     #self.numeric_threshold = float(config['train_parameters']['numeric_threshold'])
     #self.c_state_penalty = config['train_parameters']['c_state_penalty']
     #self.percentile = config['train_parameters']['percentile']

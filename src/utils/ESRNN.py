@@ -65,8 +65,18 @@ class _ES(nn.Module):
         if self.output_size > self.seasonality:
             start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
             end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
+
+            print('self.seasonality', self.seasonality)
+            print('self.output_size', self.output_size)
+            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+            print('start_seasonality_ext', start_seasonality_ext)
+            print('end_seasonality_ext', end_seasonality_ext)
+
             seasonalities_stacked = torch.cat((seasonalities_stacked,
                                         seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
+
+            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+
 
         return levels_stacked, seasonalities_stacked
 
@@ -205,6 +215,11 @@ class _ESRNN(nn.Module):
 
           windows_y_hat = self.rnn(windows_x)
           y_hat = torch.squeeze(windows_y_hat, 0)
+
+          print('y_hat.shape', y_hat.shape)
+          print('seasonalities.shape', seasonalities.shape)
+          print('n_time', n_time)
+          print('output_size', output_size)
 
           # Return seasons and levels
           y_hat = torch.exp(y_hat)
