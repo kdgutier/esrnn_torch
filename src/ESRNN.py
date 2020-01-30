@@ -31,6 +31,10 @@ class ESRNN(object):
   def train(self, dataloader, random_seed):
     print(10*'='+' Training ESRNN ' + 10*'=' + '\n')
 
+    # Random Seeds
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
+
     # Optimizers
     # TODO scheduler
     es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
@@ -57,9 +61,6 @@ class ESRNN(object):
         windows_y, windows_y_hat, levels = self.esrnn(batch)
         
         loss = smyl_loss(windows_y, windows_y_hat, levels)
-        # print(loss.data.numpy())
-        # print(batch.idxs)
-        # print("levels.data.numpy()", levels.data.numpy())
         losses.append(loss.data.numpy())
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
@@ -83,10 +84,6 @@ class ESRNN(object):
     X, y = self.long_to_wide(X_df, y_df)
     assert len(X)==len(y)
     assert X.shape[1]>=3
-    
-    # Random Seeds
-    torch.manual_seed(random_seed)
-    np.random.seed(random_seed)
 
     # Exogenous variables
     unique_categories = np.unique(X[:, 1])
@@ -143,10 +140,12 @@ class ESRNN(object):
   def long_to_wide(self, X_df, y_df):
     data = X_df.copy()
     data['y'] = y_df['y'].copy()
+    sorted_ds = np.sort(data['ds'].unique())
     ds_map = {}
-    for dmap, t in enumerate(data['ds'].unique()):
+    for dmap, t in enumerate(sorted_ds):
         ds_map[t] = dmap
     data['ds_map'] = data['ds'].map(ds_map)
+    data = data.sort_values(by=['ds_map','unique_id'])
     df_wide = data.pivot(index='unique_id', columns='ds_map')['y']
     
     x_unique = data[['unique_id', 'x']].groupby('unique_id').first()
