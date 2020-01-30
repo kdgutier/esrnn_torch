@@ -49,25 +49,23 @@ class Iterator(object):
     # Initialize batch iterator
     self.b = 0
     self.n_batches = int(self.n_series / self.batch_size)
-    sort_key = list(range(self.n_series))
-    self.sort_key = {'unique_id': [self.unique_idxs[i] for i in sort_key],
-                  'sort_key': sort_key}
+    shuffle = list(range(self.n_series))
+    self.sort_key = {'unique_id': [self.unique_idxs[i] for i in shuffle],
+                     'sort_key': shuffle}
 
   def shuffle_dataset(self, random_seed=1):
     """Return the examples in the dataset in order, or shuffled."""
-    if self.shuffle:
-      # Random Seed
-      np.random.seed(random_seed)
-      self.random_seed = random_seed
-      sort_key = np.random.choice(self.n_series, self.n_series, replace=False)
-      self.X = self.X[sort_key]
-      self.y = self.y[sort_key]
-    else:
-      sort_key = list(range(self.n_series))
-    print("antes self.sort_key", self.sort_key)
-    self.sort_key = {'unique_id': [self.sort_key['unique_id'][self.sort_key[i]] for i in sort_key],
-                     'sort_key': [self.sort_key['sort_key'][self.sort_key[i]] for i in sort_key]}
-    print("despues self.sort_key", self.sort_key)
+    # Random Seed
+    np.random.seed(random_seed)
+    self.random_seed = random_seed
+    shuffle = np.random.choice(self.n_series, self.n_series, replace=False)
+    self.X = self.X[shuffle]
+    self.y = self.y[shuffle]
+
+    old_sort_key = self.sort_key['sort_key']
+    old_unique_idxs = self.sort_key['unique_id']
+    self.sort_key = {'unique_id': [old_unique_idxs[i] for i in shuffle],
+                'sort_key': [old_sort_key[i] for i in shuffle]}
 
   def get_trim_batch(self, unique_id):
     if unique_id==None:
@@ -82,8 +80,7 @@ class Iterator(object):
 
     # Extract values for batch
     unique_idxs = self.sort_key['unique_id'][first:last]
-    batch_idxs = self.sort_key['int_unique_id'][first:last]
-    #batch_idxs = self.sort_key['sort_key'][first:last]
+    batch_idxs = self.sort_key['sort_key'][first:last]
 
     batch_y = self.y[first:last]
     batch_categories = self.X[first:last, 1]

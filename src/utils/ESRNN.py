@@ -66,16 +66,16 @@ class _ES(nn.Module):
             start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
             end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
 
-            print('self.seasonality', self.seasonality)
-            print('self.output_size', self.output_size)
-            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
-            print('start_seasonality_ext', start_seasonality_ext)
-            print('end_seasonality_ext', end_seasonality_ext)
+            #print('self.seasonality', self.seasonality)
+            #print('self.output_size', self.output_size)
+            #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+            #print('start_seasonality_ext', start_seasonality_ext)
+            #print('end_seasonality_ext', end_seasonality_ext)
 
             seasonalities_stacked = torch.cat((seasonalities_stacked,
                                         seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
 
-            print('seasonalities_stacked.shape', seasonalities_stacked.shape)
+            #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
 
 
         return levels_stacked, seasonalities_stacked
