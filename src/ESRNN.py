@@ -144,7 +144,7 @@ class ESRNN(object):
       Y_hat_id["unique_id"] = unique_id
       ts = date_range = pd.date_range(start=batch.last_ds[0],
                                       periods=self.mc.output_size+1, freq=self.mc.frequency)
-      Y_hat_id["ts"] = ts[1:]
+      Y_hat_id["ds"] = ts[1:]
       Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
 
     return Y_hat_panel

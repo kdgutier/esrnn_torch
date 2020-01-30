@@ -222,7 +222,12 @@ class _ESRNN(nn.Module):
 
           # Return seasons and levels
           y_hat = torch.exp(y_hat)
+          print('y_hat', y_hat)
           y_hat = y_hat * levels[:, [n_time-1]]
+          print('y_hat', y_hat)
+          print('levels[:, [n_time-1]', levels[:, [n_time-1]])
           y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
+          print('y_hat', y_hat)
+          print('seasonalities[:, n_time:(n_time+output_size)]', seasonalities[:, n_time:(n_time+output_size)])
           y_hat = y_hat.data.numpy()
         return y_hat
