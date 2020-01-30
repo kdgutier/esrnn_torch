@@ -36,22 +36,21 @@ class ESRNN(object):
     np.random.seed(random_seed)
 
     # Optimizers
-    # TODO scheduler
     es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
                               lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
                               betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
     es_scheduler = StepLR(optimizer=es_optimizer,
-                    step_size=self.mc.lr_scheduler_step_size,
-                    gamma=0.9)
+                          step_size=self.mc.lr_scheduler_step_size,
+                          gamma=0.9)
 
     rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
-                                lr=self.mc.learning_rate,
-                                betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+                               lr=self.mc.learning_rate,
+                               betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
     rnn_scheduler = StepLR(optimizer=rnn_optimizer,
-                    step_size=self.mc.lr_scheduler_step_size,
-                    gamma=0.9)
+                           step_size=self.mc.lr_scheduler_step_size,
+                           gamma=0.9)
     
     # Loss Functions
     smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
@@ -59,8 +58,8 @@ class ESRNN(object):
     # training code
     for epoch in range(self.mc.max_epochs):
       start = time.time()
-
-      dataloader.shuffle_dataset(random_seed=epoch)
+      if dataloader.shuffle:
+        dataloader.shuffle_dataset(random_seed=epoch)
       losses = []
       for j in range(dataloader.n_batches):
         es_optimizer.zero_grad()
@@ -87,7 +86,7 @@ class ESRNN(object):
 
     print('Train finished!')
   
-  def fit(self, X_df, y_df, random_seed=1):
+  def fit(self, X_df, y_df, shuffle=True, random_seed=1):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
@@ -104,7 +103,7 @@ class ESRNN(object):
     self.mc.exogenous_size = len(unique_categories)
 
     # Create batches (device in mc)
-    self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=False)
+    self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=shuffle)
     self.sort_key = self.dataloader.sort_key
 
     # Initialize model
