@@ -51,7 +51,8 @@ class ESRNN(object):
     # training code
     for epoch in range(self.mc.max_epochs):
       start = time.time()
-      
+
+      dataloader.shuffle_dataset(random_seed=epoch)
       losses = []
       for j in range(dataloader.n_batches):
         es_optimizer.zero_grad()

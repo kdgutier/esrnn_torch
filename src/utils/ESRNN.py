@@ -61,6 +61,7 @@ class _ES(nn.Module):
 
         # Completion of seasonalities if prediction horizon is larger than seasonality
         # Naive2 like prediction, to avoid recursive forecasting
+        # TODO: check condition
         if self.output_size > self.seasonality:
             start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
             end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
