@@ -113,7 +113,7 @@ class ESRNN(object):
     # Train model
     self.train(dataloader=self.dataloader, random_seed=random_seed)
 
-  def predict(self, X_df):
+  def predict(self, X_df, decomposition=False):
     """
         Predictions for all stored time series
     Returns:
@@ -135,11 +135,14 @@ class ESRNN(object):
       # Corresponding train batch
       batch = self.dataloader.get_batch(unique_id=unique_id)
 
-      # Declare y_hat_id placeholder
-      Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
-
       # Prediction
-      y_hat = self.esrnn.predict(batch)
+      if decomposition:
+        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
+        y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
+      else:
+        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
+        y_hat, _, _, _ = self.esrnn.predict(batch)
+
       y_hat = y_hat.squeeze()
       Y_hat_id.iloc[:, 0] = y_hat
 
@@ -148,6 +151,12 @@ class ESRNN(object):
       ts = date_range = pd.date_range(start=batch.last_ds[0],
                                       periods=self.mc.output_size+1, freq=self.mc.frequency)
       Y_hat_id["ds"] = ts[1:]
+
+      if decomposition:
+        Y_hat_id["trend"] = trends.squeeze()
+        Y_hat_id["seasonalities"] = seasonalities.squeeze()
+        Y_hat_id["level"] = level.squeeze()
+
       Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
 
     if 'ds' in X_df:
