@@ -188,7 +188,7 @@ class _ESRNN(nn.Module):
       # Deseasonalization and normalization
       windows_y_hat = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
       windows_y_hat = windows_y_hat / levels[:, [x_end-1]]
-      windows_y_hat = torch.log(x)
+      windows_y_hat = torch.log(windows_y_hat)
 
       # Concatenate categories 
       if exogenous_size>0:
