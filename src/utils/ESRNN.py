@@ -190,7 +190,7 @@ class _ESRNN(nn.Module):
       windows_y_hat = windows_y_hat / levels[:, [x_end-1]]
       windows_y_hat = torch.log(windows_y_hat)
 
-      # Concatenate categories
+      # Concatenate categories 
       if exogenous_size>0:
         windows_y_hat = torch.cat((windows_y_hat, ts_object.categories), 1)
 
