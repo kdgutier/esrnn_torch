@@ -190,7 +190,7 @@ class _ESRNN(nn.Module):
       x = x / levels[:, [x_end-1]]
       x = torch.log(x)
 
-      # Concatenate categories
+      # Concatenate categories 
       if exogenous_size>0:
         x = torch.cat((x, ts_object.categories), 1)
 
