@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from src.ESRNN import ESRNN
-from utils_evaluation import owa
+from src.utils_evaluation import owa
 
 def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
   m4_info = pd.read_csv(data_dir+'/M4-info.csv', usecols=['M4id','category'])
