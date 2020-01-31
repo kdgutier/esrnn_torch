@@ -27,10 +27,17 @@ class _ESHolt(nn.Module):
     """
     Computes levels and seasons
     """
+    # parse mc
+    batch_size = self.mc.batch_size
+    input_size = self.mc.input_size
+    output_size = self.mc.output_size
+    noise_std = self.mc.noise_std
+
     # Parse ts_object
     y = ts_object.y
     idxs = ts_object.idxs
     n_series, n_time = y.shape
+    n_windows = n_time-input_size-output_size+1
 
     # Lookup Smoothing parameters per serie
     init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
@@ -64,8 +71,27 @@ class _ESHolt(nn.Module):
       trends.append(newtrend)
       seasonalities.append(newseason)
     
-    levels_stacked = torch.stack(levels).transpose(1,0)
-    seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
-    trends_stacked = torch.stack(trends).transpose(1,0)
+    levels = torch.stack(levels).transpose(1,0)
+    seasonalities = torch.stack(seasonalities).transpose(1,0)
+    trends = torch.stack(trends).transpose(1,0)
 
-    return levels_stacked, seasonalities_stacked, trends
+    windows_y_hat = torch.zeros((n_windows, batch_size, input_size))
+    windows_y = torch.zeros((n_windows, batch_size, output_size))
+    for i in range(n_windows):
+      x_start = i
+      x_end = input_size+i
+
+      # Deseasonalization and normalization
+      window_y_hat = (levels[:, [x_end]]+trends[:, [x_end]])*seasonalities[:, x_start:x_end]
+      window_y_hat = self.gaussian_noise(torch.log(window_y_hat), std=noise_std)
+
+      y_start = x_end
+      y_end = x_end+output_size
+
+      # Deseasonalization and normalization
+      window_y = torch.log(window_y)
+
+      windows_y_hat[i, :, :] += window_y_hat
+      windows_y[i, :, :] += window_y
+
+    return windows_y, windows_y_hat, levels
