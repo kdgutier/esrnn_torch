@@ -127,7 +127,7 @@ class _ESRNN(nn.Module):
     # parse ts_object
     y = ts_object.y
     idxs = ts_object.idxs
-    n_series, n_time = y_ts.shape
+    n_series, n_time = y.shape
     n_windows = n_time-input_size-output_size+1
     assert n_windows>0
 
@@ -171,9 +171,9 @@ class _ESRNN(nn.Module):
     seasonality = self.mc.seasonality
 
     # parse ts_object
-    y_ts = ts_object.y
+    y = ts_object.y
     idxs = ts_object.idxs
-    n_series, n_time = y_ts.shape
+    n_series, n_time = y.shape
 
     # evaluation mode
     self.eval()
@@ -186,18 +186,19 @@ class _ESRNN(nn.Module):
       x_end = n_time
 
       # Deseasonalization and normalization
-      x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-      x = x / levels[:, [x_end-1]]
-      x = torch.log(x)
+      windows_y_hat = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
+      windows_y_hat = windows_y_hat / levels[:, [x_end-1]]
+      windows_y_hat = torch.log(windows_y_hat)
 
       # Concatenate categories
       if exogenous_size>0:
-        x = torch.cat((x, ts_object.categories), 1)
+        windows_y_hat = torch.cat((windows_y_hat, ts_object.categories), 1)
 
-      windows_x = torch.unsqueeze(x, 0)
+      windows_y_hat = torch.unsqueeze(windows_y_hat, 0)
 
-      windows_y_hat = self.rnn(windows_x)
+      windows_y_hat = self.rnn(windows_y_hat)
       y_hat = torch.squeeze(windows_y_hat, 0)
+      y_hat = torch.exp(y_hat)
 
       # Completion of seasonalities if prediction horizon is larger than seasonality
       # Naive2 like prediction, to avoid recursive forecasting
@@ -207,7 +208,6 @@ class _ESRNN(nn.Module):
         extra_seasonality = last_season.repeat((1, repetitions))
         seasonalities = torch.cat((seasonalities, extra_seasonality), 1)
       
-      y_hat = torch.exp(y_hat)
       # Deseasonalization and normalization (inverse)
       y_hat = y_hat * levels[:, [n_time-1]]
       y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
