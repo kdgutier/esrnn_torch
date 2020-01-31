@@ -33,14 +33,13 @@ class Batch():
 
 
 class Iterator(object):
-  def __init__(self, mc, X, y, shuffle=False):
+  def __init__(self, mc, X, y):
     self.X, self.y = X, y
     assert len(X)==len(y)
     
     # Parse Model config
     self.mc = mc
     self.batch_size = mc.batch_size
-    self.shuffle = shuffle
 
     self.unique_idxs = np.unique(self.X[:, 0])
     assert len(self.unique_idxs)==len(self.X)

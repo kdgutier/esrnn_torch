@@ -31,10 +31,6 @@ class ESRNN(object):
   def train(self, dataloader, random_seed):
     print(10*'='+' Training ESRNN ' + 10*'=' + '\n')
 
-    # Random Seeds
-    torch.manual_seed(random_seed)
-    np.random.seed(random_seed)
-
     # Optimizers
     es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
                               lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
@@ -58,7 +54,7 @@ class ESRNN(object):
     # training code
     for epoch in range(self.mc.max_epochs):
       start = time.time()
-      if dataloader.shuffle:
+      if self.shuffle:
         dataloader.shuffle_dataset(random_seed=epoch)
       losses = []
       for j in range(dataloader.n_batches):
@@ -103,8 +99,12 @@ class ESRNN(object):
     self.mc.exogenous_size = len(unique_categories)
 
     # Create batches (device in mc)
-    self.dataloader = Iterator(mc=self.mc, X=X, y=y, shuffle=shuffle)
-    self.sort_key = self.dataloader.sort_key
+    self.dataloader = Iterator(mc=self.mc, X=X, y=y)
+    self.shuffle = shuffle
+
+    # Random Seeds (model initialization)
+    torch.manual_seed(random_seed)
+    np.random.seed(random_seed)
 
     # Initialize model
     self.mc.n_series = self.dataloader.n_series
