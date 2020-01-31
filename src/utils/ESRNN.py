@@ -59,25 +59,6 @@ class _ES(nn.Module):
     levels_stacked = torch.stack(levels).transpose(1,0)
     seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
 
-    # Completion of seasonalities if prediction horizon is larger than seasonality
-    # Naive2 like prediction, to avoid recursive forecasting
-    # TODO: check condition
-    if self.output_size > self.seasonality:
-      start_seasonality_ext = seasonalities_stacked.shape[1] - self.seasonality
-      end_seasonality_ext = start_seasonality_ext + self.output_size - self.seasonality
-
-      #print('self.seasonality', self.seasonality)
-      #print('self.output_size', self.output_size)
-      #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
-      #print('start_seasonality_ext', start_seasonality_ext)
-      #print('end_seasonality_ext', end_seasonality_ext)
-
-      seasonalities_stacked = torch.cat((seasonalities_stacked,
-                                  seasonalities_stacked[:, start_seasonality_ext:end_seasonality_ext]), 1)
-
-      #print('seasonalities_stacked.shape', seasonalities_stacked.shape)
-
-
     return levels_stacked, seasonalities_stacked
 
 
@@ -187,6 +168,7 @@ class _ESRNN(nn.Module):
     input_size = self.mc.input_size
     output_size = self.mc.output_size
     exogenous_size = self.mc.exogenous_size
+    seasonality = self.mc.seasonality
 
     # parse ts_object
     y_ts = ts_object.y
@@ -216,6 +198,14 @@ class _ESRNN(nn.Module):
 
       windows_y_hat = self.rnn(windows_x)
       y_hat = torch.squeeze(windows_y_hat, 0)
+
+      # Completion of seasonalities if prediction horizon is larger than seasonality
+      # Naive2 like prediction, to avoid recursive forecasting
+      if output_size > seasonality:
+        repetitions = int(np.ceil(output_size/seasonality))-1
+        last_season = seasonalities[:, -seasonality:]
+        extra_seasonality = last_season.repeat((1, repetitions))
+        seasonalities = torch.cat((seasonalities, extra_seasonality), 1)
       
       y_hat = torch.exp(y_hat)
       # Deseasonalization and normalization (inverse)

@@ -122,6 +122,9 @@ class ESRNN(object):
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
+    assert type(X_df) == pd.core.frame.DataFrame
+    assert 'unique_id' in X_df
+
     # Obtain unique_ids to predict
     predict_unique_idxs = X_df['unique_id'].unique()
 
@@ -146,6 +149,9 @@ class ESRNN(object):
                                       periods=self.mc.output_size+1, freq=self.mc.frequency)
       Y_hat_id["ds"] = ts[1:]
       Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
+
+    if 'ds' in X_df:
+      Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
 
     return Y_hat_panel
   
