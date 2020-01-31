@@ -186,17 +186,17 @@ class _ESRNN(nn.Module):
       x_end = n_time
 
       # Deseasonalization and normalization
-      x = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-      x = x / levels[:, [x_end-1]]
-      x = torch.log(x)
+      windows_y_hat = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
+      windows_y_hat = windows_y_hat / levels[:, [x_end-1]]
+      windows_y_hat = torch.log(x)
 
       # Concatenate categories 
       if exogenous_size>0:
-        x = torch.cat((x, ts_object.categories), 1)
+        windows_y_hat = torch.cat((windows_y_hat, ts_object.categories), 1)
 
-      windows_x = torch.unsqueeze(x, 0)
+      windows_y_hat = torch.unsqueeze(windows_y_hat, 0)
 
-      windows_y_hat = self.rnn(windows_x)
+      windows_y_hat = self.rnn(windows_y_hat)
       y_hat = torch.squeeze(windows_y_hat, 0)
 
       # Completion of seasonalities if prediction horizon is larger than seasonality
