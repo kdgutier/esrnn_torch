@@ -161,7 +161,7 @@ class _ESRNN(nn.Module):
             # Deseasonalization and normalization
             x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
             x = x / levels[:, [x_end]]
-            x = self.gaussian_noise(x, std=noise_std)
+            x = self.gaussian_noise(torch.log(x), std=noise_std)
 
             # Concatenate categories
             if exogenous_size>0:
@@ -173,6 +173,7 @@ class _ESRNN(nn.Module):
             # Deseasonalization and normalization
             y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
             y = y / levels[:, [x_end]]
+            y = torch.log(y)
 
             windows_x[i, :, :] += x
             windows_y[i, :, :] += y
@@ -205,6 +206,7 @@ class _ESRNN(nn.Module):
           # Deseasonalization and normalization
           x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
           x = x / levels[:, [x_end-1]]
+          x = torch.log(x)
 
           # Concatenate categories
           if exogenous_size>0:
@@ -214,19 +216,11 @@ class _ESRNN(nn.Module):
 
           windows_y_hat = self.rnn(windows_x)
           y_hat = torch.squeeze(windows_y_hat, 0)
-
-          print('y_hat.shape', y_hat.shape)
-          print('seasonalities.shape', seasonalities.shape)
-          print('n_time', n_time)
-          print('output_size', output_size)
-
+          
+          y_hat = torch.exp(y_hat)
           # Deseasonalization and normalization (inverse)
           y_hat = y_hat * levels[:, [n_time-1]]
-          print('y_hat', y_hat)
-          print('levels[:, [n_time-1]', levels[:, [n_time-1]])
           y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
-          print('y_hat', y_hat)
-          print('seasonalities[:, n_time:(n_time+output_size)]', seasonalities[:, n_time:(n_time+output_size)])
           y_hat = y_hat.data.numpy()
 
         return y_hat
