@@ -32,9 +32,9 @@ class _ES(nn.Module):
 
     # Lookup Smoothing parameters per serie
     init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
-    lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
-
     init_seas_sms = [self.seas_sms[idx] for idx in idxs]
+
+    lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
     seas_sms = self.logistic(torch.stack(init_seas_sms).squeeze(1))
 
     init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
@@ -56,10 +56,10 @@ class _ES(nn.Module):
       levels.append(newlev)
       seasonalities.append(newseason)
     
-    levels_stacked = torch.stack(levels).transpose(1,0)
-    seasonalities_stacked = torch.stack(seasonalities).transpose(1,0)
+    levels = torch.stack(levels).transpose(1,0)
+    seasonalities = torch.stack(seasonalities).transpose(1,0)
 
-    return levels_stacked, seasonalities_stacked
+    return levels, seasonalities
 
 
 class _RNN(nn.Module):
@@ -125,7 +125,7 @@ class _ESRNN(nn.Module):
     noise_std = self.mc.noise_std
 
     # parse ts_object
-    y_ts = ts_object.y
+    y = ts_object.y
     idxs = ts_object.idxs
     n_series, n_time = y_ts.shape
     n_windows = n_time-input_size-output_size+1
@@ -140,24 +140,24 @@ class _ESRNN(nn.Module):
       x_end = input_size+i
 
       # Deseasonalization and normalization
-      x = y_ts[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-      x = x / levels[:, [x_end]]
-      x = self.gaussian_noise(torch.log(x), std=noise_std)
+      window_x = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
+      window_x = window_x / levels[:, [x_end]]
+      window_x = self.gaussian_noise(torch.log(window_x), std=noise_std)
 
       # Concatenate categories
       if exogenous_size>0:
-        x = torch.cat((x, ts_object.categories), 1)
+        window_x = torch.cat((window_x, ts_object.categories), 1)
 
       y_start = x_end
       y_end = x_end+output_size
 
       # Deseasonalization and normalization
-      y = y_ts[:, y_start:y_end] / seasonalities[:, y_start:y_end]
-      y = y / levels[:, [x_end]]
-      y = torch.log(y)
+      window_y = y[:, y_start:y_end] / seasonalities[:, y_start:y_end]
+      window_y = window_y / levels[:, [x_end]]
+      window_y = torch.log(window_y)
 
-      windows_x[i, :, :] += x
-      windows_y[i, :, :] += y
+      windows_x[i, :, :] += window_x
+      windows_y[i, :, :] += window_y
 
     windows_y_hat = self.rnn(windows_x)
     return windows_y, windows_y_hat, levels
@@ -214,3 +214,8 @@ class _ESRNN(nn.Module):
       y_hat = y_hat.data.numpy()
 
     return y_hat
+
+
+
+
+
