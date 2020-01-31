@@ -157,16 +157,15 @@ class Naive2:
   """
   Naive2: Naive after deseasonalization.
   """
-  def __init__(self):
-    pass
+  def __init__(self, seasonality):
+    self.seasonality
     
-  def fit(self, ts_init, frcy):
-    self.frcy = frcy
-    seasonality_in = deseasonalize(ts_init, frcy)
-    repetitions = int(np.ceil(len(ts_init) / frcy))
+  def fit(self, ts_init):
+    seasonality_in = deseasonalize(ts_init, frcy=self.seasonality)
+    windows = int(np.ceil(len(ts_init) / self.seasonality))
     
     self.ts_init = ts_init
-    self.s_hat = np.tile(seasonality_in, reps=repetitions)[:len(ts_init)]
+    self.s_hat = np.tile(seasonality_in, reps=windows)[:len(ts_init)]
     self.ts_des = ts_init / self.s_hat
             
     return self
@@ -176,6 +175,7 @@ class Naive2:
     r_hat = Naive().fit(self.ts_des).predict(h)        
     y_hat = s_hat * r_hat
     return y_hat
+
 
 class RandomWalkDrift:
   """
@@ -232,8 +232,7 @@ def smape(y, y_hat):
   """
   y = np.reshape(y, (-1,))
   y_hat = np.reshape(y_hat, (-1,))
-  smape = np.mean(2.0 * np.abs(y - y_hat) / \
-                  (np.abs(y) + np.abs(y_hat)))
+  smape = np.mean(2.0 * np.abs(y - y_hat) / (np.abs(y) + np.abs(y_hat)))
   return smape
 
 def mase(y, y_hat, insample, freq):
