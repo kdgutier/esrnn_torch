@@ -33,6 +33,23 @@ class Batch():
 
 
 class Iterator(object):
+  """ Time Series Iterator.
+
+  Parameters
+  ----------
+  mc: ModelConfig object
+    ModelConfig object with inherited hyperparameters:
+    batch_size, and exogenous_size, from the ESRNN 
+    initialization.
+  X: array, shape (n_unique_id, 3)
+    Panel array with unique_id, last date stamp and 
+    exogenous variable.
+  y: array, shape (n_unique_id, n_time)
+    Panel array in wide format with unique_id, last
+    date stamp and time series values.
+  Returns
+  self : object
+  """
   def __init__(self, mc, X, y):
     self.X, self.y = X, y
     assert len(X)==len(y)

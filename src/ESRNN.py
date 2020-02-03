@@ -17,6 +17,69 @@ from src.utils.data import Iterator
 
 
 class ESRNN(object):
+  """ Exponential Smoothing Recursive Neural Network.
+
+  Pytorch Implementation of the M4 time series forecasting competition winner.
+  Proposed by Smyl. The model uses a hybrid approach of Machine Learning and 
+  statistical methods by combining recursive neural networks to model a common
+  trend with shared parameters across series, and multiplicative Holt-Winter
+  exponential smoothing.
+
+  Parameters
+  ----------
+  max_epochs: int
+    description
+  learning_rate: float
+    description
+  lr_scheduler_step_size: int
+    description
+  per_series_lr_multip: float
+    description
+  gradient_eps: float
+    desscription
+  gradient_clipping_threshold: float
+    description
+  noise_std: float
+    description
+  numeric_threshold: float
+    description
+  level_variability_penalty: float
+    Multiplier for L" penalty against wigglines of level vector.
+  c_state_penalty: float
+    description
+  percentile: float
+    We always use Pinball loss, although on normalized values. 
+    When forecasting point value, we actually forecast median, so PERCENTILE=50.
+  training_percentile: float
+    The model has a tendency for positive bias. 
+    So, we can reduce it by running smaller TRAINING_PERCENTILE.
+  batch_size: int
+    description
+  seasonality: int
+    description
+  input_size: int
+    description
+  output_size: int
+    description
+  exogenous_size: int
+    description
+  min_inp_seq_length: int
+    description
+  state_hsize: int
+    description
+  dilations: int list
+    Each list represents one chunk of Dilateed LSTMS, connected in standard resnNet fashion
+  add_nl_layer: bool
+    Whether to insert a tanh() layer between the RNN stack and the linear adaptor (output) layers
+  Notes
+  -----
+
+  **References:**
+  `M4 Competition Conclusions
+  <https://rpubs.com/fotpetr/m4competition>`__
+  `Original Dynet Implementation of ESRNN
+  <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
+  """
   def __init__(self, max_epochs=15, batch_size=1,
                learning_rate=1e-3, per_series_lr_multip=1, gradient_eps=1e-6, gradient_clipping_threshold=20,
                lr_scheduler_step_size=9, noise_std=0.001, 
