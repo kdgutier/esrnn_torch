@@ -196,7 +196,7 @@ class ESRNN(object):
           batch = dataloader.get_batch()
           windows_y, windows_y_hat, _ = self.esrnn(batch)
           loss = criterion(windows_y, windows_y_hat)
-          losses += loss.data.numpy()
+          losses += loss.data.cpu().numpy()
           n_series += len(batch.idxs)
 
       losses /= n_series
