@@ -4,18 +4,18 @@ architecture: diluted rnn
 device: cpu
 train_parameters:
   max_epochs: 15
-  freq_of_test: 1 #Number of epochs for each test.
+  freq_of_test: 1
   learning_rate: 1e-3
   lr_scheduler_step_size: 10
   per_series_lr_multip: 1.0
   gradient_eps: 1e-6
   gradient_clipping_threshold: 20
+  rnn_weight_decay: 0
   noise_std: 0.001
   numeric_threshold: 1e+38
-  level_variability_penalty: 80 #Multiplier for L" penalty against wigglines of level vector. Important.
-  c_state_penalty: 0
-  percentile: 50 #we always use Pinball loss, although on normalized values. When forecasting point value, we actually forecast median, so PERCENTILE=50.
-  training_percentile: 45 #the program has a tendency for positive bias. So, we can reduce it by running smaller TRAINING_PERCENTILE.
+  level_variability_penalty: 80
+  percentile: 50
+  training_percentile: 45
   batch_size: 1
 data_parameters:
   seasonality: 4
@@ -25,10 +25,10 @@ data_parameters:
   min_inp_seq_length: 0
   data_dir: "./data/m4/"
   output_dir: "./results/m4/"
-  max_num_series: 100 #use all series 24000
+  max_num_series: 100
 model_parameters:
   state_hsize: 40
-  lback: 0 #LBACK 0 means final mode: learning on all data and forecasting. LBACK=1 would move back by OUTPUT_SIZE, and forecast last known OUTPUT_SIZE points, for backtesting. LBACK could be a larger integer, but then number of series shrinks.
-  dilations: [[1, 2], [4, 8]] #Each vector represents one chunk of Dilateed LSTMS, connected in standard resnNet fashion
-  add_nl_layer: FALSE  #whether to insert a tanh() layer between the RNN stack and the linear adaptor (output) layers
-  averaging_level: 5 #number of model versions to ensamble
+  lback: 0
+  dilations: [[1, 2], [4, 8]]
+  add_nl_layer: FALSE
+  averaging_level: 5

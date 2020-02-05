@@ -28,25 +28,32 @@ class ESRNN(object):
   Parameters
   ----------
   max_epochs: int
-    description
+    maximum number of complete passes to train data during fit
   learning_rate: float
-    description
+    size of the stochastic gradient descent steps
   lr_scheduler_step_size: int
-    description
+    this step_size is the period for each learning rate decay
   per_series_lr_multip: float
-    description
+    multiplier for per-series parameters smoothing and initial
+    seasonalities learning rate (default 1.0)
   gradient_eps: float
-    desscription
+    term added to the Adam optimizer denominator to improve
+    numerical stability (default: 1e-8)
   gradient_clipping_threshold: float
-    description
+    max norm of gradient vector, with all parameters treated 
+    as a single vector
+  rnn_weight_decay: float
+    parameter to control classic L2/Tikhonov regularization
+    of the rnn parameters
   noise_std: float
-    description
+    standard deviation of white noise added to input during 
+    fit to avoid the model from memorizing the train data
   numeric_threshold: float
     description
   level_variability_penalty: float
-    Multiplier for L" penalty against wigglines of level vector.
-  c_state_penalty: float
-    description
+    this parameter controls the strength of the penalization 
+    to the wigglines of the level vector, induces smoothness
+    in the output
   percentile: float
     We always use Pinball loss, although on normalized values. 
     When forecasting point value, we actually forecast median, so PERCENTILE=50.
@@ -81,18 +88,19 @@ class ESRNN(object):
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
   def __init__(self, max_epochs=15, batch_size=1,
-               learning_rate=1e-3, per_series_lr_multip=1, gradient_eps=1e-6, gradient_clipping_threshold=20,
+               learning_rate=1e-3, per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                lr_scheduler_step_size=9, noise_std=0.001, 
-               level_variability_penalty=80, tau=0.5, c_state_penalty=0,
+               level_variability_penalty=80, tau=0.5, rnn_weight_decay=0,
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
+               add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, 
+               device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, 
                           learning_rate=learning_rate, per_series_lr_multip=per_series_lr_multip, 
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, 
                           lr_scheduler_step_size=lr_scheduler_step_size, noise_std=noise_std, 
                           level_variability_penalty=level_variability_penalty, tau=tau,
-                          c_state_penalty=c_state_penalty,
+                          rnn_weight_decay=rnn_weight_decay,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer, 
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
@@ -112,7 +120,7 @@ class ESRNN(object):
     rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
                                lr=self.mc.learning_rate,
                                betas=(0.9, 0.999), eps=self.mc.gradient_eps,
-                               weight_decay=self.mc.c_state_penalty)
+                               weight_decay=self.mc.rnn_weight_decay)
 
     rnn_scheduler = StepLR(optimizer=rnn_optimizer,
                            step_size=self.mc.lr_scheduler_step_size,
