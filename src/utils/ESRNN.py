@@ -215,8 +215,8 @@ class _ESRNN(nn.Module):
       y_hat = y_hat.data.cpu().numpy()
 
       # Decomposition
-      trends = trends.data.numpy()
+      trends = trends.data.cpu().numpy()
       seasonalities = seasonalities[:, n_time:(n_time+output_size)].data.numpy()
-      level = levels[:, [n_time-1]].data.numpy()
+      level = levels[:, [n_time-1]].data.cpu().numpy()
 
     return y_hat, trends, seasonalities, level
