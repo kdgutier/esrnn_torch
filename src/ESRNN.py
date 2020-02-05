@@ -86,6 +86,8 @@ class ESRNN(object):
   add_nl_layer: bool
     whether to insert a tanh() layer between the RNN stack and the 
     linear adaptor (output) layers
+  device: str
+    pytorch device either 'cpu' or 'cuda'
   Notes
   -----
   **References:**
