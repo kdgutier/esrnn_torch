@@ -143,7 +143,7 @@ class SeasonalNaive:
     """
     ts_init: the original time series
     frcy: frequency of the time series
-    ts_naive: last observatinos of time series
+    ts_naive: last observations of time series
     """
     self.ts_seasonal_naive = ts_init[-frcy:]
     return self

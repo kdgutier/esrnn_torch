@@ -60,27 +60,31 @@ class ESRNN(object):
     for the value predicted, when forecasting point value, 
     the forecast is the median, so percentile=50.
   training_percentile: float
-    To reduce the model's tendency for positive bias (over estimate)
-    the training_percentile can be set to fit a smaller value 
+    To reduce the model's tendency to over estimate, the 
+    training_percentile can be set to fit a smaller value 
     through the Pinball Loss.
   batch_size: int
     number of training examples for the stochastic gradient steps
   seasonality: int
-    description
+    main frequency of the time series
   input_size: int
-    description
+    input size of the recursive neural network, usually multiple of
+    seasonality
   output_size: int
-    description
+    output_size or forecast horizon of the recursive neural network
+    usually multiple of seasonality
   exogenous_size: int
-    description
+    size of one hot encoded categorical variable, invariannt per serie
   min_inp_seq_length: int
     description
   state_hsize: int
-    description
+    dimension of hidden state of the recursive neural network
   dilations: int list
-    Each list represents one chunk of Dilateed LSTMS, connected in standard resnNet fashion
+    each list represents one chunk of Dilated LSTMS, connected in 
+    standard ResNet fashion
   add_nl_layer: bool
-    Whether to insert a tanh() layer between the RNN stack and the linear adaptor (output) layers
+    whether to insert a tanh() layer between the RNN stack and the 
+    linear adaptor (output) layers
   Notes
   -----
   **References:**
@@ -194,7 +198,7 @@ class ESRNN(object):
           n_series += len(batch.idxs)
 
       losses /= n_series
-      return losses  
+      return losses
   
   def fit(self, X_df, y_df, shuffle=True, random_seed=1):
     # Transform long dfs to wide numpy
