@@ -12,7 +12,6 @@ train_parameters:
   gradient_clipping_threshold: 20
   rnn_weight_decay: 0
   noise_std: 0.001
-  numeric_threshold: 1e+38
   level_variability_penalty: 50
   percentile: 50
   training_percentile: 49
