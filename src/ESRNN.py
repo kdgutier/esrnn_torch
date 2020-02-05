@@ -169,12 +169,13 @@ class ESRNN(object):
       es_scheduler.step()
       rnn_scheduler.step()
 
+      # Evaluation
       print("========= Epoch {} finished =========".format(epoch))
-      print("Training time: {}".format(time.time()-start))
-      print("Training loss: {}".format(np.mean(losses)))
+      print("Training time: {}".format(round(time.time()-start, 5)))
+      print("Training loss: {}".format(round(np.mean(losses), 5)))
       if (epoch % self.mc.freq_of_test == 0):
-        test_loss = self.evaluation(dataloader=dataloader, criterion=eval_loss)
-        print("Test Pinball loss (Median): {}".format(test_loss))
+        epoch_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
+        print("Test Pinball loss: {}".format(round(epoch_evaluation, 5)))
 
     print('Train finished!')
   
