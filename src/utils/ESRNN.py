@@ -44,6 +44,11 @@ class _ES(nn.Module):
     seasonalities = []
     levels =[]
 
+    y_device = y.get_device()
+    seasonalities_device = init_seas.get_device()
+    print("y_device", y_device)
+    print("seasonalities_device", seasonalities_device)
+
     for i in range(self.seasonality):
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
