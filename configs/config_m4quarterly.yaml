@@ -4,6 +4,7 @@ architecture: diluted rnn
 device: cpu
 train_parameters:
   max_epochs: 15
+  batch_size: 1
   freq_of_test: 1
   learning_rate: 1e-3
   lr_scheduler_step_size: 10
@@ -15,7 +16,6 @@ train_parameters:
   level_variability_penalty: 80
   percentile: 50
   training_percentile: 45
-  batch_size: 1
 data_parameters:
   seasonality: 4
   input_size: 4

@@ -4,6 +4,7 @@ architecture: residual lstm
 device: cpu
 train_parameters:
   max_epochs: 10
+  batch_size: 1
   freq_of_test: 1
   learning_rate: 5e-4
   lr_scheduler_step_size: 12
@@ -15,7 +16,6 @@ train_parameters:
   level_variability_penalty: 50
   percentile: 50
   training_percentile: 49
-  batch_size: 1
 data_parameters:
   seasonality: 12
   input_size: 12

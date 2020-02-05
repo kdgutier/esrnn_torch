@@ -16,8 +16,9 @@ Experiment Config File at configs/config_m4.yaml
 
 # Run original ESRNN
 ```console
-local_user@local_host$ conda activate ts_transfer
-local_user@local_host$ jupyter notebook test_rnn.ipynb
+local_user@local_host$ conda activate esrnn_torch
+local_user@local_host$ jupyter notebook m4_test.ipynb
+local_user@local_host$ PYTHONPATH=. python vae/M4_experiment.py
 ```
 
 # REFERENCES

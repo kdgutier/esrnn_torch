@@ -1,3 +1,5 @@
+import yaml
+
 import pandas as pd
 import numpy as np
 
@@ -26,14 +28,34 @@ def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
 
 
 def main():
-  X_df_train, y_df_train = M4_parser(dataset_name='Quarterly', mode='train')
-  X_df_test, y_df_test = M4_parser(dataset_name='Quarterly', mode='test')
+  X_df_train, y_df_train = M4_parser(dataset_name='Quarterly', mode='train', num_obs=1000)
+  #X_df_test, y_df_test = M4_parser(dataset_name='Quarterly', mode='test')
 
-  esrnn = ESRNN(max_epochs=2, batch_size=4)
+  config_file = './configs/config_m4quarterly.yaml'
+  with open(config_file, 'r') as stream:
+    config = yaml.safe_load(stream)
+
+  esrnn = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
+                batch_size=config['train_parameters']['batch_size'],
+                learning_rate=config['train_parameters']['learning_rate'],
+                lr_scheduler_step_size=config['train_parameters']['lr_scheduler_step_size'],
+                per_series_lr_multip=config['train_parameters']['per_series_lr_multip'],
+                gradient_clipping_threshold=config['train_parameters']['gradient_clipping_threshold'],
+                rnn_weight_decay=config['train_parameters']['rnn_weight_decay'],
+                noise_std=config['train_parameters']['noise_std'],
+                level_variability_penalty=config['train_parameters']['level_variability_penalty'],
+                percentile=config['train_parameters']['percentile'],
+                training_percentile=config['train_parameters']['training_percentile'],
+                state_hsize=config['model_parameters']['state_hsize'],
+                dilations=config['model_parameters']['dilations'],
+                add_nl_layer=config['model_parameters']['add_nl_layer'],
+                seasonality=config['data_parameters']['seasonality'],
+                input_size=config['data_parameters']['input_size'],
+                output_size=config['data_parameters']['output_size'],
+                device=config['device'])
+
   esrnn.fit(X_df_train, y_df_train)
-
   y_df_hat = esrnn.predict(X_df_test)
-
 
 
 if __name__ == '__main__':
