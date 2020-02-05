@@ -28,8 +28,8 @@ class Batch():
       self.categories[rows_idx, cols_idx] = 1
       self.categories = torch.from_numpy(self.categories).float()
 
-    self.y.to(device)
-    self.categories.to(device)
+    self.y = self.y.to(device)
+    self.categories = self.categories.to(device)
 
 
 class Iterator(object):
