@@ -29,13 +29,13 @@ def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
 
 def main():
   X_df_train, y_df_train = M4_parser(dataset_name='Quarterly', mode='train', num_obs=1000)
-  #X_df_test, y_df_test = M4_parser(dataset_name='Quarterly', mode='test')
+  X_df_test, y_df_test = M4_parser(dataset_name='Quarterly', mode='test')
 
   config_file = './configs/config_m4quarterly.yaml'
   with open(config_file, 'r') as stream:
     config = yaml.safe_load(stream)
 
-  esrnn = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
+  esrnn = ESRNN(max_epochs=2,
                 batch_size=config['train_parameters']['batch_size'],
                 learning_rate=float(config['train_parameters']['learning_rate']),
                 lr_scheduler_step_size=config['train_parameters']['lr_scheduler_step_size'],
