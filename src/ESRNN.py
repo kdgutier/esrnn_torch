@@ -29,6 +29,8 @@ class ESRNN(object):
   ----------
   max_epochs: int
     maximum number of complete passes to train data during fit
+  freq_of_test: int
+    period for the diagnostic evaluation of the model.
   learning_rate: float
     size of the stochastic gradient descent steps
   lr_scheduler_step_size: int
@@ -87,7 +89,7 @@ class ESRNN(object):
   `Original Dynet Implementation of ESRNN
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
-  def __init__(self, max_epochs=15, batch_size=1,
+  def __init__(self, max_epochs=15, batch_size=1, freq_of_test=1,
                learning_rate=1e-3, lr_scheduler_step_size=9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
@@ -97,7 +99,7 @@ class ESRNN(object):
                add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, 
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size,
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, freq_of_test=freq_of_test,
                           learning_rate=learning_rate, lr_scheduler_step_size=lr_scheduler_step_size,
                           per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,

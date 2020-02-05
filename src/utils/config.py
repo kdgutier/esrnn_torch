@@ -1,5 +1,5 @@
 class ModelConfig(object):
-  def __init__(self, max_epochs, batch_size, 
+  def __init__(self, max_epochs, batch_size, freq_of_test,
                learning_rate, lr_scheduler_step_size,
                per_series_lr_multip, gradient_eps, gradient_clipping_threshold,
                rnn_weight_decay,
@@ -12,6 +12,7 @@ class ModelConfig(object):
     # Train Parameters
     self.max_epochs = max_epochs
     self.batch_size = batch_size
+    self.freq_of_test = freq_of_test
     self.learning_rate = learning_rate
     self.lr_scheduler_step_size = lr_scheduler_step_size
     self.per_series_lr_multip = per_series_lr_multip
