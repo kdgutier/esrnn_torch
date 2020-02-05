@@ -48,6 +48,7 @@ class Iterator(object):
     Panel array in wide format with unique_id, last
     date stamp and time series values.
   Returns
+  ----------
   self : object
     Iterator method get_batch() returns a batch of time
     series objects defined by the Batch class.
