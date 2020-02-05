@@ -67,6 +67,7 @@ class ESRNN(object):
     number of training examples for the stochastic gradient steps
   seasonality: int
     main frequency of the time series
+    Quarterly 4, Daily 7, Monthly 12
   input_size: int
     input size of the recursive neural network, usually multiple of
     seasonality
