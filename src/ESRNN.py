@@ -242,6 +242,7 @@ class ESRNN(object):
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
+    print(10*'='+' Predicting ESRNN ' + 10*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
 
