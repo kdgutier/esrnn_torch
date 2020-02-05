@@ -138,8 +138,10 @@ class _ESRNN(nn.Module):
 
     # Initialize windows, levels and seasonalities
     levels, seasonalities = self.es(ts_object)
-    windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size))
-    windows_y = torch.zeros((n_windows, batch_size, output_size))
+    windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size),
+                                device=self.mc.device)
+    windows_y = torch.zeros((n_windows, batch_size, output_size),
+                            device=self.mc.device)
     for i in range(n_windows):
       x_start = i
       x_end = input_size+i
