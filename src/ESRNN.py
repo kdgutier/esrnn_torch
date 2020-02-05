@@ -12,7 +12,7 @@ from torch.optim.lr_scheduler import StepLR
 from pathlib import Path
 from src.utils.config import ModelConfig
 from src.utils.ESRNN import _ESRNN
-from src.utils.losses import SmylLoss
+from src.utils.losses import SmylLoss, PinballLoss
 from src.utils.data import Iterator
 
 
@@ -136,8 +136,8 @@ class ESRNN(object):
     train_tau = self.mc.training_percentile / 100
     train_loss = SmylLoss(tau=train_tau, level_variability_penalty=self.mc.level_variability_penalty)
 
-    evaluation_tau = self.mc.percentile / 100
-    evaluation_loss = SmylLoss(tau=evaluation_tau, level_variability_penalty=self.mc.level_variability_penalty)
+    eval_tau = self.mc.percentile / 100
+    eval_loss = PinballLoss(tau=eval_tau)
 
     for epoch in range(self.mc.max_epochs):
       start = time.time()
@@ -155,6 +155,7 @@ class ESRNN(object):
         loss = train_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.numpy())
         loss.backward()
+
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
         torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), self.mc.gradient_clipping_threshold)
         rnn_optimizer.step()
@@ -166,9 +167,34 @@ class ESRNN(object):
 
       print("========= Epoch {} finished =========".format(epoch))
       print("Training time: {}".format(time.time()-start))
-      print("Forecast loss: {}".format(np.mean(losses)))
+      print("Training loss: {}".format(np.mean(losses)))
+      if (epoch % self.mc.freq_of_test == 0):
+        test_loss = self.evaluation(dataloader=dataloader, criterion=eval_loss)
+        print("Test Pinball loss (Median): {}".format(test_loss))
 
     print('Train finished!')
+  
+  def evaluation(self, dataloader, criterion):
+      """
+      Evaluate the model against data
+      Args:
+        mc: model parameters
+        model: the trained model
+        dataloader: a data loader
+        criterion: loss to evaluate
+      """
+      losses = 0.0
+      n_series = 0
+      with torch.no_grad():
+        for j in range(dataloader.n_batches):
+          batch = dataloader.get_batch()
+          windows_y, windows_y_hat, _ = self.esrnn(batch)
+          loss = criterion(windows_y, windows_y_hat)
+          losses += loss.data.numpy()
+          n_series += len(batch.idxs)
+
+      losses /= n_series
+      return losses  
   
   def fit(self, X_df, y_df, shuffle=True, random_seed=1):
     # Transform long dfs to wide numpy

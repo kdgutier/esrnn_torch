@@ -88,6 +88,6 @@ class SmylLoss(nn.Module):
   def forward(self, windows_y, windows_y_hat, levels):
     smyl_loss = self.pinball_loss(windows_y, windows_y_hat)
     if self.level_variability_loss.level_variability_penalty>0:
-        log_diff_of_levels = self.level_variability_loss(levels) 
-        smyl_loss += log_diff_of_levels
+      log_diff_of_levels = self.level_variability_loss(levels) 
+      smyl_loss += log_diff_of_levels
     return smyl_loss
