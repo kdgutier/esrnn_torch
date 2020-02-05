@@ -158,7 +158,7 @@ class ESRNN(object):
         
         # Pinball loss on normalized values
         loss = train_loss(windows_y, windows_y_hat, levels)
-        losses.append(loss.data.numpy())
+        losses.append(loss.data.cpu().numpy())
         loss.backward()
 
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
