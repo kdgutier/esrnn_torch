@@ -1,7 +1,7 @@
 name: M4 monthly ESRNN Experiment
 dataset_name: m4monthly
 architecture: residual lstm
-device: cpu
+device: cpu #cuda
 train_parameters:
   max_epochs: 10
   batch_size: 1

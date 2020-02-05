@@ -1,7 +1,7 @@
 name: M4 daily ESRNN Experiment
 dataset_name: m4daily
 architecture: residual lstm
-device: cpu
+device: cpu #cuda
 train_parameters:
   max_epochs: 15
   batch_size: 1

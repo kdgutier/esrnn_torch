@@ -1,7 +1,7 @@
 name: M4 quarterly ESRNN Experiment
 dataset_name: m4quarterly
 architecture: diluted rnn
-device: cpu
+device: cpu #cuda
 train_parameters:
   max_epochs: 15
   batch_size: 1
