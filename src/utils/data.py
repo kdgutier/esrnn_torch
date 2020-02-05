@@ -49,6 +49,8 @@ class Iterator(object):
     date stamp and time series values.
   Returns
   self : object
+    Iterator method get_batch() returns a batch of time
+    series objects defined by the Batch class.
   """
   def __init__(self, mc, X, y):
     self.X, self.y = X, y
