@@ -178,7 +178,7 @@ class ESRNN(object):
         epoch_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
         print("Test Pinball loss: {}".format(round(epoch_evaluation, 5)))
 
-    print('Train finished!')
+    print('Train finished! \n')
   
   def evaluation(self, dataloader, criterion):
       """
