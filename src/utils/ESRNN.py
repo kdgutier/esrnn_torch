@@ -212,7 +212,7 @@ class _ESRNN(nn.Module):
       # Deseasonalization and normalization (inverse)
       y_hat = trends * levels[:, [n_time-1]]
       y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
-      y_hat = y_hat.data.numpy()
+      y_hat = y_hat.data.cpu().numpy()
 
       # Decomposition
       trends = trends.data.numpy()
