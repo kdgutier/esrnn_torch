@@ -37,7 +37,7 @@ def main():
 
   esrnn = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
                 batch_size=config['train_parameters']['batch_size'],
-                learning_rate=config['train_parameters']['learning_rate'],
+                learning_rate=float(config['train_parameters']['learning_rate']),
                 lr_scheduler_step_size=config['train_parameters']['lr_scheduler_step_size'],
                 per_series_lr_multip=config['train_parameters']['per_series_lr_multip'],
                 gradient_clipping_threshold=config['train_parameters']['gradient_clipping_threshold'],
