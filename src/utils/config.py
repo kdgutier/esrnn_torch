@@ -4,7 +4,8 @@ class ModelConfig(object):
                per_series_lr_multip, gradient_eps, gradient_clipping_threshold,
                rnn_weight_decay,
                noise_std,
-               level_variability_penalty, tau,
+               level_variability_penalty,
+               percentile, training_percentile,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                frequency, max_periods, device, root_dir):
 
@@ -19,7 +20,8 @@ class ModelConfig(object):
     self.rnn_weight_decay = rnn_weight_decay
     self.noise_std = noise_std
     self.level_variability_penalty = level_variability_penalty
-    self.tau = tau
+    self.percentile = percentile
+    self.training_percentile = training_percentile
     self.device = device
 
     # Model Parameters

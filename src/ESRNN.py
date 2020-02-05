@@ -48,20 +48,21 @@ class ESRNN(object):
   noise_std: float
     standard deviation of white noise added to input during 
     fit to avoid the model from memorizing the train data
-  numeric_threshold: float
-    description
   level_variability_penalty: float
     this parameter controls the strength of the penalization 
     to the wigglines of the level vector, induces smoothness
     in the output
   percentile: float
-    We always use Pinball loss, although on normalized values. 
-    When forecasting point value, we actually forecast median, so PERCENTILE=50.
+    This value is only for diagnostic evaluation.
+    In case of percentile predictions this parameter controls
+    for the value predicted, when forecasting point value, 
+    the forecast is the median, so percentile=50.
   training_percentile: float
-    The model has a tendency for positive bias. 
-    So, we can reduce it by running smaller TRAINING_PERCENTILE.
+    To reduce the model's tendency for positive bias (over estimate)
+    the training_percentile can be set to fit a smaller value 
+    through the Pinball Loss.
   batch_size: int
-    description
+    number of training examples for the stochastic gradient steps
   seasonality: int
     description
   input_size: int
@@ -80,7 +81,6 @@ class ESRNN(object):
     Whether to insert a tanh() layer between the RNN stack and the linear adaptor (output) layers
   Notes
   -----
-
   **References:**
   `M4 Competition Conclusions
   <https://rpubs.com/fotpetr/m4competition>`__
@@ -90,9 +90,9 @@ class ESRNN(object):
   def __init__(self, max_epochs=15, batch_size=1,
                learning_rate=1e-3, lr_scheduler_step_size=9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
-               rnn_weight_decay=0,
-               noise_std=0.001,
-               level_variability_penalty=80, tau=0.5,
+               rnn_weight_decay=0, noise_std=0.001,
+               level_variability_penalty=80,
+               percentile=50, training_percentile=50,
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, 
                device='cpu', root_dir='./'):
@@ -101,9 +101,10 @@ class ESRNN(object):
                           learning_rate=learning_rate, lr_scheduler_step_size=lr_scheduler_step_size,
                           per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
-                          rnn_weight_decay=rnn_weight_decay,
-                          noise_std=noise_std,
-                          level_variability_penalty=level_variability_penalty, tau=tau,
+                          rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
+                          level_variability_penalty=level_variability_penalty,
+                          percentile=percentile,
+                          training_percentile=training_percentile,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
@@ -130,9 +131,12 @@ class ESRNN(object):
                            gamma=0.9)
     
     # Loss Functions
-    smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
+    train_tau = self.mc.training_percentile / 100
+    train_loss = SmylLoss(tau=train_tau, level_variability_penalty=self.mc.level_variability_penalty)
 
-    # training code
+    evaluation_tau = self.mc.percentile / 100
+    evaluation_loss = SmylLoss(tau=evaluation_tau, level_variability_penalty=self.mc.level_variability_penalty)
+
     for epoch in range(self.mc.max_epochs):
       start = time.time()
       if self.shuffle:
@@ -145,7 +149,8 @@ class ESRNN(object):
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, levels = self.esrnn(batch)
         
-        loss = smyl_loss(windows_y, windows_y_hat, levels)
+        # Pinball loss on normalized values
+        loss = train_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.numpy())
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
@@ -199,7 +204,7 @@ class ESRNN(object):
         Predictions for all stored time series
     Returns:
         Y_hat_panel : array-like (n_samples, 1).
-            Predicted values for models in Family for ids in Panel.
+          Predicted values for models in Family for ids in Panel.
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
