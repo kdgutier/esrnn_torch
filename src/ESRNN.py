@@ -69,13 +69,14 @@ class ESRNN(object):
     main frequency of the time series
     Quarterly 4, Daily 7, Monthly 12
   input_size: int
-    input size of the recursive neural network, usually multiple of
-    seasonality
+    input size of the recursive neural network, usually a 
+    multiple of seasonality
   output_size: int
-    output_size or forecast horizon of the recursive neural network
-    usually multiple of seasonality
+    output_size or forecast horizon of the recursive neural 
+    network, usually multiple of seasonality
   exogenous_size: int
-    size of one hot encoded categorical variable, invariannt per serie
+    size of one hot encoded categorical variable, invariannt 
+    per time series of the panel
   min_inp_seq_length: int
     description
   state_hsize: int
@@ -173,12 +174,13 @@ class ESRNN(object):
       rnn_scheduler.step()
 
       # Evaluation
+      self.train_loss = np.mean(losses)
       print("========= Epoch {} finished =========".format(epoch))
       print("Training time: {}".format(round(time.time()-start, 5)))
-      print("Training loss: {}".format(round(np.mean(losses), 5)))
+      print("Training loss: {}".format(round(self.train_loss, 5)))
       if (epoch % self.mc.freq_of_test == 0):
-        epoch_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
-        print("Test Pinball loss: {}".format(round(epoch_evaluation, 5)))
+        self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
+        print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
 
     print('Train finished! \n')
   
@@ -244,7 +246,7 @@ class ESRNN(object):
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
-    print(10*'='+' Predicting ESRNN ' + 10*'=' + '\n')
+    print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
 
