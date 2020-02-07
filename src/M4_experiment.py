@@ -38,7 +38,6 @@ def M4_parser(dataset_name, num_obs=1000, data_dir='./data/m4'):
 
   dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
 
-  corrected_test_ds = []
   for unique_id in dataset.unique_id.unique():
       f_train_df = y_train_df.loc[y_train_df.unique_id==unique_id, :].reset_index()
       f_test_df = dataset.loc[dataset.unique_id==unique_id, :]
