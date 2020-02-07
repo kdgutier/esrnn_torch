@@ -70,7 +70,7 @@ def grid_main(args):
     print(47*'=' + '\n')
 
     # Instantiate, fit and predict
-    model = ESRNN(max_epochs=1,
+    model = ESRNN(max_epochs=int(mc.max_epochs),
                 batch_size=int(mc.batch_size),
                 learning_rate=mc.learning_rate,
                 lr_scheduler_step_size=mc.lr_scheduler_step_size,
