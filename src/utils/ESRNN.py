@@ -43,7 +43,6 @@ class _ES(nn.Module):
     # Initialize seasonalities and levels
     seasonalities = []
     levels =[]
-
     for i in range(self.seasonality):
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
@@ -133,8 +132,10 @@ class _ESRNN(nn.Module):
 
     # Initialize windows, levels and seasonalities
     levels, seasonalities = self.es(ts_object)
-    windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size))
-    windows_y = torch.zeros((n_windows, batch_size, output_size))
+    windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size),
+                                device=self.mc.device)
+    windows_y = torch.zeros((n_windows, batch_size, output_size),
+                            device=self.mc.device)
     for i in range(n_windows):
       x_start = i
       x_end = input_size+i
@@ -211,11 +212,11 @@ class _ESRNN(nn.Module):
       # Deseasonalization and normalization (inverse)
       y_hat = trends * levels[:, [n_time-1]]
       y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
-      y_hat = y_hat.data.numpy()
+      y_hat = y_hat.data.cpu().numpy()
 
       # Decomposition
-      trends = trends.data.numpy()
-      seasonalities = seasonalities[:, n_time:(n_time+output_size)].data.numpy()
-      level = levels[:, [n_time-1]].data.numpy()
+      trends = trends.data.cpu().numpy()
+      seasonalities = seasonalities[:, n_time:(n_time+output_size)].data.cpu().numpy()
+      level = levels[:, [n_time-1]].data.cpu().numpy()
 
     return y_hat, trends, seasonalities, level

@@ -12,25 +12,110 @@ from torch.optim.lr_scheduler import StepLR
 from pathlib import Path
 from src.utils.config import ModelConfig
 from src.utils.ESRNN import _ESRNN
-from src.utils.losses import SmylLoss
+from src.utils.losses import SmylLoss, PinballLoss
 from src.utils.data import Iterator
 
 
 class ESRNN(object):
-  def __init__(self, max_epochs=15, batch_size=1,
-               learning_rate=1e-3, per_series_lr_multip=1, gradient_eps=1e-6, gradient_clipping_threshold=20,
-               lr_scheduler_step_size=9, noise_std=0.001, 
-               level_variability_penalty=80, tau=0.5, c_state_penalty=0,
+  """ Exponential Smoothing Recursive Neural Network.
+
+  Pytorch Implementation of the M4 time series forecasting competition winner.
+  Proposed by Smyl. The model uses a hybrid approach of Machine Learning and 
+  statistical methods by combining recursive neural networks to model a common
+  trend with shared parameters across series, and multiplicative Holt-Winter
+  exponential smoothing.
+
+  Parameters
+  ----------
+  max_epochs: int
+    maximum number of complete passes to train data during fit
+  freq_of_test: int
+    period for the diagnostic evaluation of the model.
+  learning_rate: float
+    size of the stochastic gradient descent steps
+  lr_scheduler_step_size: int
+    this step_size is the period for each learning rate decay
+  per_series_lr_multip: float
+    multiplier for per-series parameters smoothing and initial
+    seasonalities learning rate (default 1.0)
+  gradient_eps: float
+    term added to the Adam optimizer denominator to improve
+    numerical stability (default: 1e-8)
+  gradient_clipping_threshold: float
+    max norm of gradient vector, with all parameters treated 
+    as a single vector
+  rnn_weight_decay: float
+    parameter to control classic L2/Tikhonov regularization
+    of the rnn parameters
+  noise_std: float
+    standard deviation of white noise added to input during 
+    fit to avoid the model from memorizing the train data
+  level_variability_penalty: float
+    this parameter controls the strength of the penalization 
+    to the wigglines of the level vector, induces smoothness
+    in the output
+  percentile: float
+    This value is only for diagnostic evaluation.
+    In case of percentile predictions this parameter controls
+    for the value predicted, when forecasting point value, 
+    the forecast is the median, so percentile=50.
+  training_percentile: float
+    To reduce the model's tendency to over estimate, the 
+    training_percentile can be set to fit a smaller value 
+    through the Pinball Loss.
+  batch_size: int
+    number of training examples for the stochastic gradient steps
+  seasonality: int
+    main frequency of the time series
+    Quarterly 4, Daily 7, Monthly 12
+  input_size: int
+    input size of the recursive neural network, usually a 
+    multiple of seasonality
+  output_size: int
+    output_size or forecast horizon of the recursive neural 
+    network, usually multiple of seasonality
+  exogenous_size: int
+    size of one hot encoded categorical variable, invariannt 
+    per time series of the panel
+  min_inp_seq_length: int
+    description
+  state_hsize: int
+    dimension of hidden state of the recursive neural network
+  dilations: int list
+    each list represents one chunk of Dilated LSTMS, connected in 
+    standard ResNet fashion
+  add_nl_layer: bool
+    whether to insert a tanh() layer between the RNN stack and the 
+    linear adaptor (output) layers
+  device: str
+    pytorch device either 'cpu' or 'cuda'
+  Notes
+  -----
+  **References:**
+  `M4 Competition Conclusions
+  <https://rpubs.com/fotpetr/m4competition>`__
+  `Original Dynet Implementation of ESRNN
+  <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
+  """
+  def __init__(self, max_epochs=15, batch_size=1, freq_of_test=1,
+               learning_rate=1e-3, lr_scheduler_step_size=9,
+               per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
+               rnn_weight_decay=0, noise_std=0.001,
+               level_variability_penalty=80,
+               percentile=50, training_percentile=50,
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
+               add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, 
+               device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, 
-                          learning_rate=learning_rate, per_series_lr_multip=per_series_lr_multip, 
-                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, 
-                          lr_scheduler_step_size=lr_scheduler_step_size, noise_std=noise_std, 
-                          level_variability_penalty=level_variability_penalty, tau=tau,
-                          c_state_penalty=c_state_penalty,
-                          state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer, 
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, freq_of_test=freq_of_test,
+                          learning_rate=learning_rate, lr_scheduler_step_size=lr_scheduler_step_size,
+                          per_series_lr_multip=per_series_lr_multip,
+                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
+                          rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
+                          level_variability_penalty=level_variability_penalty,
+                          percentile=percentile,
+                          training_percentile=training_percentile,
+                          state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
 
@@ -49,16 +134,19 @@ class ESRNN(object):
     rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
                                lr=self.mc.learning_rate,
                                betas=(0.9, 0.999), eps=self.mc.gradient_eps,
-                               weight_decay=self.mc.c_state_penalty)
+                               weight_decay=self.mc.rnn_weight_decay)
 
     rnn_scheduler = StepLR(optimizer=rnn_optimizer,
                            step_size=self.mc.lr_scheduler_step_size,
                            gamma=0.9)
     
     # Loss Functions
-    smyl_loss = SmylLoss(tau=self.mc.tau, level_variability_penalty=self.mc.level_variability_penalty)
+    train_tau = self.mc.training_percentile / 100
+    train_loss = SmylLoss(tau=train_tau, level_variability_penalty=self.mc.level_variability_penalty)
 
-    # training code
+    eval_tau = self.mc.percentile / 100
+    eval_loss = PinballLoss(tau=eval_tau)
+
     for epoch in range(self.mc.max_epochs):
       start = time.time()
       if self.shuffle:
@@ -71,9 +159,11 @@ class ESRNN(object):
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, levels = self.esrnn(batch)
         
-        loss = smyl_loss(windows_y, windows_y_hat, levels)
-        losses.append(loss.data.numpy())
+        # Pinball loss on normalized values
+        loss = train_loss(windows_y, windows_y_hat, levels)
+        losses.append(loss.data.cpu().numpy())
         loss.backward()
+
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
         torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), self.mc.gradient_clipping_threshold)
         rnn_optimizer.step()
@@ -83,11 +173,38 @@ class ESRNN(object):
       es_scheduler.step()
       rnn_scheduler.step()
 
+      # Evaluation
+      self.train_loss = np.mean(losses)
       print("========= Epoch {} finished =========".format(epoch))
-      print("Training time: {}".format(time.time()-start))
-      print("Forecast loss: {}".format(np.mean(losses)))
+      print("Training time: {}".format(round(time.time()-start, 5)))
+      print("Training loss: {}".format(round(self.train_loss, 5)))
+      if (epoch % self.mc.freq_of_test == 0):
+        self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
+        print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
 
-    print('Train finished!')
+    print('Train finished! \n')
+  
+  def evaluation(self, dataloader, criterion):
+      """
+      Evaluate the model against data
+      Args:
+        mc: model parameters
+        model: the trained model
+        dataloader: a data loader
+        criterion: loss to evaluate
+      """
+      losses = 0.0
+      n_series = 0
+      with torch.no_grad():
+        for j in range(dataloader.n_batches):
+          batch = dataloader.get_batch()
+          windows_y, windows_y_hat, _ = self.esrnn(batch)
+          loss = criterion(windows_y, windows_y_hat)
+          losses += loss.data.cpu().numpy()
+          n_series += len(batch.idxs)
+
+      losses /= n_series
+      return losses
   
   def fit(self, X_df, y_df, shuffle=True, random_seed=1):
     # Transform long dfs to wide numpy
@@ -125,10 +242,11 @@ class ESRNN(object):
         Predictions for all stored time series
     Returns:
         Y_hat_panel : array-like (n_samples, 1).
-            Predicted values for models in Family for ids in Panel.
+          Predicted values for models in Family for ids in Panel.
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
+    print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
 

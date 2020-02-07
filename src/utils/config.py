@@ -1,23 +1,28 @@
 class ModelConfig(object):
-  def __init__(self, max_epochs, batch_size, 
-               learning_rate, per_series_lr_multip, gradient_eps, gradient_clipping_threshold, 
-               lr_scheduler_step_size, noise_std, 
-               level_variability_penalty, tau, c_state_penalty,
+  def __init__(self, max_epochs, batch_size, freq_of_test,
+               learning_rate, lr_scheduler_step_size,
+               per_series_lr_multip, gradient_eps, gradient_clipping_threshold,
+               rnn_weight_decay,
+               noise_std,
+               level_variability_penalty,
+               percentile, training_percentile,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                frequency, max_periods, device, root_dir):
 
     # Train Parameters
     self.max_epochs = max_epochs
     self.batch_size = batch_size
+    self.freq_of_test = freq_of_test
     self.learning_rate = learning_rate
+    self.lr_scheduler_step_size = lr_scheduler_step_size
     self.per_series_lr_multip = per_series_lr_multip
     self.gradient_eps = gradient_eps
     self.gradient_clipping_threshold = gradient_clipping_threshold
+    self.rnn_weight_decay = rnn_weight_decay
     self.noise_std = noise_std
-    self.lr_scheduler_step_size = lr_scheduler_step_size
     self.level_variability_penalty = level_variability_penalty
-    self.c_state_penalty = c_state_penalty
-    self.tau = tau
+    self.percentile = percentile
+    self.training_percentile = training_percentile
     self.device = device
 
     # Model Parameters
@@ -39,7 +44,7 @@ class ModelConfig(object):
     #self.dataset_name = config['dataset_name']
     #self.freq_of_test = config['train_parameters']['freq_of_test']
     #self.numeric_threshold = float(config['train_parameters']['numeric_threshold'])
-    #self.c_state_penalty = config['train_parameters']['c_state_penalty']
+    #self.rnn_weight_decay = config['train_parameters']['rnn_weight_decay']
     #self.percentile = config['train_parameters']['percentile']
     #self.training_percentile = config['train_parameters']['training_percentile']
     #self.training_tau = self.training_percentile / 100.

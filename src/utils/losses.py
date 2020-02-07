@@ -2,13 +2,24 @@ import torch
 import torch.nn as nn
 
 class PinballLoss(nn.Module):
-  """Computes the pinball loss between y and y_hat.
-  y: actual values in torch tensor.
-  y_hat: predicted values in torch tensor.
-  tau: a float between 0 and 1 the slope of the pinball loss. In the context
-  of quantile regression, the value of alpha determine the conditional
-  quantile level.
-  return: pinball_loss
+  """ Pinball Loss
+  Computes the pinball loss between y and y_hat.
+
+  Parameters
+  ----------  
+  y: tensor
+    actual values in torch tensor.
+  y_hat: tensor (same shape as y)
+    predicted values in torch tensor.
+  tau: float, between 0 and 1
+    the slope of the pinball loss, in the context of 
+    quantile regression, the value of tau determines the
+    conditional quantile level.
+  
+  Returns
+  ----------
+  pinball_loss:
+    average accuracy for the predicted quantile
   """
   def __init__(self, tau=0.5):
     super(PinballLoss, self).__init__()
@@ -21,11 +32,22 @@ class PinballLoss(nn.Module):
     return pinball
 
 class LevelVariabilityLoss(nn.Module):
-  """Computes the variability penalty for the level.
-  levels: levels obtained from exponential smoothing component of ESRNN.
-          tensor with shape (batch, n_time).
-  level_variability_penalty: float.
-  return: level_var_loss
+  """ Level Variability Loss
+  Computes the variability penalty for the level.
+
+  Parameters
+  ----------
+  levels: tensor with shape (batch, n_time)
+    levels obtained from exponential smoothing component of ESRNN
+  level_variability_penalty: float
+    this parameter controls the strength of the penalization 
+    to the wigglines of the level vector, induces smoothness
+    in the output
+  
+  Returns
+  ----------
+  level_var_loss:
+    wiggliness loss for the level vector
   """
   def __init__(self, level_variability_penalty):
     super(LevelVariabilityLoss, self).__init__()
@@ -66,6 +88,6 @@ class SmylLoss(nn.Module):
   def forward(self, windows_y, windows_y_hat, levels):
     smyl_loss = self.pinball_loss(windows_y, windows_y_hat)
     if self.level_variability_loss.level_variability_penalty>0:
-        log_diff_of_levels = self.level_variability_loss(levels) 
-        smyl_loss += log_diff_of_levels
+      log_diff_of_levels = self.level_variability_loss(levels) 
+      smyl_loss += log_diff_of_levels
     return smyl_loss
