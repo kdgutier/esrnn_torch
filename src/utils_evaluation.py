@@ -124,7 +124,7 @@ class Naive:
   def fit(self, ts_init):
     """
     ts_init: the original time series
-    ts_naive: last observatinos of time series
+    ts_naive: last observations of time series
     """
     self.ts_naive = [ts_init[-1]]
     return self
@@ -139,13 +139,13 @@ class SeasonalNaive:
   def __init__(self):
     pass
   
-  def fit(self, ts_init, frcy):
+  def fit(self, ts_init, seasonality):
     """
     ts_init: the original time series
     frcy: frequency of the time series
     ts_naive: last observations of time series
     """
-    self.ts_seasonal_naive = ts_init[-frcy:]
+    self.ts_seasonal_naive = ts_init[-seasonality:]
     return self
 
   def predict(self, h):
@@ -161,7 +161,7 @@ class Naive2:
     self.seasonality = seasonality
     
   def fit(self, ts_init):
-    seasonality_in = deseasonalize(ts_init, frcy=self.seasonality)
+    seasonality_in = deseasonalize(ts_init, ppy=self.seasonality)
     windows = int(np.ceil(len(ts_init) / self.seasonality))
     
     self.ts_init = ts_init
@@ -171,7 +171,8 @@ class Naive2:
     return self
     
   def predict(self, h):
-    s_hat = SeasonalNaive().fit(self.s_hat, frcy=self.frcy).predict(h)
+    s_hat = SeasonalNaive().fit(self.s_hat,
+                                seasonality=self.seasonality).predict(h)
     r_hat = Naive().fit(self.ts_des).predict(h)        
     y_hat = s_hat * r_hat
     return y_hat
