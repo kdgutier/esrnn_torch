@@ -38,21 +38,11 @@ def M4_parser(dataset_name, num_obs=1000000, data_dir='./data/m4'):
 
   dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
 
-  for unique_id in dataset.unique_id.unique():
-      f_train_df = y_train_df.loc[y_train_df.unique_id==unique_id, :].reset_index()
-      f_test_df = dataset.loc[dataset.unique_id==unique_id, :]
-
-      ds = pd.date_range(start=f_train_df.ds.max(),
-                         periods=len(f_test_df)+1, freq='D')[1:]
-
-      dataset.loc[dataset.unique_id==unique_id, 'ds'] = ds
-
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
-  X_test_df = dataset.filter(items=['unique_id', 'ds', 'x'])
-  y_test_df = dataset.filter(items=['unique_id', 'ds', 'y'])
-
+  X_test_df = dataset.filter(items=['unique_id', 'x'])
+  y_test_df = dataset.filter(items=['unique_id', 'y'])
   return X_train_df, y_train_df, X_test_df, y_test_df
 
 
@@ -105,18 +95,31 @@ def naive2_predictions(dataset):
     # Naive2
     y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
     
-    for unique_id in y_train_df.unique_id.unique():
-        y_df = y_train_df.loc[y_train_df.unique_id==unique_id, :].reset_index()
+    # Sort X by unique_id for faster loop
+    y_train_df = y_train_df.sort_values(by=['unique_id', 'ds'])
+
+    # List of uniques ids
+    unique_ids = y_train_df['unique_id'].unique()
+
+    # Panel of fitted models
+    for unique_id in unique_ids:
+        # Fast filter X and y by id.
+        top_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'left'))
+        bottom_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'right'))
+        y_id = y_train_df[top_row:bottom_row]
+        
+        
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-        y_naive2['ds'] = pd.date_range(start=y_df.ds.max(),
+        y_naive2['ds'] = pd.date_range(start=y_id.ds.max(),
                                        periods=output_size+1, freq='D')[1:]
-        y_naive2['unique_id'] = [y_df.unique_id[0]] * output_size
-        y_naive2['y_hat'] = Naive2(seasonality).fit(y_df.y.to_numpy()).predict(output_size)
+        y_naive2['unique_id'] = unique_id
+        y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
         y_naive2_df = y_naive2_df.append(y_naive2)
     
     y_naive2_df['y'] = y_test_df['y']
     naive2_file = './results/{}/naive2predictions.csv'.format(dataset)
     y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
+  
 
 def generate_grid(args):
   model_specs = {'model_type': ['esrnn'],
