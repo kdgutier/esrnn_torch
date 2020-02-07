@@ -82,7 +82,7 @@ def grid_main(args):
                 dilations=dilations,
                 add_nl_layer=mc.add_nl_layer,
                 seasonality=mc.seasonality,
-                input_size=mc.seasonality,
+                input_size=int(mc.seasonality),
                 output_size=mc.output_size,
                 freq_of_test=10000,
                 device=device)
