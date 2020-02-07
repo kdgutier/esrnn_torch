@@ -63,8 +63,8 @@ def yaml_main():
 
 def naive2_predictions(args):
   # Read train and test data
-  X_df_train, y_df_train = M4_parser(dataset_name=args.dataset, mode='train')
-  X_df_test, y_df_test = M4_parser(dataset_name=args.dataset, mode='test')
+  X_df_train, y_df_train = M4_parser(dataset_name=args.dataset, mode='train', num_obs=100)
+  X_df_test, y_df_test = M4_parser(dataset_name=args.dataset, mode='test', num_obs=100)
 
   # Naive2
   y_naive2_panel = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
@@ -93,7 +93,7 @@ def generate_grid(args):
                  'training_percentile' : [45, 50],
                  'max_periods': [2, 20],
                  'state_hsize' : [40],
-                 'dilations' : [[1, 2], [4, 8]], [[1,2,4,8]]],
+                 'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
                  'add_nl_layer' : [True, False],
                  'seasonality' : [4],
                  'output_size' : [8],
