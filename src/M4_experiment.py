@@ -8,7 +8,8 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.utils_evaluation import owa
+from src.utils_evaluation import Naive2, owa
+
 
 def M4_parser(dataset_name, num_obs=1000000, data_dir='./data/m4'):
   m4_info = pd.read_csv(data_dir+'/M4-info.csv', usecols=['M4id','category'])
