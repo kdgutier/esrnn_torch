@@ -277,9 +277,9 @@ class ESRNN(object):
 
         # Serie prediction
         Y_hat_id["unique_id"] = unique_id
-        ts = date_range = pd.date_range(start=batch.last_ds[0],
+        ds = date_range = pd.date_range(start=batch.last_ds[0],
                                         periods=self.mc.output_size+1, freq=self.mc.frequency)
-        Y_hat_id["ds"] = ts[1:]
+        Y_hat_id["ds"] = ds[1:]
 
         if decomposition:
           Y_hat_id["trend"] = trends.squeeze()
