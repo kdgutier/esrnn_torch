@@ -80,7 +80,7 @@ class _RNN(nn.Module):
                   cell_type='LSTM')
       layers.append(layer)
 
-    self.rnn_stack = nn.Sequential(*layers)
+    self.rnn_stack = nn.Sequential(*layers).to(self.mc.device)
 
     if self.mc.add_nl_layer:
       self.MLPW  = nn.Linear(mc.state_hsize, mc.state_hsize)
