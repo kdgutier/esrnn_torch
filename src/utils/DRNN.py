@@ -79,7 +79,7 @@ class DRNN(nn.Module):
                 hidden = (c.unsqueeze(0), m.unsqueeze(0))
             else:
                 hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
-
+        hidden = hidden.to('cuda:1')
         dilated_outputs, hidden = cell(dilated_inputs, hidden)
 
         return dilated_outputs, hidden
