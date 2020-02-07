@@ -107,8 +107,8 @@ class _ESRNN(nn.Module):
   def __init__(self, mc):
     super(_ESRNN, self).__init__()
     self.mc = mc
-    self.es = _ES(mc)
-    self.rnn = _RNN(mc)
+    self.es = _ES(mc).to(self.mc.device)
+    self.rnn = _RNN(mc).to(self.mc.device)
 
   def gaussian_noise(self, input_data, std=0.2):
     size = input_data.size()
