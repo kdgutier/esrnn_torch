@@ -14,7 +14,7 @@ def generate_grid(args):
   model_specs = {'model_type': ['esrnn'],
                 'dataset': [args.dataset],
                 'max_epochs' : [50, 500],
-                'batch_size' : [16, 32],
+                'batch_size' : [8, 16],
                 'learning_rate' : [1e-4, 1e-3],
                 'lr_scheduler_step_size' : [10],
                 'per_series_lr_multip' : [1.0, 1.5],
