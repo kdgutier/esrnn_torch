@@ -1,6 +1,4 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = "1"
-
 import yaml
 import argparse
 import itertools
@@ -60,6 +58,7 @@ def grid_main(args):
   
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
+    
     dilations = ast.literal_eval(mc.dilations)
     device = mc.device + ':' + str(args.gpu_id)
 
@@ -68,6 +67,8 @@ def grid_main(args):
     print(mc)
     print('\n')
     print(47*'=' + '\n')
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
 
     # Instantiate, fit and predict
     model = ESRNN(max_epochs=int(mc.max_epochs),
