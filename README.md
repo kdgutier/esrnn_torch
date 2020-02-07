@@ -18,7 +18,7 @@ Experiment Config File at configs/config_m4.yaml
 ```console
 local_user@local_host$ conda activate esrnn_torch
 local_user@local_host$ jupyter notebook m4_test.ipynb
-local_user@local_host$ PYTHONPATH=. python vae/M4_experiment.py
+local_user@local_host$ PYTHONPATH=. python src/M4_experiment.py --model_id 0
 ```
 
 # REFERENCES
