@@ -101,7 +101,7 @@ def grid_main(args):
                         'test evaluation': loss}
 
     # Output evaluation
-    output_file = './results/grid_search/{}/{}.p'.format(args.dataset, i)
+    output_file = './results/grid_search/{}/{}.p'.format(args.dataset, mc.model_id)
     outfile = open(output_file, "wb")
     pickle.dump(evaluation_dict, outfile)
 
