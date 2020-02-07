@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = "1"
+
 import yaml
 import argparse
 import itertools
