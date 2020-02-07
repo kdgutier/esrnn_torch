@@ -10,7 +10,7 @@ import numpy as np
 
 from src.utils_evaluation import owa
 
-def M4_parser(dataset_name, num_obs=1000, data_dir='./data/m4'):
+def M4_parser(dataset_name, num_obs=1000000, data_dir='./data/m4'):
   m4_info = pd.read_csv(data_dir+'/M4-info.csv', usecols=['M4id','category'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
 
@@ -89,8 +89,7 @@ def yaml_main():
 
 def naive2_predictions(dataset):
     # Read train and test data
-    _, y_df_train = M4_parser(dataset_name=dataset, mode='train', num_obs=5)
-    _, y_df_test = M4_parser(dataset_name=dataset, mode='test', num_obs=5)
+    _, y_train_df, _, y_test_df = M4_parser(dataset_name=dataset)
     
     seas_dict = {'Quarterly': {'seasonality': 4, 'input_size': 4,
                                'output_size': 8},
@@ -104,19 +103,20 @@ def naive2_predictions(dataset):
     output_size = seas_dict[dataset]['output_size']
     
     # Naive2
-    y_naive2_panel = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
+    y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
     
-    for unique_id in y_df_train.unique_id.unique():
-        y_df = y_df_train.loc[y_df_train.unique_id==unique_id, :].reset_index()
+    for unique_id in y_train_df.unique_id.unique():
+        y_df = y_train_df.loc[y_train_df.unique_id==unique_id, :].reset_index()
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
         y_naive2['ds'] = pd.date_range(start=y_df.ds.max(),
                                        periods=output_size+1, freq='D')[1:]
         y_naive2['unique_id'] = [y_df.unique_id[0]] * output_size
         y_naive2['y_hat'] = Naive2(seasonality).fit(y_df.y.to_numpy()).predict(output_size)
-        y_naive2_panel = y_naive2_panel.append(y_naive2)
+        y_naive2_df = y_naive2_df.append(y_naive2)
     
+    y_naive2_df['y'] = y_test_df['y']
     naive2_file = './results/{}/naive2predictions.csv'.format(dataset)
-    y_naive2_panel.to_csv(naive2_file, encoding='utf-8', index=None)
+    y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
 
 def generate_grid(args):
   model_specs = {'model_type': ['esrnn'],
