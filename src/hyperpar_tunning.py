@@ -8,7 +8,6 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.ESRNN import ESRNN
 from src.utils_evaluation import owa
 
 def generate_grid(args):
@@ -60,7 +59,7 @@ def grid_main(args):
     mc = model_specs_df.loc[i, :]
     
     dilations = ast.literal_eval(mc.dilations)
-    device = mc.device + ':' + str(args.gpu_id)
+    device = mc.device# + ':' + str(args.gpu_id)
 
     print(47*'=' + '\n')
     print('model_config: {}'.format(i))
@@ -69,6 +68,8 @@ def grid_main(args):
     print(47*'=' + '\n')
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
+
+    from src.ESRNN import ESRNN
 
     # Instantiate, fit and predict
     model = ESRNN(max_epochs=int(mc.max_epochs),
