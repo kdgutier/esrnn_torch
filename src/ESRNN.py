@@ -138,36 +138,47 @@ class ESRNN(object):
     # Predictions for panel
     Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
 
+    # Imputate flag
+    impute_flag = False
+
     for unique_id in predict_unique_idxs:
       # Corresponding train batch
-      batch = self.dataloader.get_batch(unique_id=unique_id)
+      if unique_id in self.dataloader.sort_key['unique_id']:
+        batch = self.dataloader.get_batch(unique_id=unique_id)
 
-      # Prediction
-      if decomposition:
-        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
-        y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
+        # Prediction
+        if decomposition:
+          Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
+          y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
+        else:
+          Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
+          y_hat, _, _, _ = self.esrnn.predict(batch)
+
+        y_hat = y_hat.squeeze()
+        Y_hat_id.iloc[:, 0] = y_hat
+
+        # Serie prediction
+        Y_hat_id["unique_id"] = unique_id
+        ts = date_range = pd.date_range(start=batch.last_ds[0],
+                                        periods=self.mc.output_size+1, freq=self.mc.frequency)
+        Y_hat_id["ds"] = ts[1:]
+
+        if decomposition:
+          Y_hat_id["trend"] = trends.squeeze()
+          Y_hat_id["seasonalities"] = seasonalities.squeeze()
+          Y_hat_id["level"] = level.squeeze()
+
+        Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
       else:
-        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
-        y_hat, _, _, _ = self.esrnn.predict(batch)
-
-      y_hat = y_hat.squeeze()
-      Y_hat_id.iloc[:, 0] = y_hat
-
-      # Serie prediction
-      Y_hat_id["unique_id"] = unique_id
-      ts = date_range = pd.date_range(start=batch.last_ds[0],
-                                      periods=self.mc.output_size+1, freq=self.mc.frequency)
-      Y_hat_id["ds"] = ts[1:]
-
-      if decomposition:
-        Y_hat_id["trend"] = trends.squeeze()
-        Y_hat_id["seasonalities"] = seasonalities.squeeze()
-        Y_hat_id["level"] = level.squeeze()
-
-      Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
+        impute_flag = True
 
     if 'ds' in X_df:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
+
+    if impute_flag:
+      mean_imputator = Y_hat_panel[['ds','y_hat']].groupby('ds').mean().reset_index()
+      mean_imputator = mean_imputator.rename(columns={'y_hat':'y_hat_mean'})
+      Y_hat_panel = Y_hat_panel.merge(mean_imputator, on=['ds'], how='left')
 
     return Y_hat_panel
   
