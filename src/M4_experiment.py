@@ -10,12 +10,12 @@ import numpy as np
 
 from src.utils_evaluation import owa
 
-def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
+def M4_parser(dataset_name, num_obs=1000, data_dir='./data/m4'):
   m4_info = pd.read_csv(data_dir+'/M4-info.csv', usecols=['M4id','category'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
 
-  file_path='{}/{}/{}-{}.csv'.format(data_dir, mode, dataset_name, mode)
-  dataset = pd.read_csv(file_path).head(num_obs)
+  train_path='{}/train/{}-train.csv'.format(data_dir, dataset_name)
+  dataset = pd.read_csv(train_path).head(num_obs)
   dataset = dataset.rename(columns={'V1':'unique_id'})
   
   dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
@@ -25,9 +25,36 @@ def M4_parser(dataset_name, mode='train', num_obs=1000, data_dir='./data/m4'):
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
-  X_df = dataset.filter(items=['unique_id', 'ds', 'x'])
-  y_df = dataset.filter(items=['unique_id', 'ds', 'y'])
-  return X_df, y_df
+  X_train_df = dataset.filter(items=['unique_id', 'ds', 'x'])
+  y_train_df = dataset.filter(items=['unique_id', 'ds', 'y'])
+
+  test_path='{}/test/{}-test.csv'.format(data_dir, dataset_name)
+  dataset = pd.read_csv(test_path).head(num_obs)
+  dataset = dataset.rename(columns={'V1':'unique_id'})
+  
+  dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
+  dataset = dataset.rename(columns={'V':'y'})
+  dataset = dataset.dropna()
+
+  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
+
+  corrected_test_ds = []
+  for unique_id in dataset.unique_id.unique():
+      f_train_df = y_train_df.loc[y_train_df.unique_id==unique_id, :].reset_index()
+      f_test_df = dataset.loc[dataset.unique_id==unique_id, :]
+
+      ds = pd.date_range(start=f_train_df.ds.max(),
+                         periods=len(f_test_df)+1, freq='D')[1:]
+
+      dataset.loc[dataset.unique_id==unique_id, 'ds'] = ds
+
+  dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
+  dataset.drop(columns=['M4id'], inplace=True)
+  dataset = dataset.rename(columns={'category': 'x'})
+  X_test_df = dataset.filter(items=['unique_id', 'ds', 'x'])
+  y_test_df = dataset.filter(items=['unique_id', 'ds', 'y'])
+
+  return X_train_df, y_train_df, X_test_df, y_test_df
 
 
 
@@ -61,21 +88,36 @@ def yaml_main():
   esrnn.fit(X_df_train, y_df_train)
   y_df_hat = esrnn.predict(X_df_test)
 
-def naive2_predictions(args):
-  # Read train and test data
-  X_df_train, y_df_train = M4_parser(dataset_name=args.dataset, mode='train', num_obs=100)
-  X_df_test, y_df_test = M4_parser(dataset_name=args.dataset, mode='test', num_obs=100)
-
-  # Naive2
-  y_naive2_panel = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-  for i in range(len(X_df_train)):
-    y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-    y_naive2['ds'] = list(range(1,mc.output_size+1))
-    y_naive2['unique_id'] = X_df_train.loc[i, :].unique_id
-    y_naive2['y_hat'] = Naive2().fit(all_series[i].y, mc.input_size).predict(mc.output_size)
-    y_naive2_panel = y_naive2_panel.append(y_naive2)
-
-
+def naive2_predictions(dataset):
+    # Read train and test data
+    _, y_df_train = M4_parser(dataset_name=dataset, mode='train', num_obs=5)
+    _, y_df_test = M4_parser(dataset_name=dataset, mode='test', num_obs=5)
+    
+    seas_dict = {'Quarterly': {'seasonality': 4, 'input_size': 4,
+                               'output_size': 8},
+                 'Monthly': {'seasonality': 12, 'input_size': 12,
+                             'output_size':24},
+                 'Daily': {'seasonality': 7, 'input_size': 7,
+                           'output_size': 14}}
+    
+    seasonality = seas_dict[dataset]['seasonality']
+    input_size = seas_dict[dataset]['input_size']
+    output_size = seas_dict[dataset]['output_size']
+    
+    # Naive2
+    y_naive2_panel = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
+    
+    for unique_id in y_df_train.unique_id.unique():
+        y_df = y_df_train.loc[y_df_train.unique_id==unique_id, :].reset_index()
+        y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
+        y_naive2['ds'] = pd.date_range(start=y_df.ds.max(),
+                                       periods=output_size+1, freq='D')[1:]
+        y_naive2['unique_id'] = [y_df.unique_id[0]] * output_size
+        y_naive2['y_hat'] = Naive2(seasonality).fit(y_df.y.to_numpy()).predict(output_size)
+        y_naive2_panel = y_naive2_panel.append(y_naive2)
+    
+    naive2_file = './results/{}/naive2predictions.csv'.format(dataset)
+    y_naive2_panel.to_csv(naive2_file, encoding='utf-8', index=None)
 
 def generate_grid(args):
   model_specs = {'model_type': ['esrnn'],
