@@ -158,7 +158,7 @@ class Naive2:
   Naive2: Naive after deseasonalization.
   """
   def __init__(self, seasonality):
-    self.seasonality
+    self.seasonality = seasonality
     
   def fit(self, ts_init):
     seasonality_in = deseasonalize(ts_init, frcy=self.seasonality)
