@@ -27,11 +27,12 @@ def maybe_download(filename):
 def M4_parser(dataset_name, num_obs=1000000):
   m4_info = pd.read_csv(DATA_DIRECTORY+'/M4-info.csv', usecols=['M4id','category'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
-
+  
+  # train data
   train_path='{}/train/{}-train.csv'.format(DATA_DIRECTORY, dataset_name)
   dataset = pd.read_csv(train_path).head(num_obs)
   dataset = dataset.rename(columns={'V1':'unique_id'})
-  
+
   dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
   dataset = dataset.rename(columns={'V':'y'})
   dataset = dataset.dropna()
@@ -39,24 +40,32 @@ def M4_parser(dataset_name, num_obs=1000000):
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
+  dataset.sort_values(by=['unique_id', 'ds'], inplace=True)
   X_train_df = dataset.filter(items=['unique_id', 'ds', 'x'])
   y_train_df = dataset.filter(items=['unique_id', 'ds', 'y'])
-
+  
+  max_dates = X_train_df.groupby('unique_id').agg({'ds': 'count'}).reset_index()
+  
+  # test data
   test_path='{}/test/{}-test.csv'.format(DATA_DIRECTORY, dataset_name)
   dataset = pd.read_csv(test_path).head(num_obs)
   dataset = dataset.rename(columns={'V1':'unique_id'})
-  
+
   dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
   dataset = dataset.rename(columns={'V':'y'})
   dataset = dataset.dropna()
 
-  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
-
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
-  X_test_df = dataset.filter(items=['unique_id', 'x'])
-  y_test_df = dataset.filter(items=['unique_id', 'y'])
+  
+  dataset = dataset.merge(max_dates, on='unique_id', how='left')
+  dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
+  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
+  
+  X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
+  y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
+
   return X_train_df, y_train_df, X_test_df, y_test_df
 
 def prepare_M4_data(dataset_name, num_obs):

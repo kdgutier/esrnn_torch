@@ -1,16 +1,14 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 
-def plot_prediction(y, y_hat, forecast=True):
+def plot_prediction(y, y_hat):
     """
     """
-    n_y = len(y)
-    n_yhat = len(y_hat)
-    ds_y = np.array(range(n_y))
-    ds_yhat = np.array(range(n_y, n_y+n_yhat))
+    pd.plotting.register_matplotlib_converters()
 
-    plt.plot(ds_y, y, label = 'y')
-    plt.plot(ds_yhat, y_hat, label='y_hat')
+    plt.plot(y.ds, y.y, label = 'y')
+    plt.plot(y_hat.ds, y_hat.y_hat, label='y_hat')
     plt.legend(loc='upper left')
     plt.show()
