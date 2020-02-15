@@ -203,8 +203,10 @@ class RandomWalkDrift:
 def mse(y, y_hat):
   """
   Calculates Mean Squared Error.
-  y: actual values
-  y_hat: predicted values
+  y: numpy array
+    actual test values
+  y_hat: numpy array
+    predicted values
   return: MSE
   """
   y = np.reshape(y, (-1,))
@@ -215,8 +217,10 @@ def mse(y, y_hat):
 def mape(y, y_hat):
   """
   Calculates Mean Absolute Percentage Error.
-  y: actual values
-  y_hat: predicted values
+  y: numpy array
+    actual test values
+  y_hat: numpy array
+    predicted values
   return: MAPE
   """
   y = np.reshape(y, (-1,))
@@ -227,8 +231,10 @@ def mape(y, y_hat):
 def smape(y, y_hat):
   """
   Calculates Symmetric Mean Absolute Percentage Error.
-  y: actual values
-  y_hat: predicted values
+  y: numpy array
+    actual test values
+  y_hat: numpy array
+    predicted values
   return: sMAPE
   """
   y = np.reshape(y, (-1,))
@@ -236,20 +242,25 @@ def smape(y, y_hat):
   smape = np.mean(2.0 * np.abs(y - y_hat) / (np.abs(y) + np.abs(y_hat)))
   return smape
 
-def mase(y, y_hat, insample, freq):
+def mase(y, y_hat, y_train, seasonality):
   """
   Calculates Mean Absolute Scaled Error.
-  y: actual values
-  y_hat: predicted values
-  insample: insample data
-  freq: data frequency
+  y: numpy array
+    actual test values
+  y_hat: numpy array
+    predicted values
+  y_train: numpy array
+    actual train values for Naive1 predictions
+  seasonality: int
+    main frequency of the time series
+    Quarterly 4, Daily 7, Monthly 12
   return: MASE
   """
   y_hat_naive = []
-  for i in range(freq, len(insample)):
-      y_hat_naive.append(insample[(i - freq)])
+  for i in range(seasonality, len(y_train)):
+      y_hat_naive.append(y_train[(i - seasonality)])
 
-  masep = np.mean(abs(insample[freq:] - y_hat_naive))
+  masep = np.mean(abs(y_train[seasonality:] - y_hat_naive))
   mase = np.mean(abs(y - y_hat)) / masep
   return mase
 
@@ -257,11 +268,20 @@ def mase(y, y_hat, insample, freq):
 # PANEL EVALUATION
 ########################
 
-def evaluate_panel(y_panel, y_hat_panel, metric, insample=None, freq=None):
+def evaluate_panel(y_panel, y_hat_panel, metric,
+                   y_insample=None, seasonality=None):
   """
   Calculates metric for y_panel and y_hat_panel
-  y_panel: panel with columns unique_id, ds, y
-  y_hat_panel: panel with columns unique_id, ds, y_hat
+  y_panel: pandas df
+    panel with columns unique_id, ds, y
+  y_naive2_panel: pandas df
+    panel with columns unique_id, ds, y_hat
+  y_insample: pandas df
+    panel with columns unique_id, ds, y (train)
+    this is used in the MASE
+  seasonality: int
+    main frequency of the time series
+    Quarterly 4, Daily 7, Monthly 12
   return: list of metric evaluations
   """
   metric_name = metric.__code__.co_name
@@ -271,31 +291,42 @@ def evaluate_panel(y_panel, y_hat_panel, metric, insample=None, freq=None):
   y_panel = y_panel.sort_values(['unique_id', 'ds'])
   y_hat_panel = y_hat_panel.sort_values(['unique_id', 'ds'])
 
-  evaluation_list = []
+  evaluation = []
   for u_id in y_panel.unique_id.unique():
-    y = y_panel.loc[y_panel.unique_id==u_id, 'y'].to_numpy()
-    y_hat = y_hat_panel.loc[y_panel.unique_id==u_id, 'y_hat'].to_numpy()
+    y_id = y_panel.loc[y_panel.unique_id==u_id, 'y'].to_numpy()
+    y_hat_id = y_hat_panel.loc[y_panel.unique_id==u_id, 'y_hat'].to_numpy()
 
     if metric_name == 'mase':
-      assert (insample is not None) and (freq is not None)
-      y_insample = insample.loc[insample.unique_id==u_id, 'y'].to_numpy()
-      evaluation = metric(y, y_hat, y_insample, freq)
+      assert (y_insample is not None) and (seasonality is not None)
+      y_insample_id = y_insample.loc[y_insample.unique_id==u_id, 'y'].to_numpy()
+      evaluation = metric(y_id, y_hat_id, y_insample_id, seasonality)
     else:
-      evaluation = metric(y, y_hat)
-    evaluation_list.append(evaluation)
-  return evaluation_list
+      evaluation_id = metric(y_id, y_hat_id)
+    evaluation.append(evaluation_id)
+  return evaluation
 
-def owa(y_panel, y_hat_panel, y_naive2_panel, insample, freq):
+def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
   """
   Calculates MASE, sMAPE for Naive2 and current model
   then calculatess Overall Weighted Average.
-  y_panel: panel with columns unique_id, ds, y
-  y_hat_panel: panel with columns unique_id, ds, y_hat
-  y_naive2_panel: panel with columns unique_id, ds, y_hat
+  y_panel: pandas df
+    panel with columns unique_id, ds, y
+  y_hat_panel: pandas df
+    panel with columns unique_id, ds, y_hat
+  y_naive2_panel: pandas df
+    panel with columns unique_id, ds, y_hat
+  y_insample: pandas df
+    panel with columns unique_id, ds, y (train)
+    this is used in the MASE
+  seasonality: int
+    main frequency of the time series
+    Quarterly 4, Daily 7, Monthly 12
   return: OWA
   """
-  total_mase = evaluate_panel(y_panel, y_hat_panel, mase, insample, freq)
-  total_mase_naive2 = evaluate_panel(y_panel, y_naive2_panel, mase, insample, freq)
+  total_mase = evaluate_panel(y_panel, y_hat_panel, mase,
+                              y_insample, seasonality)
+  total_mase_naive2 = evaluate_panel(y_panel, y_naive2_panel, mase,
+                                     y_insample, seasonality)
   total_smape = evaluate_panel(y_panel, y_hat_panel, smape)
   total_smape_naive2 = evaluate_panel(y_panel, y_naive2_panel, smape)
 

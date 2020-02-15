@@ -73,7 +73,7 @@ def M4_parser(dataset_name, num_obs=1000000):
   return X_train_df, y_train_df, X_test_df, y_test_df
 
 def naive2_predictions(dataset_name, num_obs):
-    print(9*'='+' Predicting Naive2 ' + 8*'=' + '\n')
+    print(9*'='+' Predicting Naive2 ' + 8*'=')
 
     # Read train and test data
     _, y_train_df, _, y_test_df = M4_parser(dataset_name, num_obs)
@@ -88,6 +88,8 @@ def naive2_predictions(dataset_name, num_obs):
     seasonality = seas_dict[dataset_name]['seasonality']
     input_size = seas_dict[dataset_name]['input_size']
     output_size = seas_dict[dataset_name]['output_size']
+
+    print('Dataset:{} Seasonality:{}'.format(dataset_name, seasonality)+ '\n')
     
     # Naive2
     y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
