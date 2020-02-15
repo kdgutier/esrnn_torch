@@ -8,45 +8,61 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.utils_evaluation import Naive2, owa
+from src.M4_data import prepare_M4_data
+from src.utils_evaluation import owa
+from src.utils_visualization import plot_prediction
+
+##############################################################################
+#
+##############################################################################
+
+def plot_model_prediction(y_train_df, X_test_df, y_test_df, model, u_id):
+    """
+    y_train_df: pandas df
+      panel with columns unique_id, ds, y
+    X_test_df: pandas df
+      panel with columns unique_id, ds, x
+    y_test_df: pandas df
+      panel with columns unique_id, ds, y
+    model: python class
+      python class with predict method
+    u_id: str
+      unique_id to filter pandas dfs
+    """
+    X_test_plot = X_test_df.loc[X_test_df.unique_id==u_id, :]
+    y_train_plot = y_train_df.loc[y_train_df.unique_id==u_id, :]
+    y_test_plot = y_test_df.loc[y_test_df.unique_id==u_id, :]
+    y_test_plot = pd.concat([y_train_plot, y_test_plot], axis=0, sort=True)
+    y_hat_plot = model.predict(X_test_plot)
+    plot_prediction(y_test_plot, y_hat_plot)
+
+def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
+    """
+    y_train_df: pandas df
+      panel with columns unique_id, ds, y
+    X_test_df: pandas df
+      panel with columns unique_id, ds, x
+    y_test_df: pandas df
+      panel with columns unique_id, ds, y, y_hat_naive2
+    model: python class
+      python class with predict method
+    """
+    y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
+    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
+    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
+    y_hat_panel = model.predict(X_test_df)
+    y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
+
+    model_owa = owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, 
+                    seasonality=model.mc.seasonality)
+
+    print('=='+' Overall Weighted Average:{} '.format(model_owa) + '==')
+    return model_owa
 
 
-def M4_parser(dataset_name, num_obs=1000000, data_dir='./data/m4'):
-  m4_info = pd.read_csv(data_dir+'/M4-info.csv', usecols=['M4id','category'])
-  m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
-
-  train_path='{}/train/{}-train.csv'.format(data_dir, dataset_name)
-  dataset = pd.read_csv(train_path).head(num_obs)
-  dataset = dataset.rename(columns={'V1':'unique_id'})
-  
-  dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
-  dataset = dataset.rename(columns={'V':'y'})
-  dataset = dataset.dropna()
-  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
-  dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-  dataset.drop(columns=['M4id'], inplace=True)
-  dataset = dataset.rename(columns={'category': 'x'})
-  X_train_df = dataset.filter(items=['unique_id', 'ds', 'x'])
-  y_train_df = dataset.filter(items=['unique_id', 'ds', 'y'])
-
-  test_path='{}/test/{}-test.csv'.format(data_dir, dataset_name)
-  dataset = pd.read_csv(test_path).head(num_obs)
-  dataset = dataset.rename(columns={'V1':'unique_id'})
-  
-  dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
-  dataset = dataset.rename(columns={'V':'y'})
-  dataset = dataset.dropna()
-
-  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
-
-  dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-  dataset.drop(columns=['M4id'], inplace=True)
-  dataset = dataset.rename(columns={'category': 'x'})
-  X_test_df = dataset.filter(items=['unique_id', 'x'])
-  y_test_df = dataset.filter(items=['unique_id', 'y'])
-  return X_train_df, y_train_df, X_test_df, y_test_df
-
-
+##############################################################################
+#
+##############################################################################
 
 def yaml_main():
   X_df_train, y_df_train = M4_parser(dataset_name='Quarterly', mode='train', num_obs=1000)
@@ -77,50 +93,6 @@ def yaml_main():
 
   esrnn.fit(X_df_train, y_df_train)
   y_df_hat = esrnn.predict(X_df_test)
-
-def naive2_predictions(dataset):
-    # Read train and test data
-    _, y_train_df, _, y_test_df = M4_parser(dataset_name=dataset)
-    
-    seas_dict = {'Quarterly': {'seasonality': 4, 'input_size': 4,
-                               'output_size': 8},
-                 'Monthly': {'seasonality': 12, 'input_size': 12,
-                             'output_size':24},
-                 'Daily': {'seasonality': 7, 'input_size': 7,
-                           'output_size': 14}}
-    
-    seasonality = seas_dict[dataset]['seasonality']
-    input_size = seas_dict[dataset]['input_size']
-    output_size = seas_dict[dataset]['output_size']
-    
-    # Naive2
-    y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-    
-    # Sort X by unique_id for faster loop
-    y_train_df = y_train_df.sort_values(by=['unique_id', 'ds'])
-
-    # List of uniques ids
-    unique_ids = y_train_df['unique_id'].unique()
-
-    # Panel of fitted models
-    for unique_id in unique_ids:
-        # Fast filter X and y by id.
-        top_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'left'))
-        bottom_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'right'))
-        y_id = y_train_df[top_row:bottom_row]
-        
-        
-        y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-        y_naive2['ds'] = pd.date_range(start=y_id.ds.max(),
-                                       periods=output_size+1, freq='D')[1:]
-        y_naive2['unique_id'] = unique_id
-        y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
-        y_naive2_df = y_naive2_df.append(y_naive2)
-    
-    y_naive2_df['y'] = y_test_df['y']
-    naive2_file = './results/{}/naive2predictions.csv'.format(dataset)
-    y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
-  
 
 def generate_grid(args):
   model_specs = {'model_type': ['esrnn'],

@@ -5,6 +5,10 @@ plt.style.use('ggplot')
 
 def plot_prediction(y, y_hat):
     """
+    y: pandas df
+      panel with columns unique_id, ds, y
+    y_hat: pandas df
+      panel with columns unique_id, ds, y_hat
     """
     pd.plotting.register_matplotlib_converters()
 
