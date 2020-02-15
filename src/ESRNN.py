@@ -97,7 +97,7 @@ class ESRNN(object):
   `Original Dynet Implementation of ESRNN
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
-  def __init__(self, max_epochs=15, batch_size=1, freq_of_test=1,
+  def __init__(self, max_epochs=15, batch_size=1, freq_of_test=-1,
                learning_rate=1e-3, lr_scheduler_step_size=9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
@@ -178,7 +178,7 @@ class ESRNN(object):
       print("========= Epoch {} finished =========".format(epoch))
       print("Training time: {}".format(round(time.time()-start, 5)))
       print("Training loss: {}".format(round(self.train_loss, 5)))
-      if (epoch % self.mc.freq_of_test == 0):
+      if (epoch % self.mc.freq_of_test == 0 and self.mc.freq_of_test > 0):
         self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
         print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
 
@@ -256,47 +256,36 @@ class ESRNN(object):
     # Predictions for panel
     Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
 
-    # Imputate flag
-    impute_flag = False
-
     for unique_id in predict_unique_idxs:
       # Corresponding train batch
-      if unique_id in self.dataloader.sort_key['unique_id']:
-        batch = self.dataloader.get_batch(unique_id=unique_id)
+      batch = self.dataloader.get_batch(unique_id=unique_id)
 
-        # Prediction
-        if decomposition:
-          Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
-          y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
-        else:
-          Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
-          y_hat, _, _, _ = self.esrnn.predict(batch)
-
-        y_hat = y_hat.squeeze()
-        Y_hat_id.iloc[:, 0] = y_hat
-
-        # Serie prediction
-        Y_hat_id["unique_id"] = unique_id
-        ds = date_range = pd.date_range(start=batch.last_ds[0],
-                                        periods=self.mc.output_size+1, freq=self.mc.frequency)
-        Y_hat_id["ds"] = ds[1:]
-
-        if decomposition:
-          Y_hat_id["trend"] = trends.squeeze()
-          Y_hat_id["seasonalities"] = seasonalities.squeeze()
-          Y_hat_id["level"] = level.squeeze()
-
-        Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
+      # Prediction
+      if decomposition:
+        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
+        y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
       else:
-        impute_flag = True
+        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
+        y_hat, _, _, _ = self.esrnn.predict(batch)
 
+      y_hat = y_hat.squeeze()
+      Y_hat_id.iloc[:, 0] = y_hat
+
+      # Serie prediction
+      Y_hat_id["unique_id"] = unique_id
+      ds = date_range = pd.date_range(start=batch.last_ds[0],
+                                      periods=self.mc.output_size+1, freq=self.mc.frequency)
+      Y_hat_id["ds"] = ds[1:]
+
+      if decomposition:
+        Y_hat_id["trend"] = trends.squeeze()
+        Y_hat_id["seasonalities"] = seasonalities.squeeze()
+        Y_hat_id["level"] = level.squeeze()
+
+      Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
+  
     if 'ds' in X_df:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
-
-    if impute_flag:
-      mean_imputator = Y_hat_panel[['ds','y_hat']].groupby('ds').mean().reset_index()
-      mean_imputator = mean_imputator.rename(columns={'y_hat':'y_hat_mean'})
-      Y_hat_panel = Y_hat_panel.merge(mean_imputator, on=['ds'], how='left')
 
     return Y_hat_panel
   
