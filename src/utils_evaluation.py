@@ -285,21 +285,22 @@ def evaluate_panel(y_panel, y_hat_panel, metric,
   return: list of metric evaluations
   """
   metric_name = metric.__code__.co_name
-  print('==================== ', metric_name, ' ====================')
-  assert len(y_panel)==len(y_hat_panel)
 
   y_panel = y_panel.sort_values(['unique_id', 'ds'])
   y_hat_panel = y_hat_panel.sort_values(['unique_id', 'ds'])
+  assert len(y_panel)==len(y_hat_panel)
+  assert all(y_panel.unique_id.unique() == y_hat_panel.unique_id.unique()), "not same u_ids"
 
   evaluation = []
   for u_id in y_panel.unique_id.unique():
     y_id = y_panel.loc[y_panel.unique_id==u_id, 'y'].to_numpy()
     y_hat_id = y_hat_panel.loc[y_panel.unique_id==u_id, 'y_hat'].to_numpy()
+    assert len(y_id)==len(y_hat_id)
 
     if metric_name == 'mase':
       assert (y_insample is not None) and (seasonality is not None)
       y_insample_id = y_insample.loc[y_insample.unique_id==u_id, 'y'].to_numpy()
-      evaluation = metric(y_id, y_hat_id, y_insample_id, seasonality)
+      evaluation_id = metric(y_id, y_hat_id, y_insample_id, seasonality)
     else:
       evaluation_id = metric(y_id, y_hat_id)
     evaluation.append(evaluation_id)
@@ -323,7 +324,7 @@ def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
     Quarterly 4, Daily 7, Monthly 12
   return: OWA
   """
-  total_mase = evaluate_panel(y_panel, y_hat_panel, mase,
+  total_mase = evaluate_panel(y_panel, y_hat_panel, mase, 
                               y_insample, seasonality)
   total_mase_naive2 = evaluate_panel(y_panel, y_naive2_panel, mase,
                                      y_insample, seasonality)
