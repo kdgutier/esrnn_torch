@@ -7,9 +7,9 @@ import pandas as pd
 from src.utils_evaluation import Naive2
 
 SOURCE_URL = 'https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/'
-DATA_DIRECTORY = "./data/m4/"
-TRAIN_DIRECTORY = DATA_DIRECTORY + "Train/"
-TEST_DIRECTORY = DATA_DIRECTORY + "Test/"
+DATA_DIRECTORY = "./data/m4"
+TRAIN_DIRECTORY = DATA_DIRECTORY + "/Train/"
+TEST_DIRECTORY = DATA_DIRECTORY + "/Test/"
 
 
 def maybe_download(filename):
@@ -33,7 +33,7 @@ def M4_parser(dataset_name, num_obs=1000000):
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
   
   # train data
-  train_path='{}/train/{}-train.csv'.format(DATA_DIRECTORY, dataset_name)
+  train_path='{}{}-train.csv'.format(TRAIN_DIRECTORY, dataset_name)
   dataset = pd.read_csv(train_path).head(num_obs)
   dataset = dataset.rename(columns={'V1':'unique_id'})
 
@@ -51,7 +51,7 @@ def M4_parser(dataset_name, num_obs=1000000):
   max_dates = X_train_df.groupby('unique_id').agg({'ds': 'count'}).reset_index()
   
   # test data
-  test_path='{}/test/{}-test.csv'.format(DATA_DIRECTORY, dataset_name)
+  test_path='{}{}-test.csv'.format(TEST_DIRECTORY, dataset_name)
   dataset = pd.read_csv(test_path).head(num_obs)
   dataset = dataset.rename(columns={'V1':'unique_id'})
 
