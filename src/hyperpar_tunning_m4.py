@@ -73,7 +73,7 @@ def grid_main(args):
 
   # Read/Generate hyperparameter grid
   grid_file = './data/' + args.dataset + '/model_grid.csv'
-  if not os.path.exists(grid_file)::
+  if not os.path.exists(grid_file):
     generate_grid(args)
   model_specs_df = pd.read_csv(grid_file)
   
