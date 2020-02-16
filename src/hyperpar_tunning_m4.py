@@ -72,7 +72,7 @@ def grid_main(args):
   X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000)
 
   # Read/Generate hyperparameter grid
-  grid_file = './data/' + args.dataset + '/model_grid.csv'
+  grid_file = './data/m4/' + args.dataset + '/model_grid.csv'
   if not os.path.exists(grid_file):
     generate_grid(args)
   model_specs_df = pd.read_csv(grid_file)
