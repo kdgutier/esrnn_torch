@@ -68,11 +68,13 @@ def generate_grid(args):
   model_specs_df.to_csv(grid_file, encoding='utf-8', index=None)
 
 def grid_main(args):
-
   # Read train and test data
   X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000)
 
+  # Read/Generate hyperparameter grid
   grid_file = './data/' + args.dataset + '/model_grid.csv'
+  if if not os.path.exists(grid_file)::
+    generate_grid(args)
   model_specs_df = pd.read_csv(grid_file)
   
   for i in range(args.id_min, args.id_max):
@@ -127,15 +129,10 @@ def grid_main(args):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
-  parser.add_argument("--gen_grid", required=True, type=int)
   parser.add_argument("--id_min", required=True, type=int)
   parser.add_argument("--id_max", required=True, type=int)
   parser.add_argument("--gpu_id", required=False, type=int, default=0)
   parser.add_argument("--dataset", required=True, type=str)
   args = parser.parse_args()
 
-  if args.gen_grid == 1:
-      generate_grid(args)
-
   grid_main(args)
-
