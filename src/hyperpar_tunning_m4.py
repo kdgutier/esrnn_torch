@@ -96,7 +96,7 @@ def grid_main(args):
   grid_dir = './results/grid_search/{}/'.format(args.dataset)
   grid_file = grid_dir + '/model_grid.csv'
   if not os.path.exists(grid_dir):
-    os.mkdir('.results/grid_search/')
+    os.mkdir('./results/grid_search/')
     os.mkdir(grid_dir)
   if not os.path.exists(grid_file):
     generate_grid(args, grid_file)
