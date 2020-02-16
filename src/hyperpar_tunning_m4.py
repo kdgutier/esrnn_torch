@@ -39,6 +39,32 @@ def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
 # HYPER PARAMETER GRIDS
 #############################################################################
 
+HOURLY = {}
+
+DAILY = {'model_type': ['esrnn'],
+          'dataset': ['Daily'],
+          'max_epochs' : [10, 15],
+          'batch_size' : [8, 32],
+          'learning_rate' : [1e-4, 3e-4, 1e-3],
+          'lr_scheduler_step_size' : [10],
+          'per_series_lr_multip' : [1.0, 1.5],
+          'gradient_clipping_threshold' : [20],
+          'rnn_weight_decay' : [0.0, 0.5],
+          'noise_std' : [1e-2],
+          'level_variability_penalty' : [80, 100],
+          'percentile' : [50],
+          'training_percentile' : [45, 49],
+          'max_periods': [10, 20],
+          'state_hsize' : [40],
+          'dilations' : [[[1, 7, 28]], [[1,7],[28]]],
+          'add_nl_layer' : [True, False],
+          'seasonality' : [7],
+          'output_size' : [14],
+          'device' : ['cuda']}
+
+WEEKLY = {}
+
+YEARLY = {}
 
 QUARTERLY = {'model_type': ['esrnn'],
              'dataset': ['Quarterly'],
@@ -61,16 +87,11 @@ QUARTERLY = {'model_type': ['esrnn'],
              'output_size' : [8],
              'device' : ['cuda']} #cuda:int
 
-DAILY = {}
-
-YEARLY = {}
-
-HOURLY = {}
-
-ALL_MODEL_SPEC  = {'Quarterly': QUARTERLY,
+ALL_MODEL_SPEC  = {'Hourly': HOURLY,
                    'Daily': DAILY,
+                   'Weekly': WEEKLY,
                    'Yearly': YEARLY,
-                   'Hourly': HOURLY}
+                   'Quarterly': QUARTERLY}
 
 #############################################################################
 # MAIN EXPERIMENT
