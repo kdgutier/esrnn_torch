@@ -35,34 +35,55 @@ def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
     print('=='+' Overall Weighted Average:{} '.format(model_owa) + '==')
     return model_owa
 
-def generate_grid(args):
-  model_specs = {'model_type': ['esrnn'],
-                 'dataset': [args.dataset],
-                 'max_epochs' : [10, 15],
-                 'batch_size' : [8, 32],
-                 'learning_rate' : [1e-4, 1e-3],
-                 'lr_scheduler_step_size' : [10],
-                 'per_series_lr_multip' : [1.0, 1.5],
-                 'gradient_clipping_threshold' : [20],
-                 'rnn_weight_decay' : [0.0, 0.5],
-                 'noise_std' : [1e-2],
-                 'level_variability_penalty' : [80, 100],
-                 'percentile' : [50],
-                 'training_percentile' : [45, 50],
-                 'max_periods': [10, 20],
-                 'state_hsize' : [40],
-                 'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
-                 'add_nl_layer' : [True, False],
-                 'seasonality' : [4],
-                 'output_size' : [8],
-                 'device' : ['cuda']} #cuda:int
+#############################################################################
+# HYPER PARAMETER GRIDS
+#############################################################################
+
+
+QUARTERLY = {'model_type': ['esrnn'],
+             'dataset': ['Quarterly'],
+             'max_epochs' : [10, 15],
+             'batch_size' : [8, 32],
+             'learning_rate' : [1e-4, 1e-3],
+             'lr_scheduler_step_size' : [10],
+             'per_series_lr_multip' : [1.0, 1.5],
+             'gradient_clipping_threshold' : [20],
+             'rnn_weight_decay' : [0.0, 0.5],
+             'noise_std' : [1e-2],
+             'level_variability_penalty' : [80, 100],
+             'percentile' : [50],
+             'training_percentile' : [45, 50],
+             'max_periods': [10, 20],
+             'state_hsize' : [40],
+             'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
+             'add_nl_layer' : [True, False],
+             'seasonality' : [4],
+             'output_size' : [8],
+             'device' : ['cuda']} #cuda:int
+
+DAILY = {}
+
+YEARLY = {}
+
+HOURLY = {}
+
+ALL_MODEL_SPEC  = {'Quarterly': QUARTERLY,
+                   'Daily': DAILY,
+                   'Yearly': YEARLY,
+                   'Hourly': HOURLY}
+
+#############################################################################
+# MAIN EXPERIMENT
+#############################################################################
+
+def generate_grid(args, grid_file):
+  model_specs = ALL_MODEL_SPEC[args.dataset]
 
   specs_list = list(itertools.product(*list(model_specs.values())))
   model_specs_df = pd.DataFrame(specs_list,
                             columns=list(model_specs.keys()))
 
   model_specs_df['model_id'] = model_specs_df.index
-  grid_file = './data/' + args.dataset + '/model_grid.csv'
   np.random.seed(1)
   model_specs_df = model_specs_df.sample(100)
   model_specs_df.to_csv(grid_file, encoding='utf-8', index=None)
@@ -72,11 +93,15 @@ def grid_main(args):
   X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000)
 
   # Read/Generate hyperparameter grid
-  grid_file = './data/m4/' + args.dataset + '/model_grid.csv'
+  grid_dir = './results/grid_search/'
+  grid_file = grid_dir + args.dataset + '-model_grid.csv'
+  if not os.path.exists(grid_dir):
+    os.mkdir(grid_dir)
   if not os.path.exists(grid_file):
-    generate_grid(args)
+    generate_grid(args, grid_file)
   model_specs_df = pd.read_csv(grid_file)
   
+  # Parse hyper parameter data frame
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
     
@@ -93,7 +118,7 @@ def grid_main(args):
 
     from src.ESRNN import ESRNN
 
-    # Instantiate, fit and predict
+    # Instantiate, fit, predict and evaluate
     model = ESRNN(max_epochs=int(mc.max_epochs),
                 batch_size=int(mc.batch_size),
                 learning_rate=mc.learning_rate,
@@ -114,13 +139,10 @@ def grid_main(args):
                 freq_of_test=10000,
                 device=device)
 
+    # Fit, predict and evaluate
     model.fit(X_df_train, y_df_train)
-
     model_owa = evaluate_model_prediction(y_df_train, X_df_test, y_df_test, model=model)
-
-    # Dictionary generation
-    evaluation_dict = {'id': mc.model_id,
-                        'test evaluation': model_owa}
+    evaluation_dict = {'id': mc.model_id, 'test evaluation': model_owa}
 
     # Output evaluation
     output_file = './results/grid_search/{}/{}.p'.format(args.dataset, mc.model_id)
