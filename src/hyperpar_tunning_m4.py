@@ -93,8 +93,8 @@ def grid_main(args):
   X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000)
 
   # Read/Generate hyperparameter grid
-  grid_dir = './results/grid_search/'
-  grid_file = grid_dir + args.dataset + '-model_grid.csv'
+  grid_dir = './results/grid_search/{}/'.format(args.dataset)
+  grid_file = grid_dir + '/model_grid.csv'
   if not os.path.exists(grid_dir):
     os.mkdir(grid_dir)
   if not os.path.exists(grid_file):
@@ -145,7 +145,8 @@ def grid_main(args):
     evaluation_dict = {'id': mc.model_id, 'test evaluation': model_owa}
 
     # Output evaluation
-    output_file = './results/grid_search/{}/{}.p'.format(args.dataset, mc.model_id)
+    grid_dir = './results/grid_search/{}/'.format(args.dataset)
+    output_file = '{}/model_{}.p'.format(grid_dir, mc.model_id)
     outfile = open(output_file, "wb")
     pickle.dump(evaluation_dict, outfile)
 
