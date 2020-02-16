@@ -136,6 +136,7 @@ def prepare_M4_data(dataset_name, num_obs):
   quarterlytest_filename = maybe_download('Test/Quarterly-test.csv')
   weeklytest_filename = maybe_download('Test/Weekly-test.csv')
   yearlytest_filename = maybe_download('Test/Yearly-test.csv')
+  print('\n')
 
   X_train_df, y_train_df, X_test_df, y_test_df = M4_parser(dataset_name, num_obs)
 
