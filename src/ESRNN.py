@@ -237,7 +237,7 @@ class ESRNN(object):
     # Train model
     self.train(dataloader=self.train_dataloader, random_seed=random_seed)
 
-  def predict(self, X_df, decomposition=False, predict_batch_size=128):
+  def predict(self, X_df, decomposition=False):
     """
         Predictions for all stored time series
     Returns:
@@ -254,7 +254,9 @@ class ESRNN(object):
     # TODO: Declare new dataloader
     
     # Create fast dataloader
-    self.train_dataloader.update_batch_size(predict_batch_size)
+    if self.mc.n_series < 128: new_batch_size = self.mc.n_series
+    else: new_batch_size = 128
+    self.train_dataloader.update_batch_size(new_batch_size)
     dataloader = self.train_dataloader
 
     # Create Y_hat_panel placeholders
