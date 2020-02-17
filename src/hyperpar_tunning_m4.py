@@ -133,7 +133,7 @@ def generate_grid(args, grid_file):
 
 def grid_main(args):
   # Read train and test data
-  X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset)
+  X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000000)
 
   # Read/Generate hyperparameter grid
   grid_dir = './results/grid_search/{}/'.format(args.dataset)
