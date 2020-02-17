@@ -345,7 +345,8 @@ def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
   assert len(total_smape) == len(total_smape_naive2)
   assert len(total_mase) == len(total_smape)
   
-  owa = ((np.mean(total_mase)/np.mean(total_mase_naive2)) + \
-         (np.mean(total_smape)/np.mean(total_smape_naive2)))/2
-  owa = np.round(owa, 3)
-  return owa
+  model_mase = np.mean(total_mase)
+  model_smape = np.mean(total_smape)
+  model_owa = ((model_mase/np.mean(total_mase_naive2)) + \
+               (model_smape/np.mean(total_smape_naive2)))/2
+  return model_owa, model_mase, model_smape

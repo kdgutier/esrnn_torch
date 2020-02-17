@@ -29,11 +29,14 @@ def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
     y_hat_panel = model.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
-    model_owa = owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, 
-                    seasonality=model.mc.seasonality)
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+                                             y_naive2_panel, y_insample, 
+                                             seasonality=model.mc.seasonality)
 
-    print('=='+' Overall Weighted Average:{} '.format(model_owa) + '==')
-    return model_owa
+    print('=='+' Overall Weighted Average:{} '.format(np.round(model_owa, 3)) + '==')
+    print('=='+' Symm. Mean Absolute P.E.:{} '.format(np.round(model_smape, 3)) + '==')
+    print('=='+' Mean Absolute Scaled E.: {} '.format(np.round(model_mase, 3)) + '==')
+    return model_owa, model_mase, model_smape
 
 #############################################################################
 # HYPER PARAMETER GRIDS
@@ -185,8 +188,13 @@ def grid_main(args):
 
     # Fit, predict and evaluate
     model.fit(X_df_train, y_df_train)
-    model_owa = evaluate_model_prediction(y_df_train, X_df_test, y_df_test, model=model)
-    evaluation_dict = {'id': mc.model_id, 'test evaluation': model_owa}
+    model_owa, model_mase, model_smape = evaluate_model_prediction(y_df_train, 
+                                                                   X_df_test,
+                                                                   y_df_test, model=model)
+    evaluation_dict = {'id': mc.model_id, 
+                       'owa': model_owa,
+                       'mase': model_mase,
+                       'smape': model_smape}
 
     # Output evaluation
     grid_dir = './results/grid_search/{}/'.format(args.dataset)

@@ -15,6 +15,8 @@ from src.utils.ESRNN import _ESRNN
 from src.utils.losses import SmylLoss, PinballLoss
 from src.utils.data import Iterator
 
+from src.utils_evaluation import owa
+
 
 class ESRNN(object):
   """ Exponential Smoothing Recursive Neural Network.
@@ -142,7 +144,8 @@ class ESRNN(object):
     
     # Loss Functions
     train_tau = self.mc.training_percentile / 100
-    train_loss = SmylLoss(tau=train_tau, level_variability_penalty=self.mc.level_variability_penalty)
+    train_loss = SmylLoss(tau=train_tau, 
+                          level_variability_penalty=self.mc.level_variability_penalty)
 
     eval_tau = self.mc.percentile / 100
     eval_loss = PinballLoss(tau=eval_tau)
@@ -164,8 +167,10 @@ class ESRNN(object):
         losses.append(loss.data.cpu().numpy())
         loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), self.mc.gradient_clipping_threshold)
-        torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), self.mc.gradient_clipping_threshold)
+        torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), 
+                                       self.mc.gradient_clipping_threshold)
+        torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), 
+                                       self.mc.gradient_clipping_threshold)
         rnn_optimizer.step()
         es_optimizer.step()
 
@@ -179,8 +184,11 @@ class ESRNN(object):
       print("Training time: {}".format(round(time.time()-start, 5)))
       print("Training loss: {}".format(round(self.train_loss, 5)))
       if (epoch % self.mc.freq_of_test == 0 and self.mc.freq_of_test > 0):
-        self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
-        print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
+        #self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
+        #print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
+        if self.y_test_df is not None:
+          self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
+                                         self.y_test_df, epoch=epoch)
 
     print('Train finished! \n')
   
@@ -206,12 +214,51 @@ class ESRNN(object):
       losses /= n_series
       return losses
   
-  def fit(self, X_df, y_df, shuffle=True, random_seed=1):
+  def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
+    """
+    y_train_df: pandas df
+      panel with columns unique_id, ds, y
+    X_test_df: pandas df
+      panel with columns unique_id, ds, x
+    y_test_df: pandas df
+      panel with columns unique_id, ds, y, y_hat_naive2
+    model: python class
+      python class with predict method
+    """
+    y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
+    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
+    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
+    y_hat_panel = self.predict(X_test_df)
+    y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
+
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+                                             y_naive2_panel, y_insample, 
+                                             seasonality=self.mc.seasonality)
+
+    if self.min_owa < model_owa:
+      self.min_owa = model_owa
+      if epoch is not None:
+        self.min_epoch = epoch
+
+    print('OWA: {} '.format(np.round(model_owa, 3)))
+    print('SMAPE: {} '.format(np.round(model_smape, 3)))
+    print('MASE: {} '.format(np.round(model_mase, 3)))
+    return model_owa, model_mase, model_smape
+  
+  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, 
+          shuffle=True, random_seed=1):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
     assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
     assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
+
+    # Storing dfs for OWA evaluation, initializing min_owa
+    self.y_train_df = y_df
+    self.X_test_df = X_test_df
+    self.y_test_df = y_test_df
+    self.min_owa = 4.0
+    self.min_epoch = 0
 
     X, y = self.long_to_wide(X_df, y_df)
     assert len(X)==len(y)
@@ -246,7 +293,7 @@ class ESRNN(object):
         ds: Corresponding list of date stamps
         unique_id: Corresponding list of unique_id
     """
-    print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
+    #print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
     
