@@ -64,6 +64,8 @@ class Iterator(object):
     self.unique_idxs = np.unique(self.X[:, 0])
     assert len(self.unique_idxs)==len(self.X)
     self.n_series = len(self.unique_idxs)
+
+    assert self.batch_size <= self.n_series
     
     # Initialize batch iterator
     self.b = 0
@@ -71,6 +73,11 @@ class Iterator(object):
     shuffle = list(range(self.n_series))
     self.sort_key = {'unique_id': [self.unique_idxs[i] for i in shuffle],
                      'sort_key': shuffle}
+  
+  def update_batch_size(self, new_batch_size):
+    self.batch_size = new_batch_size
+    assert self.batch_size <= self.n_series
+    self.n_batches = int(self.n_series / self.batch_size)
 
   def shuffle_dataset(self, random_seed=1):
     """Return the examples in the dataset in order, or shuffled."""

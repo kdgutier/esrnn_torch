@@ -223,7 +223,7 @@ class ESRNN(object):
     self.mc.exogenous_size = len(unique_categories)
 
     # Create batches (device in mc)
-    self.dataloader = Iterator(mc=self.mc, X=X, y=y)
+    self.train_dataloader = Iterator(mc=self.mc, X=X, y=y)
     self.shuffle = shuffle
 
     # Random Seeds (model initialization)
@@ -231,11 +231,11 @@ class ESRNN(object):
     np.random.seed(random_seed)
 
     # Initialize model
-    self.mc.n_series = self.dataloader.n_series
+    self.mc.n_series = self.train_dataloader.n_series
     self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
     # Train model
-    self.train(dataloader=self.dataloader, random_seed=random_seed)
+    self.train(dataloader=self.train_dataloader, random_seed=random_seed)
 
   def predict(self, X_df, decomposition=False):
     """
@@ -249,44 +249,52 @@ class ESRNN(object):
     print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
+    
+    # TODO: Filter unique_ids
+    # TODO: Declare new dataloader
+    
+    # Create fast dataloader
+    self.train_dataloader.update_batch_size(5)
+    dataloader = self.train_dataloader
 
-    # Obtain unique_ids to predict
-    predict_unique_idxs = X_df['unique_id'].unique()
-
-    # Predictions for panel
-    Y_hat_panel = pd.DataFrame(columns=['unique_id', 'y_hat'])
-
-    for unique_id in predict_unique_idxs:
-      # Corresponding train batch
-      batch = self.dataloader.get_batch(unique_id=unique_id)
-
-      # Prediction
-      if decomposition:
-        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 4)), columns=["y_hat", "trend", "seasonalities", "level"])
-        y_hat, trends, seasonalities, level = self.esrnn.predict(batch)
-      else:
-        Y_hat_id = pd.DataFrame(np.zeros(shape=(self.mc.output_size, 1)), columns=["y_hat"])
-        y_hat, _, _, _ = self.esrnn.predict(batch)
-
-      y_hat = y_hat.squeeze()
-      Y_hat_id.iloc[:, 0] = y_hat
-
-      # Serie prediction
-      Y_hat_id["unique_id"] = unique_id
-      ds = date_range = pd.date_range(start=batch.last_ds[0],
-                                      periods=self.mc.output_size+1, freq=self.mc.frequency)
-      Y_hat_id["ds"] = ds[1:]
-
-      if decomposition:
-        Y_hat_id["trend"] = trends.squeeze()
-        Y_hat_id["seasonalities"] = seasonalities.squeeze()
-        Y_hat_id["level"] = level.squeeze()
-
-      Y_hat_panel = Y_hat_panel.append(Y_hat_id, sort=False).reset_index(drop=True)
-  
+    # Create Y_hat_panel placeholders
+    output_size = self.mc.output_size
+    n_unique_id = len(dataloader.sort_key['unique_id'])
+    panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
+    panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
+    
+    # TODO: Improve wasted computation
+    panel_delta = list(range(1, output_size+1)) * n_unique_id 
+    panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
+    #panel_delta = pd.Series(panel_delta.tolist() * n_unique_id)
+    
+    panel_ds = panel_last_ds + panel_delta
+    
+    panel_y_hat= np.zeros((output_size * n_unique_id))
+    
+    # Predict
+    count = 0
+    for j in range(dataloader.n_batches):
+      batch = dataloader.get_batch()
+      batch_size = batch.y.shape[0]
+      
+      y_hat, _, _, _ = self.esrnn.predict(batch)
+      
+      panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
+      count += output_size*batch_size
+    
+    Y_hat_panel_dict = {'unique_id': panel_unique_id, 'ds': panel_ds, 
+                        'y_hat': panel_y_hat}
+    
+    assert len(panel_ds) == len(panel_y_hat) == len(panel_unique_id)
+    
+    Y_hat_panel = pd.DataFrame.from_dict(Y_hat_panel_dict)
+    
     if 'ds' in X_df:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
-
+    else:
+      Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id'], how='left')
+    
     return Y_hat_panel
   
   def long_to_wide(self, X_df, y_df):
@@ -312,6 +320,7 @@ class ESRNN(object):
     y = df_wide.filter(items=ds_cols).values
 
     # TODO: assert "completeness" of the series (frequency-wise)
+    # TODO: assert "trainability" of the series (sparsity-wise)
     return X, y
 
   def get_dir_name(self, root_dir=None):
