@@ -43,7 +43,7 @@ HOURLY = {}
 
 DAILY = {'model_type': ['esrnn'],
          'dataset': ['Daily'],
-         'max_epochs' : [10, 15],
+         'max_epochs' : [20, 40],
          'batch_size' : [8, 32],
          'learning_rate' : [1e-4, 3e-4, 1e-3],
          'lr_scheduler_step_size' : [10],
@@ -66,7 +66,7 @@ WEEKLY = {}
 
 MONTHLY = {'model_type': ['esrnn'],
            'dataset': ['Daily'],
-           'max_epochs' : [10, 15],
+           'max_epochs' : [20, 40],
            'batch_size' : [8, 32],
            'learning_rate' : [1e-4, 5e-4, 1e-3],
            'lr_scheduler_step_size' : [10],
@@ -89,7 +89,7 @@ YEARLY = {}
 
 QUARTERLY = {'model_type': ['esrnn'],
              'dataset': ['Quarterly'],
-             'max_epochs' : [10, 15],
+             'max_epochs' : [20, 40],
              'batch_size' : [8, 32],
              'learning_rate' : [1e-4, 1e-3],
              'lr_scheduler_step_size' : [10],
