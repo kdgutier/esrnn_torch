@@ -122,7 +122,7 @@ class ESRNN(object):
                           frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
 
   def train(self, dataloader, random_seed):
-    print(10*'='+' Training ESRNN ' + 10*'=' + '\n')
+    print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
     es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
@@ -183,7 +183,7 @@ class ESRNN(object):
       print("========= Epoch {} finished =========".format(epoch))
       print("Training time: {}".format(round(time.time()-start, 5)))
       print("Training loss: {}".format(round(self.train_loss, 5)))
-      if (epoch % self.mc.freq_of_test == 0 and self.mc.freq_of_test > 0):
+      if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
         #self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
         #print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
         if self.y_test_df is not None:
@@ -332,7 +332,8 @@ class ESRNN(object):
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
       count += output_size*batch_size
     
-    Y_hat_panel_dict = {'unique_id': panel_unique_id, 'ds': panel_ds, 
+    Y_hat_panel_dict = {'unique_id': panel_unique_id,
+                        'ds': panel_ds, 
                         'y_hat': panel_y_hat}
     
     assert len(panel_ds) == len(panel_y_hat) == len(panel_unique_id)
@@ -343,7 +344,8 @@ class ESRNN(object):
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
     else:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id'], how='left')
-    
+
+    self.train_dataloader.update_batch_size(self.mc.batch_size)
     return Y_hat_panel
   
   def long_to_wide(self, X_df, y_df):

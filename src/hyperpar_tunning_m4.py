@@ -113,7 +113,7 @@ def generate_grid(args, grid_file):
 
 def grid_main(args):
   # Read train and test data
-  X_df_train, y_df_train, X_df_test, y_df_test = prepare_M4_data(args.dataset, num_obs=1000000)
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(args.dataset, num_obs=1000000)
 
   # Read/Generate hyperparameter grid
   grid_dir = './results/grid_search/{}/'.format(args.dataset)
@@ -165,10 +165,10 @@ def grid_main(args):
                   device=device)
 
     # Fit, predict and evaluate
-    model.fit(X_df_train, y_df_train)
-    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_df_train, 
-                                                                         X_df_test,
-                                                                         y_df_test)
+    model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
+    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_train_df, 
+                                                                         X_test_df,
+                                                                         y_test_df)
     evaluation_dict = {'id': mc.model_id,
                        'min_owa': model.min_owa,
                        'min_epoch': model.min_epoch,
