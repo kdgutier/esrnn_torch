@@ -12,32 +12,6 @@ from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
 
 
-def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
-    """
-    y_train_df: pandas df
-      panel with columns unique_id, ds, y
-    X_test_df: pandas df
-      panel with columns unique_id, ds, x
-    y_test_df: pandas df
-      panel with columns unique_id, ds, y, y_hat_naive2
-    model: python class
-      python class with predict method
-    """
-    y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
-    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
-    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
-    y_hat_panel = model.predict(X_test_df)
-    y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
-
-    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
-                                             y_naive2_panel, y_insample, 
-                                             seasonality=model.mc.seasonality)
-
-    print('=='+' Overall Weighted Average:{} '.format(np.round(model_owa, 3)) + '==')
-    print('=='+' Symm. Mean Absolute P.E.:{} '.format(np.round(model_smape, 3)) + '==')
-    print('=='+' Mean Absolute Scaled E.: {} '.format(np.round(model_mase, 3)) + '==')
-    return model_owa, model_mase, model_smape
-
 #############################################################################
 # HYPER PARAMETER GRIDS
 #############################################################################
@@ -145,7 +119,8 @@ def grid_main(args):
   grid_dir = './results/grid_search/{}/'.format(args.dataset)
   grid_file = grid_dir + '/model_grid.csv'
   if not os.path.exists(grid_dir):
-    os.mkdir('./results/grid_search/')
+    if not os.path.exists('./results/grid_search/'):
+      os.mkdir('./results/grid_search/')
     os.mkdir(grid_dir)
   if not os.path.exists(grid_file):
     generate_grid(args, grid_file)
@@ -191,15 +166,15 @@ def grid_main(args):
 
     # Fit, predict and evaluate
     model.fit(X_df_train, y_df_train)
-    model_owa, model_mase, model_smape = evaluate_model_prediction(y_df_train, 
-                                                                   X_df_test,
-                                                                   y_df_test, model=model)
+    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_df_train, 
+                                                                         X_df_test,
+                                                                         y_df_test)
     evaluation_dict = {'id': mc.model_id,
                        'min_owa': model.min_owa,
                        'min_epoch': model.min_epoch,
-                       'owa': model_owa,
-                       'mase': model_mase,
-                       'smape': model_smape}
+                       'owa': final_owa,
+                       'mase': final_mase,
+                       'smape': final_smape}
 
     # Output evaluation
     grid_dir = './results/grid_search/{}/'.format(args.dataset)
