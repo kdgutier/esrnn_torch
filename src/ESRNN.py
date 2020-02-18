@@ -189,6 +189,7 @@ class ESRNN(object):
         if self.y_test_df is not None:
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
                                          self.y_test_df, epoch=epoch)
+          self.esrnn.train()
 
     print('Train finished! \n')
   
