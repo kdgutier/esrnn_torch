@@ -91,7 +91,7 @@ class Iterator(object):
     old_sort_key = self.sort_key['sort_key']
     old_unique_idxs = self.sort_key['unique_id']
     self.sort_key = {'unique_id': [old_unique_idxs[i] for i in shuffle],
-                'sort_key': [old_sort_key[i] for i in shuffle]}
+                     'sort_key': [old_sort_key[i] for i in shuffle]}
 
   def get_trim_batch(self, unique_id):
     if unique_id==None:
