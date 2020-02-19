@@ -5,7 +5,7 @@
 data/
 !results/
 results/*
-!results/attacks/
+literature/*
 plots/
 statistics/
 dynet/
