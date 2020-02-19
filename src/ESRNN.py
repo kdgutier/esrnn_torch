@@ -106,7 +106,8 @@ class ESRNN(object):
                level_variability_penalty=80,
                percentile=50, training_percentile=50,
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, 
+               add_nl_layer=False, seasonality=4, input_size=4, output_size=8,
+               frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, freq_of_test=freq_of_test,
@@ -119,9 +120,11 @@ class ESRNN(object):
                           training_percentile=training_percentile,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
-                          frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
+                          frequency=frequency, max_periods=max_periods, random_seed=random_seed,
+                          device=device, root_dir=root_dir)
+    self._fitted = False
 
-  def train(self, dataloader, random_seed):
+  def train(self, dataloader):
     print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
@@ -226,6 +229,8 @@ class ESRNN(object):
     model: python class
       python class with predict method
     """
+    assert self._fitted, "Model not fitted yet"
+
     y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
     y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
     y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
@@ -247,7 +252,7 @@ class ESRNN(object):
     return model_owa, model_mase, model_smape
   
   def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, 
-          shuffle=True, random_seed=1):
+          shuffle=True):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
@@ -275,15 +280,16 @@ class ESRNN(object):
     self.shuffle = shuffle
 
     # Random Seeds (model initialization)
-    torch.manual_seed(random_seed)
-    np.random.seed(random_seed)
+    torch.manual_seed(self.mc.random_seed)
+    np.random.seed(self.mc.random_seed)
 
     # Initialize model
     self.mc.n_series = self.train_dataloader.n_series
     self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
     # Train model
-    self.train(dataloader=self.train_dataloader, random_seed=random_seed)
+    self.train(dataloader=self.train_dataloader)
+    self._fitted = True
 
   def predict(self, X_df, decomposition=False):
     """
@@ -297,6 +303,7 @@ class ESRNN(object):
     #print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
+    assert self._fitted, "Model not fitted yet"
     
     # TODO: Filter unique_ids
     # TODO: Declare new dataloader
