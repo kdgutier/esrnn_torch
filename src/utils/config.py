@@ -7,7 +7,7 @@ class ModelConfig(object):
                level_variability_penalty,
                percentile, training_percentile,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
-               frequency, max_periods, device, root_dir):
+               frequency, max_periods, random_seed, device, root_dir):
 
     # Train Parameters
     self.max_epochs = max_epochs
@@ -29,6 +29,7 @@ class ModelConfig(object):
     self.state_hsize = state_hsize
     self.dilations = dilations
     self.add_nl_layer = add_nl_layer
+    self.random_seed = random_seed
 
     # Data Parameters
     self.seasonality = seasonality

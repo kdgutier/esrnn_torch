@@ -38,6 +38,7 @@ DAILY = {'model_type': ['esrnn'],
          'add_nl_layer' : [True, False],
          'seasonality' : [7],
          'output_size' : [14],
+         'random_seed': [1],
          'device' : ['cuda']}
 
 WEEKLY = {}
@@ -62,6 +63,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'add_nl_layer' : [True, False],
            'seasonality' : [12],
            'output_size' : [18],
+           'random_seed': [1],
            'device' : ['cuda']}
 
 YEARLY = {}
@@ -86,6 +88,7 @@ QUARTERLY = {'model_type': ['esrnn'],
              'add_nl_layer' : [True, False],
              'seasonality' : [4],
              'output_size' : [8],
+             'random_seed': [1],
              'device' : ['cuda']} #cuda:int
 
 ALL_MODEL_SPEC  = {'Hourly': HOURLY,
@@ -162,6 +165,7 @@ def grid_main(args):
                   input_size=int(mc.seasonality),
                   output_size=int(mc.output_size),
                   freq_of_test=int(mc.freq_of_test),
+                  random_seed=int(mc.random_seed),
                   device=device)
 
     # Fit, predict and evaluate
