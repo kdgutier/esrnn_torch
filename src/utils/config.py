@@ -6,6 +6,7 @@ class ModelConfig(object):
                noise_std,
                level_variability_penalty,
                percentile, training_percentile,
+               cell_type,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                frequency, max_periods, random_seed, device, root_dir):
 
@@ -26,6 +27,7 @@ class ModelConfig(object):
     self.device = device
 
     # Model Parameters
+    self.cell_type = cell_type
     self.state_hsize = state_hsize
     self.dilations = dilations
     self.add_nl_layer = add_nl_layer

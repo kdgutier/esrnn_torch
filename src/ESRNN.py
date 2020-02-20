@@ -84,6 +84,8 @@ class ESRNN(object):
     per time series of the panel
   min_inp_seq_length: int
     description
+  cell_type: str
+    Type of RNN cell, available GRU, LSTM, RNN, ResidualLSTM.
   state_hsize: int
     dimension of hidden state of the recursive neural network
   dilations: int list
@@ -108,6 +110,7 @@ class ESRNN(object):
                rnn_weight_decay=0, noise_std=0.001,
                level_variability_penalty=80,
                percentile=50, training_percentile=50,
+               cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=4, input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
@@ -121,6 +124,7 @@ class ESRNN(object):
                           level_variability_penalty=level_variability_penalty,
                           percentile=percentile,
                           training_percentile=training_percentile,
+                          cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, random_seed=random_seed,
@@ -171,6 +175,8 @@ class ESRNN(object):
         # Pinball loss on normalized values
         loss = train_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.cpu().numpy())
+        print("loss", loss)
+
         loss.backward()
 
         torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), 
@@ -291,8 +297,8 @@ class ESRNN(object):
     self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
     # Train model
-    self.train(dataloader=self.train_dataloader)
     self._fitted = True
+    self.train(dataloader=self.train_dataloader)
 
   def predict(self, X_df, decomposition=False):
     """
