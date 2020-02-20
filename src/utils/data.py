@@ -10,7 +10,7 @@ class Batch():
 
     # y: time series values
     n = len(y)
-    y = np.float32(y)        
+    y = np.float32(y)
     self.idxs = idxs
     self.y = y
     if (self.y.shape[1] > mc.max_series_length):

@@ -1,9 +1,6 @@
 # lovingly borrowed from https://github.com/zalandoresearch/pytorch-dilated-rnn
-# https://pytorch.org/docs/stable/_modules/torch/nn/modules/rnn.html#LSTM
-# https://discuss.pytorch.org/t/access-gates-of-lstm-gru/12399/3
-# https://discuss.pytorch.org/t/getting-modification-to-lstmcell-to-pass-over-to-cuda/16748
-# https://medium.com/@andre.holzner/lstm-cells-in-pytorch-fab924a78b1c
 # https://mlexplained.com/2019/02/15/building-an-lstm-from-scratch-in-pytorch-lstms-in-depth-part-1/
+# https://github.com/pytorch/pytorch/blob/master/benchmarks/fastrnns/custom_lstms.py
 
 import torch
 import torch.nn as nn
@@ -11,68 +8,57 @@ import torch.autograd as autograd
 
 use_cuda = torch.cuda.is_available()
 
-import warnings
-from torch.autograd import NestedIOFunction
-import torch.backends.cudnn as cudnn
-import torch.nn.functional as F
-#from .thnn import rnnFusedPointwise as fusedBackend
-
-try:
-    import torch.backends.cudnn.rnn
-except ImportError:
-    pass
+import torch.jit as jit
 
 
-class ResidualLSTM(nn.Module):
-  def __init__(self, input_size, hidden_size, dropout=0.):
-    super(ResidualLSTM, self).__init__()
-    self.input_size = input_size
-    self.hidden_size = hidden_size
-    self.w_ih = nn.Parameter(torch.Tensor(hidden_size * 4, input_size))
-    self.w_hh = nn.Parameter(torch.Tensor(hidden_size * 4, hidden_size))
-    self.b_ih = nn.Parameter(torch.Tensor(hidden_size * 4))
-    self.b_hh = nn.Parameter(torch.Tensor(hidden_size * 4))
-  
-  def init_weights(self):
-    for p in self.parameters():
-      if p.data.ndimension() >= 2:
-        nn.init.xavier_uniform_(p.data)
-      else:
-        nn.init.zeros_(p.data)
+class LSTMCell(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, dropout=0.):
+        super(LSTMCell, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.weight_ih = nn.Parameter(torch.randn(4 * hidden_size, input_size))
+        self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
+        self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
+        #self.dropout_layer = nn.Dropout(dropout)
+        self.dropout = dropout
 
-  def ResidualLSTMCell(self, input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
-    hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0) #compatibility hack
-    gates = F.linear(input, w_ih, b_ih) + F.linear(hx, w_hh, b_hh)
+    @jit.script_method
+    def forward(self, input, hidden):
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
+        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
 
-    ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
-    ingate     = torch.sigmoid(ingate)
-    forgetgate = torch.sigmoid(forgetgate)
-    cellgate   = torch.tanh(cellgate)
-    outgate    = torch.sigmoid(outgate)
-    cy = (forgetgate * cx) + (ingate * cellgate)
-    hy = outgate * torch.tanh(cy)
-    return hy, cy
-  
-  def forward(self, x, hidden=None):
-    """
-    Like LSTM inputs is of shape (seq_len, batch_size, input_size)
-    Like LSTM inputs (num_layers \* num_directions, batch, hidden_size)
-    num_layers is for compatibility hack
-    """
-    seq_size, batch_size, input_size = x.size()
-    output = []
-    if hidden is None:
-      hx, cx = (torch.zeros(batch_size, self.hidden_size).to(x.device), 
-                torch.zeros(batch_size, self.hidden_size).to(x.device))
-      hidden = (hx.unsqueeze(0), cx.unsqueeze(0)) # compatibility hack
-    
-    for t in range(seq_size):
-      x_t = x[t, :, :]
-      hidden = self.ResidualLSTMCell(x_t, hidden, w_ih=self.w_ih, w_hh=self.w_hh, 
-                                     b_ih=self.b_ih, b_hh=self.b_hh)
-      output.append(hidden[0])
-    output = torch.cat(output).view(seq_size, batch_size, self.hidden_size)
-    return output, hidden
+        ingate = torch.sigmoid(ingate)
+        forgetgate = torch.sigmoid(forgetgate)
+        cellgate = torch.tanh(cellgate)
+        outgate = torch.sigmoid(outgate)
+
+        cy = (forgetgate * cx) + (ingate * cellgate)
+        hy = outgate * torch.tanh(cy)
+
+        return hy, (hy, cy)
+
+class ResLSTM(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, dropout=0.):
+        super(ResLSTM, self).__init__()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.cell = LSTMCell(input_size, hidden_size, dropout=0.)
+
+    @jit.script_method
+    def forward(self, input, hidden):
+        # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
+        inputs = input.unbind(0)
+        outputs = torch.jit.annotate(List[Tensor], [])
+        for i in range(len(inputs)):
+            out, hidden = self.cell(inputs[i], hidden)
+            outputs += [out]
+        outputs = torch.stack(outputs)
+        print("outputs.size()", outputs.size())
+        return outputs, hidden
 
 
 
@@ -93,8 +79,8 @@ class DRNN(nn.Module):
             cell = nn.RNN
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
-        elif self.cell_type == "ResidualLSTM":
-            cell = ResidualLSTM
+        elif self.cell_type == "ResLSTM":
+            cell = ResLSTM
         else:
             raise NotImplementedError
 
@@ -145,14 +131,21 @@ class DRNN(nn.Module):
 
     def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size, hidden=None):
         if hidden is None:
-            if self.cell_type == 'LSTM' or self.cell_type == 'ResidualLSTM':
+            if self.cell_type == 'LSTM' or self.cell_type == 'ResLSTM':
                 c, m = self.init_hidden(batch_size * rate, hidden_size)
                 hidden = (c.unsqueeze(0), m.unsqueeze(0))
             else:
                 hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
 
+        print("previous dilated_inputs {} ".format(dilated_inputs.size()))
+        print(dilated_inputs)
+        print("hidden {} {}".format(hidden[0].size(), hidden[1].size()))
+        print(hidden[0])
+        print(hidden[1])
         dilated_outputs, hidden = cell(dilated_inputs, hidden) # compatibility hack
-
+        
+        print("new dilated_inputs {} ".format(dilated_inputs.size()))
+        print(dilated_inputs)
         return dilated_outputs, hidden
 
     def _unpad_outputs(self, splitted_outputs, n_steps):
@@ -195,7 +188,7 @@ class DRNN(nn.Module):
         hidden = autograd.Variable(torch.zeros(batch_size, hidden_dim))
         if use_cuda:
             hidden = hidden.cuda()
-        if self.cell_type == "LSTM" or self.cell_type == 'ResidualLSTM':
+        if self.cell_type == "LSTM" or self.cell_type == 'ResLSTM':
             memory = autograd.Variable(torch.zeros(batch_size, hidden_dim))
             if use_cuda:
                 memory = memory.cuda()
@@ -205,15 +198,32 @@ class DRNN(nn.Module):
 
 
 if __name__ == '__main__':
-    n_inp = 10
-    n_hidden = 16
-    n_layers = 3
-    batch_size = 100
-    n_windows = 5
+    n_inp = 4
+    n_hidden = 4
+    n_layers = 2
+    batch_size = 3
+    n_windows = 2
+    cell_type = 'LSTM'
 
-    model = DRNN(n_inp, n_hidden, n_layers, cell_type='ResidualLSTM', dilations=[1,2])
+    print("\n\n")
+    print("cell_type", cell_type)
+    print("n_inp", n_inp)
+    print("n_windows {}, batch_size {}, n_hidden {}".format(n_windows, batch_size, n_hidden))
+    print("\n")
+
+    model = DRNN(n_inp, n_hidden, n_layers=n_layers, cell_type=cell_type, dilations=[1,2])
 
     test_x1 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
     test_x2 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
 
     out, hidden = model(test_x1)
+
+    print("out.size()", out.size())
+    print("type(hidden)", type(hidden))
+    print("len(hidden)", len(hidden))
+    print("hidden[0].size()", hidden[0].size())
+    print("hidden[1].size()", hidden[1].size())
+    print("\n")
+
+    print("hidden[0] \n", hidden[0])
+    print("hidden[1] \n", hidden[1])
