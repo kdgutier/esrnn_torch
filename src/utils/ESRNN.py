@@ -77,7 +77,7 @@ class _RNN(nn.Module):
                    mc.state_hsize,
                    n_layers=1,
                    dilations=mc.dilations[grp_num],
-                   cell_type='LSTM')
+                   cell_type=mc.cell_type)
       layers.append(layer)
 
     self.rnn_stack = nn.Sequential(*layers)
