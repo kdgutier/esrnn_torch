@@ -1,10 +1,79 @@
 # lovingly borrowed from https://github.com/zalandoresearch/pytorch-dilated-rnn
+# https://pytorch.org/docs/stable/_modules/torch/nn/modules/rnn.html#LSTM
+# https://discuss.pytorch.org/t/access-gates-of-lstm-gru/12399/3
+# https://discuss.pytorch.org/t/getting-modification-to-lstmcell-to-pass-over-to-cuda/16748
+# https://medium.com/@andre.holzner/lstm-cells-in-pytorch-fab924a78b1c
+# https://mlexplained.com/2019/02/15/building-an-lstm-from-scratch-in-pytorch-lstms-in-depth-part-1/
 
 import torch
 import torch.nn as nn
 import torch.autograd as autograd
 
 use_cuda = torch.cuda.is_available()
+
+import warnings
+from torch.autograd import NestedIOFunction
+import torch.backends.cudnn as cudnn
+import torch.nn.functional as F
+#from .thnn import rnnFusedPointwise as fusedBackend
+
+try:
+    import torch.backends.cudnn.rnn
+except ImportError:
+    pass
+
+
+class ResidualLSTM(nn.Module):
+  def __init__(self, input_size, hidden_size, dropout=0.):
+    super(ResidualLSTM, self).__init__()
+    self.input_size = input_size
+    self.hidden_size = hidden_size
+    self.w_ih = nn.Parameter(torch.Tensor(hidden_size * 4, input_size))
+    self.w_hh = nn.Parameter(torch.Tensor(hidden_size * 4, hidden_size))
+    self.b_ih = nn.Parameter(torch.Tensor(hidden_size * 4))
+    self.b_hh = nn.Parameter(torch.Tensor(hidden_size * 4))
+  
+  def init_weights(self):
+    for p in self.parameters():
+      if p.data.ndimension() >= 2:
+        nn.init.xavier_uniform_(p.data)
+      else:
+        nn.init.zeros_(p.data)
+
+  def ResidualLSTMCell(self, input, hidden, w_ih, w_hh, b_ih=None, b_hh=None):
+    hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0) #compatibility hack
+    gates = F.linear(input, w_ih, b_ih) + F.linear(hx, w_hh, b_hh)
+
+    ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
+    ingate     = torch.sigmoid(ingate)
+    forgetgate = torch.sigmoid(forgetgate)
+    cellgate   = torch.tanh(cellgate)
+    outgate    = torch.sigmoid(outgate)
+    cy = (forgetgate * cx) + (ingate * cellgate)
+    hy = outgate * torch.tanh(cy)
+    return hy, cy
+  
+  def forward(self, x, hidden=None):
+    """
+    Like LSTM inputs is of shape (seq_len, batch_size, input_size)
+    Like LSTM inputs (num_layers \* num_directions, batch, hidden_size)
+    num_layers is for compatibility hack
+    """
+    seq_size, batch_size, input_size = x.size()
+    output = []
+    if hidden is None:
+      hx, cx = (torch.zeros(batch_size, self.hidden_size).to(x.device), 
+                torch.zeros(batch_size, self.hidden_size).to(x.device))
+      hidden = (hx.unsqueeze(0), cx.unsqueeze(0)) # compatibility hack
+    
+    for t in range(seq_size):
+      x_t = x[t, :, :]
+      hidden = self.ResidualLSTMCell(x_t, hidden, w_ih=self.w_ih, w_hh=self.w_hh, 
+                                     b_ih=self.b_ih, b_hh=self.b_hh)
+      output.append(hidden[0])
+    output = torch.cat(output).view(seq_size, batch_size, self.hidden_size)
+    return output, hidden
+
 
 
 class DRNN(nn.Module):
@@ -24,6 +93,8 @@ class DRNN(nn.Module):
             cell = nn.RNN
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
+        elif self.cell_type == "ResidualLSTM":
+            cell = ResidualLSTM
         else:
             raise NotImplementedError
 
@@ -74,13 +145,13 @@ class DRNN(nn.Module):
 
     def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size, hidden=None):
         if hidden is None:
-            if self.cell_type == 'LSTM':
+            if self.cell_type == 'LSTM' or self.cell_type == 'ResidualLSTM':
                 c, m = self.init_hidden(batch_size * rate, hidden_size)
                 hidden = (c.unsqueeze(0), m.unsqueeze(0))
             else:
                 hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
 
-        dilated_outputs, hidden = cell(dilated_inputs, hidden)
+        dilated_outputs, hidden = cell(dilated_inputs, hidden) # compatibility hack
 
         return dilated_outputs, hidden
 
@@ -124,7 +195,7 @@ class DRNN(nn.Module):
         hidden = autograd.Variable(torch.zeros(batch_size, hidden_dim))
         if use_cuda:
             hidden = hidden.cuda()
-        if self.cell_type == "LSTM":
+        if self.cell_type == "LSTM" or self.cell_type == 'ResidualLSTM':
             memory = autograd.Variable(torch.zeros(batch_size, hidden_dim))
             if use_cuda:
                 memory = memory.cuda()
@@ -137,10 +208,12 @@ if __name__ == '__main__':
     n_inp = 10
     n_hidden = 16
     n_layers = 3
+    batch_size = 100
+    n_windows = 5
 
-    model = DRNN(n_inp, n_hidden, n_layers, cell_type='LSTM')
+    model = DRNN(n_inp, n_hidden, n_layers, cell_type='ResidualLSTM', dilations=[1,2])
 
-    test_x1 = torch.autograd.Variable(torch.randn(26, 2, n_inp))
-    test_x2 = torch.autograd.Variable(torch.randn(26, 2, n_inp))
+    test_x1 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
+    test_x2 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
 
     out, hidden = model(test_x1)
