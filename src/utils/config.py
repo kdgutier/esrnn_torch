@@ -8,7 +8,7 @@ class ModelConfig(object):
                percentile, training_percentile,
                cell_type,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
-               frequency, max_periods, random_seed, device, root_dir):
+               frequency, max_series_length, random_seed, device, root_dir):
 
     # Train Parameters
     self.max_epochs = max_epochs

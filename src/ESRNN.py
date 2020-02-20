@@ -84,6 +84,9 @@ class ESRNN(object):
     per time series of the panel
   min_inp_seq_length: int
     description
+  max_periods: int
+    Parameter to chop longer series, to last max_periods,
+    max e.g. 40 years
   cell_type: str
     Type of RNN cell, available GRU, LSTM, RNN, ResidualLSTM.
   state_hsize: int
