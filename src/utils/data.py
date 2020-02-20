@@ -14,7 +14,7 @@ class Batch():
     self.idxs = idxs
     self.y = y
     if (self.y.shape[1] > mc.max_series_length):
-        self.y = y[:, -mc.max_series_length:]
+        y = y[:, -mc.max_series_length:]
     self.y = torch.tensor(y).float()
 
     # last_ds: last time for prediction purposes
