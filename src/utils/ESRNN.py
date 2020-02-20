@@ -74,10 +74,10 @@ class _RNN(nn.Module):
       else:
         input_size = mc.state_hsize
       layer = DRNN(input_size,
-                  mc.state_hsize,
-                  n_layers=1,
-                  dilations=mc.dilations[grp_num],
-                  cell_type='LSTM')
+                   mc.state_hsize,
+                   n_layers=1,
+                   dilations=mc.dilations[grp_num],
+                   cell_type='LSTM')
       layers.append(layer)
 
     self.rnn_stack = nn.Sequential(*layers)

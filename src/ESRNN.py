@@ -76,6 +76,9 @@ class ESRNN(object):
   output_size: int
     output_size or forecast horizon of the recursive neural 
     network, usually multiple of seasonality
+  random_seed: int
+    random_seed for pseudo random pytorch initializer and 
+    numpy random generator
   exogenous_size: int
     size of one hot encoded categorical variable, invariannt 
     per time series of the panel

@@ -63,7 +63,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'add_nl_layer' : [True, False],
            'seasonality' : [12],
            'output_size' : [18],
-           'random_seed': [1],
+           'random_seed': [1, 2],
            'device' : ['cuda']}
 
 YEARLY = {}
