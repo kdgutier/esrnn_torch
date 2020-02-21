@@ -10,7 +10,7 @@ import numpy as np
 
 from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
-
+from src.utils_visualization import plot_cat_distributions
 
 #############################################################################
 # HYPER PARAMETER GRIDS
@@ -186,6 +186,31 @@ def grid_main(args):
     outfile = open(output_file, "wb")
     pickle.dump(evaluation_dict, outfile)
 
+def parse_grid_search(dataset_name):
+  gs_directory = './results/grid_search/{}/'.format(dataset_name)
+  gs_file = gs_directory+'model_grid.csv'
+  gs_df = pd.read_csv(gs_directory+'model_grid.csv')
+  
+  gs_df['min_owa'] = 0
+  gs_df['min_epoch'] = 0
+  gs_df['mase'] = 0
+  gs_df['smape'] = 0
+  
+  results = []
+  files = os.listdir(gs_directory)
+  files.remove('model_grid.csv')
+  for idx, row in gs_df.iterrows():
+      file = gs_directory + 'model_' + str(row.model_id) + '.p'
+      with open(file, 'rb') as pickle_file:
+          results = pickle.load(pickle_file)
+      gs_df.loc[idx, 'min_owa'] = results['min_owa']
+      gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
+      gs_df.loc[idx, 'mase'] = results['mase']
+      gs_df.loc[idx, 'smape'] = results['smape']
+      gs_df.loc[idx, 'owa'] = results['owa']
+  
+  return gs_df
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
   parser.add_argument("--id_min", required=True, type=int)
@@ -195,3 +220,11 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   grid_main(args)
+
+  #gs_df = parse_grid_search(args.dataset)
+  #plot_cat_distributions(df=gs_df, cat='learning_rate', var='owa')
+  #plot_cat_distributions(df=ver, cat='add_nl_layer', var='owa')
+  #plot_cat_distributions(df=ver, cat='rnn_weight_decay', var='owa')
+  #plot_cat_distributions(df=ver, cat='per_series_lr_multip', var='owa')
+  #plot_cat_distributions(df=ver, cat='batch_size', var='owa')
+  #plot_cat_distributions(df=ver, cat='training_percentile', var='owa')
