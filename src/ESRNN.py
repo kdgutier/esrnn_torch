@@ -253,7 +253,7 @@ class ESRNN(object):
                                              y_naive2_panel, y_insample, 
                                              seasonality=self.mc.seasonality)
 
-    if self.min_owa < model_owa:
+    if self.min_owa > model_owa:
       self.min_owa = model_owa
       if epoch is not None:
         self.min_epoch = epoch
