@@ -107,7 +107,7 @@ class ESRNN(object):
   `Original Dynet Implementation of ESRNN
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
-  def __init__(self, max_epochs=15, batch_size=1, freq_of_test=-1,
+  def __init__(self, max_epochs=15, batch_size=1, batch_size_test=128, freq_of_test=-1,
                learning_rate=1e-3, lr_scheduler_step_size=9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
@@ -119,9 +119,9 @@ class ESRNN(object):
                frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, freq_of_test=freq_of_test,
-                          learning_rate=learning_rate, lr_scheduler_step_size=lr_scheduler_step_size,
-                          per_series_lr_multip=per_series_lr_multip,
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
+                          freq_of_test=freq_of_test, learning_rate=learning_rate,
+                          lr_scheduler_step_size=lr_scheduler_step_size, per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
                           level_variability_penalty=level_variability_penalty,
@@ -164,6 +164,7 @@ class ESRNN(object):
     eval_loss = PinballLoss(tau=eval_tau)
 
     for epoch in range(self.mc.max_epochs):
+      self.esrnn.train()
       start = time.time()
       if self.shuffle:
         dataloader.shuffle_dataset(random_seed=epoch)
@@ -178,7 +179,7 @@ class ESRNN(object):
         # Pinball loss on normalized values
         loss = train_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.cpu().numpy())
-        print("loss", loss)
+        #print("loss", loss)
 
         loss.backward()
 
@@ -316,13 +317,15 @@ class ESRNN(object):
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
     assert self._fitted, "Model not fitted yet"
+
+    self.esrnn.eval()
     
     # TODO: Filter unique_ids
     # TODO: Declare new dataloader
     
     # Create fast dataloader
-    if self.mc.n_series < 128: new_batch_size = self.mc.n_series
-    else: new_batch_size = 128
+    if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
+    else: new_batch_size = self.mc.batch_size_test
     self.train_dataloader.update_batch_size(new_batch_size)
     dataloader = self.train_dataloader
 
@@ -347,7 +350,8 @@ class ESRNN(object):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
       
-      y_hat, _, _, _ = self.esrnn.predict(batch)
+      y_hat = self.esrnn(batch)
+      y_hat = y_hat.data.cpu().numpy()
       
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
       count += output_size*batch_size

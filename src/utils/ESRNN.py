@@ -117,17 +117,25 @@ class _ESRNN(nn.Module):
 
   def forward(self, ts_object):
     # parse mc
-    batch_size = self.mc.batch_size
     input_size = self.mc.input_size
     output_size = self.mc.output_size
     exogenous_size = self.mc.exogenous_size
     noise_std = self.mc.noise_std
+    seasonality = self.mc.seasonality
+    batch_size = len(ts_object.idxs)
 
     # parse ts_object
     y = ts_object.y
-    idxs = ts_object.idxs
-    n_series, n_time = y.shape
-    n_windows = n_time-input_size-output_size+1
+    n_time = y.shape[1]
+    if self.training:
+      windows_end = n_time-input_size-output_size+1
+      windows_range = range(windows_end)
+    else:
+      windows_start = n_time-input_size-output_size+1
+      windows_end = n_time-input_size+1
+      
+      windows_range = range(windows_start, windows_end)
+    n_windows = len(windows_range)
     assert n_windows>0
 
     # Initialize windows, levels and seasonalities
@@ -136,69 +144,46 @@ class _ESRNN(nn.Module):
                                 device=self.mc.device)
     windows_y = torch.zeros((n_windows, batch_size, output_size),
                             device=self.mc.device)
-    for i in range(n_windows):
-      x_start = i
-      x_end = input_size+i
 
+    for i, window in enumerate(windows_range):
+      # Windows yhat
+      y_hat_start = window
+      y_hat_end = input_size + window
       # Deseasonalization and normalization
-      window_y_hat = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-      window_y_hat = window_y_hat / levels[:, [x_end]]
-      window_y_hat = self.gaussian_noise(torch.log(window_y_hat), std=noise_std)
+      window_y_hat = y[:, y_hat_start:y_hat_end] / seasonalities[:, y_hat_start:y_hat_end]
+      window_y_hat = window_y_hat / levels[:, [y_hat_end-1]]
+      window_y_hat = torch.log(window_y_hat)
+      if self.training:
+        window_y_hat = self.gaussian_noise(window_y_hat, std=noise_std)
 
       # Concatenate categories
       if exogenous_size>0:
         window_y_hat = torch.cat((window_y_hat, ts_object.categories), 1)
 
-      y_start = x_end
-      y_end = x_end+output_size
-
-      # Deseasonalization and normalization
-      window_y = y[:, y_start:y_end] / seasonalities[:, y_start:y_end]
-      window_y = window_y / levels[:, [x_end]]
-      window_y = torch.log(window_y)
-
+      # print('windows_y_hat.size',windows_y_hat.size())
+      # print('window_y_hat.size',window_y_hat.size())
+      # print('nwindows.size',n_windows)
+    
       windows_y_hat[i, :, :] += window_y_hat
-      windows_y[i, :, :] += window_y
 
+      # Windows y (for computing pinball loss during train)
+      if self.training:
+        y_start = y_hat_end
+        y_end = y_start+output_size
+        # Deseasonalization and normalization
+        window_y = y[:, y_start:y_end] / seasonalities[:, y_start:y_end]
+        window_y = window_y / levels[:, [y_start]]
+        window_y = torch.log(window_y)
+        windows_y[i, :, :] += window_y
+
+    # RNN Forward
     windows_y_hat = self.rnn(windows_y_hat)
-    return windows_y, windows_y_hat, levels
-
-  def predict(self, ts_object):
-    # parse mc
-    batch_size = self.mc.batch_size
-    input_size = self.mc.input_size
-    output_size = self.mc.output_size
-    exogenous_size = self.mc.exogenous_size
-    seasonality = self.mc.seasonality
-
-    # parse ts_object
-    y = ts_object.y
-    idxs = ts_object.idxs
-    n_series, n_time = y.shape
-
-    # evaluation mode
-    self.eval()
-
-    with torch.no_grad():
-      # Initialize windows, levels and seasonalities
-      levels, seasonalities = self.es(ts_object)
-
-      x_start = n_time - input_size
-      x_end = n_time
-
-      # Deseasonalization and normalization
-      windows_y_hat = y[:, x_start:x_end] / seasonalities[:, x_start:x_end]
-      windows_y_hat = windows_y_hat / levels[:, [x_end-1]]
-      windows_y_hat = torch.log(windows_y_hat)
-
-      # Concatenate categories 
-      if exogenous_size>0:
-        windows_y_hat = torch.cat((windows_y_hat, ts_object.categories), 1)
-
-      windows_y_hat = torch.unsqueeze(windows_y_hat, 0)
-
-      windows_y_hat = self.rnn(windows_y_hat)
-      y_hat = torch.squeeze(windows_y_hat, 0)
+    
+    if self.training:
+      return windows_y, windows_y_hat, levels
+    else:
+      y_hat = windows_y_hat[-1,:,:]
+      trends = torch.exp(y_hat)
 
       # Completion of seasonalities if prediction horizon is larger than seasonality
       # Naive2 like prediction, to avoid recursive forecasting
@@ -207,16 +192,6 @@ class _ESRNN(nn.Module):
         last_season = seasonalities[:, -seasonality:]
         extra_seasonality = last_season.repeat((1, repetitions))
         seasonalities = torch.cat((seasonalities, extra_seasonality), 1)
-      
-      trends = torch.exp(y_hat)
       # Deseasonalization and normalization (inverse)
-      y_hat = trends * levels[:, [n_time-1]]
-      y_hat = y_hat * seasonalities[:, n_time:(n_time+output_size)]
-      y_hat = y_hat.data.cpu().numpy()
-
-      # Decomposition
-      trends = trends.data.cpu().numpy()
-      seasonalities = seasonalities[:, n_time:(n_time+output_size)].data.cpu().numpy()
-      level = levels[:, [n_time-1]].data.cpu().numpy()
-
-    return y_hat, trends, seasonalities, level
+      y_hat = trends * levels[:, [n_time-1]] * seasonalities[:, n_time:(n_time+output_size)]
+      return y_hat
