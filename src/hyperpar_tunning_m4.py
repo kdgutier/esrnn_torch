@@ -94,7 +94,7 @@ QUARTERLY = {'model_type': ['esrnn'],
 ALL_MODEL_SPEC  = {'Hourly': HOURLY,
                    'Daily': DAILY,
                    'Weekly': WEEKLY,
-                   'MONTHLY': MONTHLY,
+                   'Monthly': MONTHLY,
                    'Yearly': YEARLY,
                    'Quarterly': QUARTERLY}
 
