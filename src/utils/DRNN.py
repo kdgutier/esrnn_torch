@@ -47,10 +47,12 @@ class ResLSTMCell(jit.ScriptModule):
         super(ResLSTMCell, self).__init__()
         self.register_buffer('input_size', torch.Tensor([input_size]))
         self.register_buffer('hidden_size', torch.Tensor([hidden_size]))
-        self.weight_ih = nn.Parameter(torch.randn(3 * hidden_size, input_size))
+        self.weight_ii = nn.Parameter(torch.randn(3 * hidden_size, input_size))
         self.weight_ic = nn.Parameter(torch.randn(3 * hidden_size, hidden_size))
-        self.bias_ih = nn.Parameter(torch.randn(3 * hidden_size))
+        self.weight_ih = nn.Parameter(torch.randn(3 * hidden_size, hidden_size))
+        self.bias_ii = nn.Parameter(torch.randn(3 * hidden_size))
         self.bias_ic = nn.Parameter(torch.randn(3 * hidden_size))
+        self.bias_ih = nn.Parameter(torch.randn(3 * hidden_size))
         self.weight_hh = nn.Parameter(torch.randn(1 * hidden_size, hidden_size))
         self.bias_hh = nn.Parameter(torch.randn(1 * hidden_size))
         self.weight_ir = nn.Parameter(torch.randn(hidden_size, input_size))
@@ -62,7 +64,8 @@ class ResLSTMCell(jit.ScriptModule):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
 
-        ifo_gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
+        ifo_gates = (torch.mm(input, self.weight_ii.t()) + self.bias_ii +
+                     torch.mm(hx, self.weight_ih.t()) + self.bias_ih +
                      torch.mm(cx, self.weight_ic.t()) + self.bias_ic)
         ingate, forgetgate, outgate = ifo_gates.chunk(3, 1)
         
@@ -83,9 +86,9 @@ class ResLSTMCell(jit.ScriptModule):
         return hy, (hy, cy)
 
 
-class ResLSTM(jit.ScriptModule):
+class ResLSTMLayer(jit.ScriptModule):
     def __init__(self, input_size, hidden_size, dropout=0.):
-        super(ResLSTM, self).__init__()
+        super(ResLSTMLayer, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         #self.cell = LSTMCell(input_size, hidden_size, dropout=0.)
@@ -123,7 +126,7 @@ class DRNN(nn.Module):
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
         elif self.cell_type == "ResLSTM":
-            cell = ResLSTM
+            cell = ResLSTMLayer
         else:
             raise NotImplementedError
 
@@ -239,7 +242,7 @@ if __name__ == '__main__':
     n_layers = 2
     batch_size = 3
     n_windows = 2
-    cell_type = 'LSTM'
+    cell_type = 'ResLSTM'
 
     print("\n\n")
     print("cell_type", cell_type)
