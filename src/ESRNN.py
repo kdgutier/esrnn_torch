@@ -282,7 +282,7 @@ class ESRNN(object):
     X, y = self.long_to_wide(X_df, y_df)
     nan_y = np.isnan(y)
     if nan_y.any():
-        print('NAS detected in time series, inputing minimal value...')
+        print('NAS detected in time series, imputing minimal value...')
         y[nan_y] = np.nanmin(y)
     assert len(X)==len(y)
     assert X.shape[1]>=3
