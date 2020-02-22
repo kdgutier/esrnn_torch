@@ -180,15 +180,8 @@ class DRNN(nn.Module):
             else:
                 hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
 
-        print("previous dilated_inputs {} ".format(dilated_inputs.size()))
-        print(dilated_inputs)
-        print("hidden {} {}".format(hidden[0].size(), hidden[1].size()))
-        print(hidden[0])
-        print(hidden[1])
         dilated_outputs, hidden = cell(dilated_inputs, hidden) # compatibility hack
         
-        print("new dilated_inputs {} ".format(dilated_inputs.size()))
-        print(dilated_inputs)
         return dilated_outputs, hidden
 
     def _unpad_outputs(self, splitted_outputs, n_steps):
