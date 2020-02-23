@@ -62,7 +62,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'state_hsize' : [40],
            'dilations' : [[[1, 3, 6, 12]], [[1,3],[6, 12]]],
            'add_nl_layer' : [False],
-           'cell_type': ['LSTM', 'ResLSTM']
+           'cell_type': ['LSTM', 'ResLSTM'],
            'seasonality' : [12],
            'output_size' : [18],
            'random_seed': [1, 2],
@@ -232,11 +232,3 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   grid_main(args)
-
-  #gs_df = parse_grid_search(args.dataset)
-  #plot_cat_distributions(df=gs_df, cat='learning_rate', var='owa')
-  #plot_cat_distributions(df=ver, cat='add_nl_layer', var='owa')
-  #plot_cat_distributions(df=ver, cat='rnn_weight_decay', var='owa')
-  #plot_cat_distributions(df=ver, cat='per_series_lr_multip', var='owa')
-  #plot_cat_distributions(df=ver, cat='batch_size', var='owa')
-  #plot_cat_distributions(df=ver, cat='training_percentile', var='owa')
