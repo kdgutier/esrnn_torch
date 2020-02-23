@@ -5,8 +5,8 @@ import itertools
 import ast
 import pickle
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
@@ -131,7 +131,7 @@ def grid_main(args):
   if not os.path.exists(grid_file):
     generate_grid(args, grid_file)
   model_specs_df = pd.read_csv(grid_file)
-  
+
   # Parse hyper parameter data frame
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
@@ -205,13 +205,21 @@ def parse_grid_search(dataset_name):
   files.remove('model_grid.csv')
   for idx, row in gs_df.iterrows():
       file = gs_directory + 'model_' + str(row.model_id) + '.p'
-      with open(file, 'rb') as pickle_file:
-          results = pickle.load(pickle_file)
-      gs_df.loc[idx, 'min_owa'] = results['min_owa']
-      gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
-      gs_df.loc[idx, 'mase'] = results['mase']
-      gs_df.loc[idx, 'smape'] = results['smape']
-      gs_df.loc[idx, 'owa'] = results['owa']
+
+      try:
+        with open(file, 'rb') as pickle_file:
+            results = pickle.load(pickle_file)
+        gs_df.loc[idx, 'min_owa'] = results['min_owa']
+        gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
+        gs_df.loc[idx, 'mase'] = results['mase']
+        gs_df.loc[idx, 'smape'] = results['smape']
+        gs_df.loc[idx, 'owa'] = results['owa']
+      except:
+        gs_df.loc[idx, 'min_owa'] = np.nan
+        gs_df.loc[idx, 'min_epoch'] = np.nan
+        gs_df.loc[idx, 'mase'] = np.nan
+        gs_df.loc[idx, 'smape'] = np.nan
+        gs_df.loc[idx, 'owa'] = np.nan
   
   return gs_df
 
