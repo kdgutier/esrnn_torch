@@ -64,7 +64,7 @@ class _ES(nn.Module):
 
     return levels, seasonalities
 
-class _FastES(nn.Module):
+class _FastES(jit.ScriptModule):
   def __init__(self, mc):
     super(_FastES, self).__init__()
     self.mc = mc
@@ -80,8 +80,9 @@ class _FastES(nn.Module):
     init_seas = torch.ones((self.n_series, self.seasonality)) * 0.5
     self.init_seas = nn.Embedding(self.n_series, self.seasonality)
     self.sms.weight.data.copy_(init_seas)
-    self.logistic = nn.Sigmoid()
+    #self.logistic = nn.Sigmoid()
 
+  @jit.script_method
   def forward(self, ts_object):
     """
     Computes levels and seasons
@@ -92,7 +93,7 @@ class _FastES(nn.Module):
     n_series, n_time = y.shape
 
     # Lookup Smoothings and Initial Seasonalities per serie
-    sms = self.logistic(self.sms(idxs))
+    sms = torch.sigmoid(self.sms(idxs))
     lev_sms, seas_sms = sms[:, 0], sms[:, 1]
     init_seas = torch.exp(self.init_seas(idxs))
 
@@ -101,9 +102,10 @@ class _FastES(nn.Module):
     #print("seas_sms.size()", seas_sms.size())
 
     # Initialize seasonalities and levels
-    seasonalities = []
-    levels = []
+    seasonalities = torch.jit.annotate(List[Tensor], [])
+    levels = torch.jit.annotate(List[Tensor], [])
     for i in range(self.seasonality):
+      seasonalities += 
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
     levels.append(y[:,0]/seasonalities[0])
@@ -167,7 +169,7 @@ class _ESRNN(nn.Module):
   def __init__(self, mc):
     super(_ESRNN, self).__init__()
     self.mc = mc
-    self.es = _FastES(mc).to(self.mc.device)
+    self.es = _ES(mc).to(self.mc.device)
     self.rnn = _RNN(mc).to(self.mc.device)
 
   def gaussian_noise(self, input_data, std=0.2):
