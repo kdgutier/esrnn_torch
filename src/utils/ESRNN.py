@@ -3,6 +3,9 @@ import torch.nn as nn
 from src.utils.DRNN import DRNN
 import numpy as np
 
+import torch.jit as jit
+
+
 class _ES(nn.Module):
   def __init__(self, mc):
     super(_ES, self).__init__()
