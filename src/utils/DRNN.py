@@ -103,7 +103,6 @@ class ResLSTMLayer(jit.ScriptModule):
             out, hidden = self.cell(inputs[i], hidden)
             outputs += [out]
         outputs = torch.stack(outputs)
-        print("outputs.size()", outputs.size())
         return outputs, hidden
 
 
