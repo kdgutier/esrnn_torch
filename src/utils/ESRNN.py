@@ -105,7 +105,7 @@ class _FastES(jit.ScriptModule):
     seasonalities = torch.jit.annotate(List[Tensor], [])
     levels = torch.jit.annotate(List[Tensor], [])
     for i in range(self.seasonality):
-      seasonalities += 
+      #seasonalities += 
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
     levels.append(y[:,0]/seasonalities[0])
