@@ -89,14 +89,15 @@ def plot_grid_cat_distributions(df, cats, var):
         cat_dict = {}
         for c in unique_cats:
             values = df[df[cat]==c][var].values
-            cat_dict[c] = values[~np.isnan(values)]
+            values = values[~np.isnan(values)]
+            if len(values)>0:
+              cat_dict[c] = values
         
-        row = int(np.round(idx/len(cats), 0))
+        row = int(np.round((idx/len(cats))+0.001, 0))
         col = idx % cols
-        
         plot_single_cat_distributions(cat_dict, axs[row, col],
                                       fig_title=cat, xlabel=var)
     
-    
-    axs[-1, -1].axis('off')
+    fig.suptitle(var, fontsize=18)
+    #axs[-1, -1].axis('off')
     plt.show()
