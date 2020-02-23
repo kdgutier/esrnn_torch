@@ -37,6 +37,7 @@ DAILY = {'model_type': ['esrnn'],
          'state_hsize' : [40],
          'dilations' : [[[1, 7, 28]], [[1,7],[28]]],
          'add_nl_layer' : [True, False],
+         'cell_type': 'LSTM',
          'seasonality' : [7],
          'output_size' : [14],
          'random_seed': [1],
@@ -53,7 +54,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'lr_scheduler_step_size' : [10],
            'per_series_lr_multip' : [0.8, 1.0],
            'gradient_clipping_threshold' : [20],
-           'rnn_weight_decay' : [0.0, 0.1],
+           'rnn_weight_decay' : [0.0, 0.05],
            'noise_std' : [1e-2],
            'level_variability_penalty' : [50, 80],
            'percentile' : [50],
@@ -62,7 +63,8 @@ MONTHLY = {'model_type': ['esrnn'],
            'cell_type': ['LSTM'],
            'state_hsize' : [40],
            'dilations' : [[[1, 3, 6, 12]], [[1,3],[6, 12]]],
-           'add_nl_layer' : [True, False],
+           'add_nl_layer' : [False],
+           'cell_type': ['LSTM', 'ResLSTM'],
            'seasonality' : [12],
            'output_size' : [18],
            'random_seed': [1, 2],
@@ -89,6 +91,7 @@ QUARTERLY = {'model_type': ['esrnn'],
              'state_hsize' : [40],
              'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
              'add_nl_layer' : [True, False],
+             'cell_type': 'LSTM',
              'seasonality' : [4],
              'output_size' : [8],
              'random_seed': [1],
@@ -165,6 +168,7 @@ def grid_main(args):
                   state_hsize=int(mc.state_hsize),
                   dilations=dilations,
                   add_nl_layer=mc.add_nl_layer,
+                  cell_type=mc.cell_type,
                   seasonality=int(mc.seasonality),
                   input_size=int(mc.seasonality),
                   output_size=int(mc.output_size),
@@ -232,11 +236,3 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   grid_main(args)
-
-  #gs_df = parse_grid_search(args.dataset)
-  #plot_cat_distributions(df=gs_df, cat='learning_rate', var='owa')
-  #plot_cat_distributions(df=ver, cat='add_nl_layer', var='owa')
-  #plot_cat_distributions(df=ver, cat='rnn_weight_decay', var='owa')
-  #plot_cat_distributions(df=ver, cat='per_series_lr_multip', var='owa')
-  #plot_cat_distributions(df=ver, cat='batch_size', var='owa')
-  #plot_cat_distributions(df=ver, cat='training_percentile', var='owa')
