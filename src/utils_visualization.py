@@ -55,3 +55,48 @@ def plot_cat_distributions(df, cat, var):
       cat_dict[c] = df[df[cat]==c][var].values
   
   plot_distributions(cat_dict, xlabel=var)
+
+def plot_single_cat_distributions(distributions_dict, ax, fig_title=None, xlabel=None):
+    n_distributions = len(distributions_dict.keys())
+
+    n_colors = len(distributions_dict.keys())
+    #colors = sns.color_palette("plasma", n_colors)
+    colors = sns.color_palette("hls", n_colors)
+
+    for idx, dist_name in enumerate(distributions_dict.keys()):
+        train_dist_plot = sns.distplot(distributions_dict[dist_name],
+                                      #bw='silverman',
+                                      #kde=False,
+                                      rug=True,
+                                      label=dist_name,
+                                      color=colors[idx],
+                                      ax=ax)
+        if xlabel is not None:
+            ax.set_xlabel(xlabel, fontsize=14)
+        ax.set_ylabel('Density', fontsize=14)
+        ax.set_title(fig_title, fontsize=15.5)
+        ax.grid(True)
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+def plot_grid_cat_distributions(df, cats, var):
+    cols = int(np.ceil(len(cats)/2))
+    fig, axs = plt.subplots(2, cols, figsize=(4*cols, 5.5))
+    plt.subplots_adjust(wspace=0.85)
+    plt.subplots_adjust(hspace=0.5)
+    
+    for idx, cat in enumerate(cats):
+        unique_cats = df[cat].unique()
+        cat_dict = {}
+        for c in unique_cats:
+            values = df[df[cat]==c][var].values
+            cat_dict[c] = values[~np.isnan(values)]
+        
+        row = int(np.round(idx/len(cats), 0))
+        col = idx % cols
+        
+        plot_single_cat_distributions(cat_dict, axs[row, col],
+                                      fig_title=cat, xlabel=var)
+    
+    
+    axs[-1, -1].axis('off')
+    plt.show()
