@@ -3,6 +3,9 @@ import torch.nn as nn
 from src.utils.DRNN import DRNN
 import numpy as np
 
+import torch.jit as jit
+
+
 class _ES(nn.Module):
   def __init__(self, mc):
     super(_ES, self).__init__()
@@ -40,10 +43,72 @@ class _ES(nn.Module):
     init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
     init_seas = torch.stack(init_seas_list)
 
+    #print("init_seas.size()", init_seas.size())
+    #print("lev_sms.size()", lev_sms.size())
+    #print("seas_sms.size()", seas_sms.size())
+
     # Initialize seasonalities and levels
     seasonalities = []
     levels =[]
     for i in range(self.seasonality):
+      seasonalities.append(init_seas[:,i])
+    seasonalities.append(init_seas[:,0])
+    levels.append(y[:,0]/seasonalities[0])
+
+    # Recursive seasonalities and levels
+    for t in range(1, n_time):
+      newlev = lev_sms * (y[:,t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
+      newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
+      levels.append(newlev)
+      seasonalities.append(newseason)
+    
+    levels = torch.stack(levels).transpose(1,0)
+    seasonalities = torch.stack(seasonalities).transpose(1,0)
+
+    return levels, seasonalities
+
+class _FastES(jit.ScriptModule):
+  def __init__(self, mc):
+    super(_FastES, self).__init__()
+    self.mc = mc
+    self.n_series = self.mc.n_series
+    self.seasonality = self.mc.seasonality
+    self.output_size = self.mc.output_size
+
+    # Level and Seasonality Smoothing parameters
+    init_sms = torch.ones((self.n_series, 2)) * 0.5
+    self.sms = nn.Embedding(self.n_series, 2) #requires_grad=True default
+    self.sms.weight.data.copy_(init_sms)
+
+    init_seas = torch.ones((self.n_series, self.seasonality)) * 0.5
+    self.init_seas = nn.Embedding(self.n_series, self.seasonality)
+    self.sms.weight.data.copy_(init_seas)
+    #self.logistic = nn.Sigmoid()
+
+  @jit.script_method
+  def forward(self, ts_object):
+    """
+    Computes levels and seasons
+    """
+    # Parse ts_object
+    y = ts_object.y
+    idxs = ts_object.idxs
+    n_series, n_time = y.shape
+
+    # Lookup Smoothings and Initial Seasonalities per serie
+    sms = torch.sigmoid(self.sms(idxs))
+    lev_sms, seas_sms = sms[:, 0], sms[:, 1]
+    init_seas = torch.exp(self.init_seas(idxs))
+
+    #print("init_seas.size()", init_seas.size())
+    #print("lev_sms.size()", lev_sms.size())
+    #print("seas_sms.size()", seas_sms.size())
+
+    # Initialize seasonalities and levels
+    seasonalities = torch.jit.annotate(List[Tensor], [])
+    levels = torch.jit.annotate(List[Tensor], [])
+    for i in range(self.seasonality):
+      #seasonalities += 
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
     levels.append(y[:,0]/seasonalities[0])

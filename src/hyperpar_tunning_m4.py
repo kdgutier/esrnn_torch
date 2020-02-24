@@ -5,8 +5,8 @@ import itertools
 import ast
 import pickle
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
@@ -23,16 +23,17 @@ DAILY = {'model_type': ['esrnn'],
          'max_epochs' : [20, 40],
          'batch_size' : [8, 32],
          'freq_of_test': [5],
-         'learning_rate' : [1e-4, 3e-4, 1e-3],
+         'learning_rate' : [1e-4, 3e-4],
          'lr_scheduler_step_size' : [10],
          'per_series_lr_multip' : [1.0, 1.5],
          'gradient_clipping_threshold' : [20],
-         'rnn_weight_decay' : [0.0, 0.5],
+         'rnn_weight_decay' : [0.0, 0.05],
          'noise_std' : [1e-2],
          'level_variability_penalty' : [80, 100],
          'percentile' : [50],
          'training_percentile' : [45, 49],
          'max_periods': [10, 20],
+         'cell_type': ['LSTM', 'ResLSTM'],
          'state_hsize' : [40],
          'dilations' : [[[1, 7, 28]], [[1,7],[28]]],
          'add_nl_layer' : [True, False],
@@ -48,19 +49,20 @@ MONTHLY = {'model_type': ['esrnn'],
            'max_epochs' : [20],
            'batch_size' : [4, 8, 32],
            'freq_of_test': [5],
-           'learning_rate' : [1e-4, 2e-4, 5e-4],
+           'learning_rate' : [1e-4, 2e-4],
            'lr_scheduler_step_size' : [10],
            'per_series_lr_multip' : [0.8, 1.0],
            'gradient_clipping_threshold' : [20],
-           'rnn_weight_decay' : [0.0, 0.1],
+           'rnn_weight_decay' : [0.0, 0.05],
            'noise_std' : [1e-2],
            'level_variability_penalty' : [50, 80],
            'percentile' : [50],
            'training_percentile' : [45, 49],
            'max_periods': [10, 20],
+           'cell_type': ['LSTM', 'ResLSTM'],
            'state_hsize' : [40],
            'dilations' : [[[1, 3, 6, 12]], [[1,3],[6, 12]]],
-           'add_nl_layer' : [True, False],
+           'add_nl_layer' : [False],
            'seasonality' : [12],
            'output_size' : [18],
            'random_seed': [1, 2],
@@ -83,9 +85,11 @@ QUARTERLY = {'model_type': ['esrnn'],
              'percentile' : [50],
              'training_percentile' : [45, 50],
              'max_periods': [10, 20],
+             'cell_type': ['LSTM'],
              'state_hsize' : [40],
              'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
              'add_nl_layer' : [True, False],
+             'cell_type': 'LSTM',
              'seasonality' : [4],
              'output_size' : [8],
              'random_seed': [1],
@@ -128,7 +132,7 @@ def grid_main(args):
   if not os.path.exists(grid_file):
     generate_grid(args, grid_file)
   model_specs_df = pd.read_csv(grid_file)
-  
+
   # Parse hyper parameter data frame
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
@@ -158,6 +162,7 @@ def grid_main(args):
                   level_variability_penalty=int(mc.level_variability_penalty),
                   percentile=int(mc.percentile),
                   training_percentile=int(mc.training_percentile),
+                  cell_type=mc.cell_type, 
                   state_hsize=int(mc.state_hsize),
                   dilations=dilations,
                   add_nl_layer=mc.add_nl_layer,
@@ -201,13 +206,21 @@ def parse_grid_search(dataset_name):
   files.remove('model_grid.csv')
   for idx, row in gs_df.iterrows():
       file = gs_directory + 'model_' + str(row.model_id) + '.p'
-      with open(file, 'rb') as pickle_file:
-          results = pickle.load(pickle_file)
-      gs_df.loc[idx, 'min_owa'] = results['min_owa']
-      gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
-      gs_df.loc[idx, 'mase'] = results['mase']
-      gs_df.loc[idx, 'smape'] = results['smape']
-      gs_df.loc[idx, 'owa'] = results['owa']
+
+      try:
+        with open(file, 'rb') as pickle_file:
+            results = pickle.load(pickle_file)
+        gs_df.loc[idx, 'min_owa'] = results['min_owa']
+        gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
+        gs_df.loc[idx, 'mase'] = results['mase']
+        gs_df.loc[idx, 'smape'] = results['smape']
+        gs_df.loc[idx, 'owa'] = results['owa']
+      except:
+        gs_df.loc[idx, 'min_owa'] = np.nan
+        gs_df.loc[idx, 'min_epoch'] = np.nan
+        gs_df.loc[idx, 'mase'] = np.nan
+        gs_df.loc[idx, 'smape'] = np.nan
+        gs_df.loc[idx, 'owa'] = np.nan
   
   return gs_df
 
@@ -220,11 +233,3 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   grid_main(args)
-
-  #gs_df = parse_grid_search(args.dataset)
-  #plot_cat_distributions(df=gs_df, cat='learning_rate', var='owa')
-  #plot_cat_distributions(df=ver, cat='add_nl_layer', var='owa')
-  #plot_cat_distributions(df=ver, cat='rnn_weight_decay', var='owa')
-  #plot_cat_distributions(df=ver, cat='per_series_lr_multip', var='owa')
-  #plot_cat_distributions(df=ver, cat='batch_size', var='owa')
-  #plot_cat_distributions(df=ver, cat='training_percentile', var='owa')
