@@ -99,7 +99,7 @@ class _ES1(_ES):
     self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
     self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
 
-    init_seas = torch.ones((self.n_series, self.seasonality)) * 0.5
+    init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
     self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
     self.logistic = nn.Sigmoid()
 
@@ -125,7 +125,7 @@ class _ES1(_ES):
     # Initialize seasonalities and levels
     seasonalities = []
     levels =[]
-    for i in range(self.seasonality):
+    for i in range(self.seasonality[0]):
       seasonalities.append(init_seas[:,i])
     seasonalities.append(init_seas[:,0])
     levels.append(y[:,0]/seasonalities[0])
@@ -151,7 +151,7 @@ class _ES1(_ES):
   
   def predict(self, trend, levels, seasonalities):
     output_size = self.mc.output_size
-    seasonality = self.mc.seasonality
+    seasonality = self.mc.seasonality[0]
     n_time = levels.shape[1]
 
     # Denormalize
@@ -216,7 +216,13 @@ class _ESRNN(nn.Module):
   def __init__(self, mc):
     super(_ESRNN, self).__init__()
     self.mc = mc
-    self.es = _ES1(mc).to(self.mc.device)
+    if len(mc.seasonality)==0:
+      self.es = _ES0(mc).to(self.mc.device)
+    elif len(mc.seasonality)==1:
+      self.es = _ES1(mc).to(self.mc.device)
+    elif len(mc.seasonality)==2:
+      self.es = _ES2(mc).to(self.mc.device)
+    
     self.rnn = _RNN(mc).to(self.mc.device)
 
   def forward(self, ts_object):

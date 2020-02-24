@@ -67,9 +67,10 @@ class ESRNN(object):
     through the Pinball Loss.
   batch_size: int
     number of training examples for the stochastic gradient steps
-  seasonality: int
-    main frequency of the time series
-    Quarterly 4, Daily 7, Monthly 12
+  seasonality: int list
+    list of seasonalities of the time series
+    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12], 
+    Quarterly [4], Yearly [].
   input_size: int
     input size of the recursive neural network, usually a 
     multiple of seasonality
@@ -115,7 +116,7 @@ class ESRNN(object):
                percentile=50, training_percentile=50,
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8,
+               add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
@@ -252,7 +253,7 @@ class ESRNN(object):
 
     model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
                                              y_naive2_panel, y_insample, 
-                                             seasonality=self.mc.seasonality)
+                                             seasonality=self.mc.seasonality[0])
 
     if self.min_owa > model_owa:
       self.min_owa = model_owa

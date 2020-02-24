@@ -42,7 +42,7 @@ class ModelConfig(object):
     self.output_size_i = self.output_size
     self.frequency = frequency
     self.min_series_length = self.input_size_i + self.output_size_i# + self.min_inp_seq_length + 2
-    self.max_series_length = (max_periods * self.seasonality) + self.min_series_length
+    self.max_series_length = (max_periods * self.input_size) + self.min_series_length
     self.root_dir = root_dir
 
     #self.numeric_threshold = float(config['train_parameters']['numeric_threshold'])
