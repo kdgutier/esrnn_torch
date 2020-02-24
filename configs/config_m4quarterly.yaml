@@ -17,7 +17,7 @@ train_parameters:
   percentile: 50
   training_percentile: 45
 data_parameters:
-  seasonality: 4
+  seasonality: [4]
   input_size: 4
   output_size: 8
   exogenous_size: 6
