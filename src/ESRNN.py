@@ -350,7 +350,7 @@ class ESRNN(object):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
       
-      y_hat = self.esrnn(batch)
+      y_hat = self.esrnn.predict(batch)
       y_hat = y_hat.data.cpu().numpy()
       
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
