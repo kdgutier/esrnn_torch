@@ -37,7 +37,8 @@ DAILY = {'model_type': ['esrnn'],
          'state_hsize' : [40],
          'dilations' : [[[1, 7, 28]], [[1,7],[28]]],
          'add_nl_layer' : [True, False],
-         'seasonality' : [7],
+         'seasonality' : [[7]],
+         'input_size' : [7],
          'output_size' : [14],
          'random_seed': [1],
          'device' : ['cuda']}
@@ -63,12 +64,36 @@ MONTHLY = {'model_type': ['esrnn'],
            'state_hsize' : [40],
            'dilations' : [[[1, 3, 6, 12]], [[1,3],[6, 12]]],
            'add_nl_layer' : [False],
-           'seasonality' : [12],
+           'seasonality' : [[12]],
+           'input_size' : [12],
            'output_size' : [18],
            'random_seed': [1, 2],
            'device' : ['cuda']}
 
-YEARLY = {}
+YEARLY = {'model_type': ['esrnn'],
+          'dataset': ['Daily'],
+          'max_epochs' : [10, 20],
+          'batch_size' : [8, 32],
+          'freq_of_test': [5],
+          'learning_rate' : [1e-4, 3e-4],
+          'lr_scheduler_step_size' : [10],
+          'per_series_lr_multip' : [1.0, 1.5],
+          'gradient_clipping_threshold' : [20],
+          'rnn_weight_decay' : [0.0, 0.05],
+          'noise_std' : [1e-2],
+          'level_variability_penalty' : [80, 100],
+          'percentile' : [50],
+          'training_percentile' : [49, 50],
+          'max_periods': [10, 20],
+          'cell_type': ['LSTM', 'ResLSTM'],
+          'state_hsize' : [30, 40],
+          'dilations' : [[[1, 6]], [[1], [6]]],
+          'add_nl_layer' : [False],
+          'seasonality' : [],
+          'input_size' : [4],
+          'output_size' : [6],
+          'random_seed': [1],
+          'device' : ['cuda']}
 
 QUARTERLY = {'model_type': ['esrnn'],
              'dataset': ['Quarterly'],
@@ -90,7 +115,8 @@ QUARTERLY = {'model_type': ['esrnn'],
              'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
              'add_nl_layer' : [True, False],
              'cell_type': 'LSTM',
-             'seasonality' : [4],
+             'seasonality' : [[4]],
+             'input_size' : [4],
              'output_size' : [8],
              'random_seed': [1],
              'device' : ['cuda']} #cuda:int
@@ -138,6 +164,7 @@ def grid_main(args):
     mc = model_specs_df.loc[i, :]
     
     dilations = ast.literal_eval(mc.dilations)
+    seasonality = ast.literal_eval(mc.seasonality)
     device = mc.device
 
     print(47*'=' + '\n')
@@ -166,8 +193,8 @@ def grid_main(args):
                   state_hsize=int(mc.state_hsize),
                   dilations=dilations,
                   add_nl_layer=mc.add_nl_layer,
-                  seasonality=int(mc.seasonality),
-                  input_size=int(mc.seasonality),
+                  seasonality=seasonality,
+                  input_size=int(mc.input_size),
                   output_size=int(mc.output_size),
                   freq_of_test=int(mc.freq_of_test),
                   random_seed=int(mc.random_seed),

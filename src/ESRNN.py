@@ -67,9 +67,10 @@ class ESRNN(object):
     through the Pinball Loss.
   batch_size: int
     number of training examples for the stochastic gradient steps
-  seasonality: int
-    main frequency of the time series
-    Quarterly 4, Daily 7, Monthly 12
+  seasonality: int list
+    list of seasonalities of the time series
+    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12], 
+    Quarterly [4], Yearly [].
   input_size: int
     input size of the recursive neural network, usually a 
     multiple of seasonality
@@ -115,7 +116,7 @@ class ESRNN(object):
                percentile=50, training_percentile=50,
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8,
+               add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
@@ -251,8 +252,8 @@ class ESRNN(object):
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
     model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
-                                             y_naive2_panel, y_insample, 
-                                             seasonality=self.mc.seasonality)
+                                             y_naive2_panel, y_insample,
+                                             seasonality=self.mc.naive_seasonality)
 
     if self.min_owa > model_owa:
       self.min_owa = model_owa
@@ -350,7 +351,7 @@ class ESRNN(object):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
       
-      y_hat = self.esrnn(batch)
+      y_hat = self.esrnn.predict(batch)
       y_hat = y_hat.data.cpu().numpy()
       
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
