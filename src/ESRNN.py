@@ -252,8 +252,8 @@ class ESRNN(object):
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
     model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
-                                             y_naive2_panel, y_insample, 
-                                             seasonality=self.mc.seasonality[0])
+                                             y_naive2_panel, y_insample,
+                                             seasonality=self.mc.naive_seasonality)
 
     if self.min_owa > model_owa:
       self.min_owa = model_owa

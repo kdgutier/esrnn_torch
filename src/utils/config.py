@@ -36,6 +36,7 @@ class ModelConfig(object):
 
     # Data Parameters
     self.seasonality = seasonality
+    self.naive_seasonality = seasonality[0]
     self.input_size = input_size
     self.input_size_i = self.input_size
     self.output_size = output_size
