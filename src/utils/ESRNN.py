@@ -167,16 +167,6 @@ class _ES1(_ES):
     # Deseasonalization and normalization (inverse)
     y_hat = trend * levels[:,[n_time-1]] * seasonalities[:, n_time:(n_time+output_size)]
 
-<<<<<<< HEAD
-    # Initialize seasonalities and levels
-    seasonalities = torch.jit.annotate(List[Tensor], [])
-    levels = torch.jit.annotate(List[Tensor], [])
-    for i in range(self.seasonality):
-      #seasonalities += 
-      seasonalities.append(init_seas[:,i])
-    seasonalities.append(init_seas[:,0])
-    levels.append(y[:,0]/seasonalities[0])
-=======
     return y_hat
 
 class _ES0(_ES):
@@ -187,7 +177,6 @@ class _ES0(_ES):
     init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
     self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
     self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
->>>>>>> 35a3c1f459d4208bb48992d4b7b7b9c34ac85fe4
 
     init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
     self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
@@ -263,32 +252,8 @@ class _ESRNN(nn.Module):
     # ES Forward
     windows_y_hat, windows_y, levels, seasonalities = self.es(ts_object)
 
-<<<<<<< HEAD
-    # Initialize windows, levels and seasonalities
-    levels, seasonalities = self.es(ts_object)
-    windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size),
-                                device=self.mc.device)
-    windows_y = torch.zeros((n_windows, batch_size, output_size),
-                            device=self.mc.device)
-
-    for i, window in enumerate(windows_range):
-      # Windows yhat
-      y_hat_start = window
-      y_hat_end = input_size + window
-      # Deseasonalization and normalization
-      window_y_hat = y[:, y_hat_start:y_hat_end] / seasonalities[:, y_hat_start:y_hat_end]
-      window_y_hat = window_y_hat / levels[:, [y_hat_end-1]]
-      window_y_hat = torch.log(window_y_hat)
-      if self.training:
-        window_y_hat = self.gaussian_noise(window_y_hat, std=noise_std)
-
-      # Concatenate categories
-      if exogenous_size>0:
-        window_y_hat = torch.cat((window_y_hat, ts_object.categories), 1)
-=======
     # RNN Forward
     windows_y_hat = self.rnn(windows_y_hat)
->>>>>>> 35a3c1f459d4208bb48992d4b7b7b9c34ac85fe4
     
     return windows_y, windows_y_hat, levels
   
