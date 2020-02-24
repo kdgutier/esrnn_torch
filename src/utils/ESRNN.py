@@ -40,10 +40,6 @@ class _ES(nn.Module):
     init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
     init_seas = torch.stack(init_seas_list)
 
-    #print("init_seas.size()", init_seas.size())
-    #print("lev_sms.size()", lev_sms.size())
-    #print("seas_sms.size()", seas_sms.size())
-
     # Initialize seasonalities and levels
     seasonalities = []
     levels =[]
@@ -95,10 +91,6 @@ class _FastES(nn.Module):
     sms = self.logistic(self.sms(idxs))
     lev_sms, seas_sms = sms[:, 0], sms[:, 1]
     init_seas = torch.exp(self.init_seas(idxs))
-
-    #print("init_seas.size()", init_seas.size())
-    #print("lev_sms.size()", lev_sms.size())
-    #print("seas_sms.size()", seas_sms.size())
 
     # Initialize seasonalities and levels
     seasonalities = []
@@ -219,10 +211,6 @@ class _ESRNN(nn.Module):
       # Concatenate categories
       if exogenous_size>0:
         window_y_hat = torch.cat((window_y_hat, ts_object.categories), 1)
-
-      # print('windows_y_hat.size',windows_y_hat.size())
-      # print('window_y_hat.size',window_y_hat.size())
-      # print('nwindows.size',n_windows)
     
       windows_y_hat[i, :, :] += window_y_hat
 
