@@ -64,9 +64,10 @@ class _ES(nn.Module):
       y_hat_end = input_size + window
       
       # Y_hat deseasonalization and normalization
-      window_y_hat = self.normalize(y=y[:, y_hat_start:y_hat_end], 
-                                    seasonalities=seasonalities[:, y_hat_start:y_hat_end], 
-                                    level=levels[:, [y_hat_end-1]])
+      window_y_hat = self.normalize(y=y[:, y_hat_start:y_hat_end],
+                                    level=levels[:, [y_hat_end-1]],
+                                    seasonalities=seasonalities,
+                                    start=y_hat_start, end=y_hat_end)
 
       if self.training:
         window_y_hat = self.gaussian_noise(window_y_hat, std=noise_std)
@@ -82,9 +83,10 @@ class _ES(nn.Module):
         y_start = y_hat_end
         y_end = y_start+output_size
         # Y deseasonalization and normalization
-        window_y = self.normalize(y=y[:, y_start:y_end], 
-                                  seasonalities=seasonalities[:, y_start:y_end], 
-                                  level=levels[:, [y_start]])
+        window_y = self.normalize(y=y[:, y_start:y_end],
+                                  level=levels[:, [y_start]],
+                                  seasonalities=seasonalities,
+                                  start=y_start, end=y_end)
         windows_y[i, :, :] += window_y
 
     return windows_y_hat, windows_y, levels, seasonalities
@@ -124,7 +126,7 @@ class _ES0(_ES):
 
     return levels, seasonalities
   
-  def normalize(self, y, level, seasonalities):
+  def normalize(self, y, level, seasonalities, start, end):
     # Normalization
     y = y / level
     y = torch.log(y)
@@ -191,12 +193,12 @@ class _ES1(_ES):
 
     return levels, seasonalities
 
-  def normalize(self, y, level, seasonalities):
+  def normalize(self, y, level, seasonalities, start, end):
     # Deseasonalization and normalization
-    y = y / seasonalities
-    y = y / level
-    y = torch.log(y)
-    return y
+    y_n = y / seasonalities[:, start:end]
+    y_n = y_n / level
+    y_n = torch.log(y_n)
+    return y_n
   
   def predict(self, trend, levels, seasonalities):
     output_size = self.mc.output_size
