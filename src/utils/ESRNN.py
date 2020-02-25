@@ -221,6 +221,31 @@ class _ES1(_ES):
     return y_hat
 
 
+class _ES2(_ES):
+  def __init__(self, mc):
+    super(_ES2, self).__init__(mc)
+    # Level and Seasonality Smoothing parameters
+    init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
+    init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
+    self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
+    self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
+
+    init_seas1 = torch.ones((self.n_series, self.seasonality[0])) * 0.5
+    self.init_seas1 = nn.Parameter(data=init_seas1, requires_grad=True)
+    init_seas2 = torch.ones((self.n_series, self.seasonality[1])) * 0.5
+    self.init_seas1 = nn.Parameter(data=init_seas2, requires_grad=True)
+    self.logistic = nn.Sigmoid()
+  
+  def compute_levels_seasons(self, ts_object):
+    pass
+  
+  def normalize(self, y, level, seasonalities, start, end):
+    pass
+  
+  def predict(self, trend, levels, seasonalities):
+    pass
+
+
 class _RNN(nn.Module):
   def __init__(self, mc):
     super(_RNN, self).__init__()
