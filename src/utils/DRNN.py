@@ -1,6 +1,7 @@
 # lovingly borrowed from https://github.com/zalandoresearch/pytorch-dilated-rnn
 # https://mlexplained.com/2019/02/15/building-an-lstm-from-scratch-in-pytorch-lstms-in-depth-part-1/
 # https://github.com/pytorch/pytorch/blob/master/benchmarks/fastrnns/custom_lstms.py
+# https://github.com/Zhenye-Na/DA-RNN
 
 import torch
 import torch.nn as nn
