@@ -63,7 +63,7 @@ class _ES(nn.Module):
       y_hat_start = window
       y_hat_end = input_size + window
       
-      # Deseasonalization and normalization
+      # Y_hat deseasonalization and normalization
       window_y_hat = self.normalize(y=y[:, y_hat_start:y_hat_end], 
                                     seasonalities=seasonalities[:, y_hat_start:y_hat_end], 
                                     level=levels[:, [y_hat_end-1]])
@@ -81,13 +81,62 @@ class _ES(nn.Module):
       if self.training:
         y_start = y_hat_end
         y_end = y_start+output_size
-        # Deseasonalization and normalization
+        # Y deseasonalization and normalization
         window_y = self.normalize(y=y[:, y_start:y_end], 
                                   seasonalities=seasonalities[:, y_start:y_end], 
                                   level=levels[:, [y_start]])
         windows_y[i, :, :] += window_y
 
     return windows_y_hat, windows_y, levels, seasonalities
+
+class _ES0(_ES):
+  def __init__(self, mc):
+    super(_ES0, self).__init__(mc)
+    # Level Smoothing parameters
+    init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
+    self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
+    self.logistic = nn.Sigmoid()
+  
+  def compute_levels_seasons(self, ts_object):
+    """
+    Computes levels and seasons
+    """
+    # Parse ts_object
+    y = ts_object.y
+    idxs = ts_object.idxs
+    n_series, n_time = y.shape
+
+    # Lookup Smoothing parameters per serie
+    init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
+    lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
+
+    # Initialize levels
+    levels =[]
+    levels.append(y[:,0])
+
+    # Recursive seasonalities and levels
+    for t in range(1, n_time):
+      newlev = lev_sms * (y[:,t]) + (1-lev_sms) * levels[t-1]
+      levels.append(newlev)
+    
+    levels = torch.stack(levels).transpose(1,0)
+    seasonalities = None
+
+    return levels, seasonalities
+  
+  def normalize(self, y, level, seasonalities):
+    # Normalization
+    y = y / level
+    y = torch.log(y)
+    return y
+  
+  def predict(self, trend, levels, seasonalities):
+    n_time = levels.shape[1]
+
+    # Denormalization
+    trend = torch.exp(trend)
+    y_hat = trend * levels[:,[n_time-1]]
+    return y_hat
 
 
 class _ES1(_ES):
@@ -168,29 +217,6 @@ class _ES1(_ES):
     y_hat = trend * levels[:,[n_time-1]] * seasonalities[:, n_time:(n_time+output_size)]
 
     return y_hat
-
-class _ES0(_ES):
-  def __init__(self, mc):
-    super(_ES1, self).__init__(mc)
-    # Level and Seasonality Smoothing parameters
-    init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
-    init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
-    self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
-    self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
-
-    init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
-    self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
-    self.logistic = nn.Sigmoid()
-  
-  def compute_levels_seasons(self, ts_object):
-    pass
-  
-  def normalize(self, y, level, seasonalities):
-    pass
-  
-  def predict(self, trend, levels, seasonalities):
-    pass
-
 
 
 class _RNN(nn.Module):

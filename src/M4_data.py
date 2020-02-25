@@ -80,10 +80,12 @@ def naive2_predictions(dataset_name, num_obs):
                            'output_size': 14},
                  'Weekly': {'seasonality': 52, 'input_size': 52,
                             'output_size': 2},
+                 'Monthly': {'seasonality': 12, 'input_size': 12,
+                             'output_size':24},
                  'Quarterly': {'seasonality': 4, 'input_size': 4,
                                'output_size': 8},
-                 'Monthly': {'seasonality': 12, 'input_size': 12,
-                             'output_size':24}}
+                 'Yearly': {'seasonality': 1, 'input_size': 4,
+                            'output_size': 6}}
     
     seasonality = seas_dict[dataset_name]['seasonality']
     input_size = seas_dict[dataset_name]['input_size']
