@@ -167,7 +167,7 @@ YEARLY = {'model_type': ['esrnn'],
           'state_hsize' : [30, 40],
           'dilations' : [[[1, 6]], [[1], [6]]],
           'add_nl_layer' : [False],
-          'seasonality' : [],
+          'seasonality' : [[]],
           'input_size' : [4],
           'output_size' : [6],
           'random_seed': [1],
@@ -193,6 +193,7 @@ def generate_grid(args, grid_file):
 
   model_specs_df['model_id'] = model_specs_df.index
   np.random.seed(1)
+  print('model_specs_df', model_specs_df)
   model_specs_df = model_specs_df.sample(100)
   model_specs_df.to_csv(grid_file, encoding='utf-8', index=None)
 
