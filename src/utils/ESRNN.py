@@ -290,7 +290,7 @@ class _ES2(_ES):
     seasonalities1 = torch.stack(seasonalities1).transpose(1,0)
     seasonalities2 = torch.stack(seasonalities2).transpose(1,0)
 
-    seasonalities = (seasonalities1, seasonalities2)
+    seasonalities = [seasonalities1, seasonalities2]
     return levels, seasonalities
   
   def normalize(self, y, level, seasonalities, start, end):
