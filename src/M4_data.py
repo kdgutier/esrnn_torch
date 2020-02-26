@@ -76,7 +76,9 @@ def naive2_predictions(dataset_name, num_obs):
     # Read train and test data
     _, y_train_df, _, y_test_df = M4_parser(dataset_name, num_obs)
     
-    seas_dict = {'Daily': {'seasonality': 7, 'input_size': 7,
+    seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
+                           'output_size': 48},
+                 'Daily': {'seasonality': 7, 'input_size': 7,
                            'output_size': 14},
                  'Weekly': {'seasonality': 52, 'input_size': 52,
                             'output_size': 2},

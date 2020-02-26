@@ -1,6 +1,6 @@
 class ModelConfig(object):
   def __init__(self, max_epochs, batch_size, batch_size_test, freq_of_test,
-               learning_rate, lr_scheduler_step_size,
+               learning_rate, lr_scheduler_step_size, lr_decay,
                per_series_lr_multip, gradient_eps, gradient_clipping_threshold,
                rnn_weight_decay,
                noise_std,
@@ -17,6 +17,7 @@ class ModelConfig(object):
     self.freq_of_test = freq_of_test
     self.learning_rate = learning_rate
     self.lr_scheduler_step_size = lr_scheduler_step_size
+    self.lr_decay = lr_decay
     self.per_series_lr_multip = per_series_lr_multip
     self.gradient_eps = gradient_eps
     self.gradient_clipping_threshold = gradient_clipping_threshold
