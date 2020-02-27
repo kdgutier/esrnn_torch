@@ -153,12 +153,6 @@ class _ES1(_ES):
     init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
     self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
 
-    print("self.init_seas", self.init_seas)
-    print("self.lev_sms", self.lev_sms)
-    print("self.seas_sms", self.seas_sms)
-
-    self.logistic = nn.Sigmoid()
-
   def compute_levels_seasons(self, ts_object):
     """
     Computes levels and seasons
@@ -169,23 +163,15 @@ class _ES1(_ES):
     n_series, n_time = y.shape
 
     # Lookup Smoothing parameters per serie
-    init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
-    init_seas_sms = [self.seas_sms[idx] for idx in idxs]
+    init_lvl_sms = [torch.sigmoid(self.lev_sms[idx]) for idx in idxs]
+    init_seas_sms = [torch.sigmoid(self.seas_sms[idx]) for idx in idxs]
 
-    lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
-    seas_sms = self.logistic(torch.stack(init_seas_sms).squeeze(1))
+    lev_sms = torch.stack(init_lvl_sms) #.squeeze(1) 
+    seas_sms = torch.stack(init_seas_sms) #.squeeze(1)
 
     # Initialize seasonalities and levels
     init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
     init_seas = torch.stack(init_seas_list)
-
-    print("lev_sms.size()", lev_sms.size())
-    print("seas_sms.size()", seas_sms.size())
-    print("init_seas.size()", init_seas.size())
-
-    print("init_seas \n", init_seas)
-    print("lev_sms \n", lev_sms)
-    print("seas_sms \n", seas_sms)
 
     seasonalities = []
     levels =[]
@@ -196,8 +182,8 @@ class _ES1(_ES):
 
     # Recursive seasonalities and levels
     for t in range(1, n_time):
-      newlev = lev_sms * (y[:,t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
-      newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
+      newlev = lev_sms[:,0] * (y[:,t] / seasonalities[t]) + (1-lev_sms[:,0]) * levels[t-1]
+      newseason = seas_sms[:,0] * (y[:,t] / newlev) + (1-seas_sms[:,0]) * seasonalities[t]
       levels.append(newlev)
       seasonalities.append(newseason)
     
@@ -238,23 +224,9 @@ class _FastES1(_ES):
   def __init__(self, mc):
     super(_FastES1, self).__init__(mc)
     # Level and Seasonality Smoothing parameters
-    #init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
-    #init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
-    #self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
-    #self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
-    init_sms = torch.ones((self.n_series, 2)) * 0.5
-    self.sms = nn.Embedding(self.n_series, 2)
-    self.sms.weight.data.copy_(init_sms)
-
-    init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
-    #self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
-    self.init_seas = nn.Embedding(self.n_series, self.seasonality[0])
-    self.init_seas.weight.data.copy_(init_seas)
-
-    print("fast self.init_seas", self.init_seas.weight.data)
-    print("fast self.sms", self.sms.weight.data)
-
-    self.logistic = nn.Sigmoid()
+    init_embeds = torch.ones((self.n_series, 2 + self.seasonality[0])) * 0.5
+    self.embeds = nn.Embedding(self.n_series, 2 + self.seasonality[0])
+    self.embeds.weight.data.copy_(init_embeds)
 
   def compute_levels_seasons(self, ts_object):
     """
@@ -265,29 +237,11 @@ class _FastES1(_ES):
     idxs = ts_object.idxs
     n_series, n_time = y.shape
 
-    # Lookup Smoothing parameters per serie
-    #init_lvl_sms = [self.lev_sms[idx] for idx in idxs]
-    #init_seas_sms = [self.seas_sms[idx] for idx in idxs]
-
-    #lev_sms = self.logistic(torch.stack(init_lvl_sms).squeeze(1))
-    #seas_sms = self.logistic(torch.stack(init_seas_sms).squeeze(1))
-
-    sms = torch.sigmoid(self.sms(idxs))
-    lev_sms = sms[:, 0]
-    seas_sms = sms[:, 1]
-
-    # Initialize seasonalities and levels
-    #init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
-    #init_seas = torch.stack(init_seas_list)
-    init_seas = torch.exp(self.init_seas(idxs))
-
-    print("fast lev_sms.size()", lev_sms.size())
-    print("fast seas_sms.size()", seas_sms.size())
-    print("fast init_seas.size()", init_seas.size())
-
-    print("fast init_seas \n", init_seas)
-    print("fast lev_sms \n", lev_sms)
-    print("fast seas_sms \n", seas_sms)
+    # Lookup parameters per serie
+    embeds = self.embeds(idxs)
+    lev_sms = torch.sigmoid(embeds[:, 0])
+    seas_sms = torch.sigmoid(embeds[:, 1])
+    init_seas = torch.exp(embeds[:, 2:])
 
     seasonalities = []
     levels =[]
@@ -497,10 +451,11 @@ class _ESRNN(nn.Module):
       self.es = _ES0(mc).to(self.mc.device)
     elif len(mc.seasonality)==1:
       #self.es = _ES1(mc).to(self.mc.device)
+      print("FastES")
       self.es = _FastES1(mc).to(self.mc.device)
     elif len(mc.seasonality)==2:
-      self.es = _ES1(mc).to(self.mc.device)
-      #self.es = _ES2(mc).to(self.mc.device)
+      #self.es = _ES1(mc).to(self.mc.device)
+      self.es = _ES2(mc).to(self.mc.device)
     
     self.rnn = _RNN(mc).to(self.mc.device)
 
