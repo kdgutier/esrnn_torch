@@ -6,7 +6,7 @@ import numpy as np
 import torch.jit as jit
 
 
-class _ES(nn.Module):
+class _ES(jit.ScriptModule):
   def __init__(self, mc):
     super(_ES, self).__init__()
     self.mc = mc
@@ -19,7 +19,8 @@ class _ES(nn.Module):
     noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
     return input_data + noise
   
-  def compute_levels_seasons(self, ts_object):
+  @jit.script_method
+  def compute_levels_seasons(self, y, idxs):
     pass
 
   def normalize(self, y, level, seasonalities):
@@ -37,9 +38,10 @@ class _ES(nn.Module):
     seasonality = self.mc.seasonality
     batch_size = len(ts_object.idxs)
 
-    # parse ts_object
+    # Parse ts_object
     y = ts_object.y
-    n_time = y.shape[1]
+    idxs = ts_object.idxs
+    n_series, n_time = y.shape
     if self.training:
       windows_end = n_time-input_size-output_size+1
       windows_range = range(windows_end)
@@ -52,7 +54,7 @@ class _ES(nn.Module):
     assert n_windows>0
 
     # Initialize windows, levels and seasonalities
-    levels, seasonalities = self.compute_levels_seasons(ts_object)
+    levels, seasonalities = self.compute_levels_seasons(y, idxs)
     windows_y_hat = torch.zeros((n_windows, batch_size, input_size+exogenous_size),
                                 device=self.mc.device)
     windows_y = torch.zeros((n_windows, batch_size, output_size),
@@ -99,7 +101,7 @@ class _ES0(_ES):
     self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
     self.logistic = nn.Sigmoid()
   
-  def compute_levels_seasons(self, ts_object):
+  def compute_levels_seasons(self, y, idxs):
     """
     Computes levels and seasons
     """
@@ -141,121 +143,42 @@ class _ES0(_ES):
     return y_hat
 
 
-class _ES1(_ES):
+class _ESM(_ES):
   def __init__(self, mc):
-    super(_ES1, self).__init__(mc)
-    # Level and Seasonality Smoothing parameters
-    init_lev_sms = torch.ones((self.n_series, 1)) * 0.5
-    init_seas_sms = torch.ones((self.n_series, 1)) * 0.5
-    self.lev_sms = nn.Parameter(data=init_lev_sms, requires_grad=True)
-    self.seas_sms = nn.Parameter(data=init_seas_sms, requires_grad=True)
-
-    init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
-    self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
-
-  def compute_levels_seasons(self, ts_object):
-    """
-    Computes levels and seasons
-    """
-    # Parse ts_object
-    y = ts_object.y
-    idxs = ts_object.idxs
-    n_series, n_time = y.shape
-
-    # Lookup Smoothing parameters per serie
-    init_lvl_sms = [torch.sigmoid(self.lev_sms[idx]) for idx in idxs]
-    init_seas_sms = [torch.sigmoid(self.seas_sms[idx]) for idx in idxs]
-
-    lev_sms = torch.stack(init_lvl_sms) #.squeeze(1) 
-    seas_sms = torch.stack(init_seas_sms) #.squeeze(1)
-
-    # Initialize seasonalities and levels
-    init_seas_list = [torch.exp(self.init_seas[idx]) for idx in idxs]
-    init_seas = torch.stack(init_seas_list)
-
-    seasonalities = []
-    levels =[]
-    for i in range(self.seasonality[0]):
-      seasonalities.append(init_seas[:,i])
-    seasonalities.append(init_seas[:,0])
-    levels.append(y[:,0]/seasonalities[0])
-
-    # Recursive seasonalities and levels
-    for t in range(1, n_time):
-      newlev = lev_sms[:,0] * (y[:,t] / seasonalities[t]) + (1-lev_sms[:,0]) * levels[t-1]
-      newseason = seas_sms[:,0] * (y[:,t] / newlev) + (1-seas_sms[:,0]) * seasonalities[t]
-      levels.append(newlev)
-      seasonalities.append(newseason)
-    
-    levels = torch.stack(levels).transpose(1,0)
-    seasonalities = torch.stack(seasonalities).transpose(1,0)
-
-    return levels, seasonalities
-
-  def normalize(self, y, level, seasonalities, start, end):
-    # Deseasonalization and normalization
-    y_n = y / seasonalities[:, start:end]
-    y_n = y_n / level
-    y_n = torch.log(y_n)
-    return y_n
-  
-  def predict(self, trend, levels, seasonalities):
-    output_size = self.mc.output_size
-    seasonality = self.mc.seasonality[0]
-    n_time = levels.shape[1]
-
-    # Denormalize
-    trend = torch.exp(trend)
-
-    # Completion of seasonalities if prediction horizon is larger than seasonality
-    # Naive2 like prediction, to avoid recursive forecasting
-    if output_size > seasonality:
-      repetitions = int(np.ceil(output_size/seasonality))-1
-      last_season = seasonalities[:, -seasonality:]
-      extra_seasonality = last_season.repeat((1, repetitions))
-      seasonalities = torch.cat((seasonalities, extra_seasonality), 1)
-    # Deseasonalization and normalization (inverse)
-    y_hat = trend * levels[:,[n_time-1]] * seasonalities[:, n_time:(n_time+output_size)]
-
-    return y_hat
-
-
-class _FastES1(_ES):
-  def __init__(self, mc):
-    super(_FastES1, self).__init__(mc)
+    super(_ESM, self).__init__(mc)
     # Level and Seasonality Smoothing parameters
     init_embeds = torch.ones((self.n_series, 2 + self.seasonality[0])) * 0.5
     self.embeds = nn.Embedding(self.n_series, 2 + self.seasonality[0])
     self.embeds.weight.data.copy_(init_embeds)
 
-  def compute_levels_seasons(self, ts_object):
+  @jit.script_method
+  def compute_levels_seasons(self, y, idxs):
     """
     Computes levels and seasons
     """
-    # Parse ts_object
-    y = ts_object.y
-    idxs = ts_object.idxs
-    n_series, n_time = y.shape
-
     # Lookup parameters per serie
     embeds = self.embeds(idxs)
     lev_sms = torch.sigmoid(embeds[:, 0])
     seas_sms = torch.sigmoid(embeds[:, 1])
-    init_seas = torch.exp(embeds[:, 2:])
+    init_seas = torch.exp(embeds[:, 2:]).unbind(1)
 
-    seasonalities = []
-    levels =[]
-    for i in range(self.seasonality[0]):
-      seasonalities.append(init_seas[:,i])
-    seasonalities.append(init_seas[:,0])
-    levels.append(y[:,0]/seasonalities[0])
+    seasonalities = torch.jit.annotate(List[Tensor], [])
+    levels = torch.jit.annotate(List[Tensor], [])
+    #seasonalities = []
+    #levels = []
+    for i in range(len(init_seas)):
+     seasonalities += [init_seas[i]]
+    seasonalities += [init_seas[0]]
+    levels += [y[:,0]/seasonalities[0]]
 
     # Recursive seasonalities and levels
+    ys = y.unbind(1)
+    n_time = len(ys)
     for t in range(1, n_time):
-      newlev = lev_sms * (y[:,t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
-      newseason = seas_sms * (y[:,t] / newlev) + (1-seas_sms) * seasonalities[t]
-      levels.append(newlev)
-      seasonalities.append(newseason)
+      newlev = lev_sms * (ys[t] / seasonalities[t]) + (1-lev_sms) * levels[t-1]
+      newseason = seas_sms * (ys[t] / newlev) + (1-seas_sms) * seasonalities[t]
+      levels += [newlev]
+      seasonalities += [newseason]
     
     levels = torch.stack(levels).transpose(1,0)
     seasonalities = torch.stack(seasonalities).transpose(1,0)
@@ -452,7 +375,7 @@ class _ESRNN(nn.Module):
     elif len(mc.seasonality)==1:
       #self.es = _ES1(mc).to(self.mc.device)
       print("FastES")
-      self.es = _FastES1(mc).to(self.mc.device)
+      self.es = _ESM(mc).to(self.mc.device)
     elif len(mc.seasonality)==2:
       #self.es = _ES1(mc).to(self.mc.device)
       self.es = _ES2(mc).to(self.mc.device)
