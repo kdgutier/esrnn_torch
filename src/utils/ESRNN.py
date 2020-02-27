@@ -224,14 +224,9 @@ class _FastES1(_ES):
   def __init__(self, mc):
     super(_FastES1, self).__init__(mc)
     # Level and Seasonality Smoothing parameters
-    init_sms = torch.ones((self.n_series, 2)) * 0.5
-    self.sms = nn.Embedding(self.n_series, 2)
-    self.sms.weight.data.copy_(init_sms)
-
-    init_seas = torch.ones((self.n_series, self.seasonality[0])) * 0.5
-    #self.init_seas = nn.Parameter(data=init_seas, requires_grad=True)
-    self.init_seas = nn.Embedding(self.n_series, self.seasonality[0])
-    self.init_seas.weight.data.copy_(init_seas)
+    init_embeds = torch.ones((self.n_series, 2 + self.seasonality[0])) * 0.5
+    self.embeds = nn.Embedding(self.n_series, 2 + self.seasonality[0])
+    self.embeds.weight.data.copy_(init_embeds)
 
   def compute_levels_seasons(self, ts_object):
     """
@@ -242,13 +237,11 @@ class _FastES1(_ES):
     idxs = ts_object.idxs
     n_series, n_time = y.shape
 
-    # Lookup Smoothing parameters per serie
-    sms = torch.sigmoid(self.sms(idxs))
-    lev_sms = sms[:, 0]
-    seas_sms = sms[:, 1]
-
-    # Initialize seasonalities and levels
-    init_seas = torch.exp(self.init_seas(idxs))
+    # Lookup parameters per serie
+    embeds = self.embeds(idxs)
+    lev_sms = torch.sigmoid(embeds[:, 0])
+    seas_sms = torch.sigmoid(embeds[:, 1])
+    init_seas = torch.exp(embeds[:, 2:])
 
     seasonalities = []
     levels =[]
@@ -458,6 +451,7 @@ class _ESRNN(nn.Module):
       self.es = _ES0(mc).to(self.mc.device)
     elif len(mc.seasonality)==1:
       #self.es = _ES1(mc).to(self.mc.device)
+      print("FastES")
       self.es = _FastES1(mc).to(self.mc.device)
     elif len(mc.seasonality)==2:
       #self.es = _ES1(mc).to(self.mc.device)
