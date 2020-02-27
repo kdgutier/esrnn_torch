@@ -10,6 +10,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 
 from pathlib import Path
+from copy import deepcopy
+
 from src.utils.config import ModelConfig
 from src.utils.ESRNN import _ESRNN
 from src.utils.losses import SmylLoss, PinballLoss
@@ -113,7 +115,7 @@ class ESRNN(object):
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
                level_variability_penalty=80,
-               percentile=50, training_percentile=50,
+               percentile=50, training_percentile=50, ensemble=False,
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
@@ -128,7 +130,7 @@ class ESRNN(object):
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
                           level_variability_penalty=level_variability_penalty,
                           percentile=percentile,
-                          training_percentile=training_percentile,
+                          training_percentile=training_percentile, ensemble=ensemble,
                           cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
@@ -137,6 +139,9 @@ class ESRNN(object):
     self._fitted = False
 
   def train(self, dataloader):
+    if self.mc.ensemble:
+      self.esrnn_ensemble = [deepcopy(self.esrnn)] * 5
+
     print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
@@ -196,6 +201,13 @@ class ESRNN(object):
       es_scheduler.step()
       rnn_scheduler.step()
 
+      if self.mc.ensemble:
+        copy_esrnn = deepcopy(self.esrnn)
+        copy_esrnn.eval()
+        self.esrnn_ensemble.pop(0)
+        self.esrnn_ensemble.append(copy_esrnn)
+
+
       # Evaluation
       self.train_loss = np.mean(losses)
       print("========= Epoch {} finished =========".format(epoch))
@@ -206,7 +218,7 @@ class ESRNN(object):
         #print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
         if self.y_test_df is not None:
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
-                                         self.y_test_df, epoch=epoch)
+                                        self.y_test_df, epoch=epoch)
           self.esrnn.train()
 
     print('Train finished! \n')
@@ -352,7 +364,14 @@ class ESRNN(object):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
       
-      y_hat = self.esrnn.predict(batch)
+      if self.mc.ensemble:
+        y_hat = torch.zeros((5,batch_size,output_size))
+        for i in range(5):
+          y_hat[i,:,:] = self.esrnn_ensemble[i].predict(batch)
+        y_hat = torch.mean(y_hat,0)
+      else:
+        y_hat = self.esrnn.predict(batch)
+      
       y_hat = y_hat.data.cpu().numpy()
       
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
@@ -407,9 +426,7 @@ class ESRNN(object):
 
     data_dir = self.mc.dataset_name
     model_parent_dir = os.path.join(root_dir, data_dir)
-    model_path = ['num_series_{}'.format(self.mc.num_series),
-                    'lr_{}'.format(self.mc.learning_rate),
-                    str(self.mc.copy)]
+    model_path = ['esrnn_{}'.format(str(self.mc.copy))]
     model_dir = os.path.join(model_parent_dir, '_'.join(model_path))
     return model_dir
 
