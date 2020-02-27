@@ -5,7 +5,7 @@ class ModelConfig(object):
                rnn_weight_decay,
                noise_std,
                level_variability_penalty,
-               percentile, training_percentile,
+               percentile, training_percentile, ensemble,
                cell_type,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                frequency, max_periods, random_seed, device, root_dir):
@@ -26,6 +26,7 @@ class ModelConfig(object):
     self.level_variability_penalty = level_variability_penalty
     self.percentile = percentile
     self.training_percentile = training_percentile
+    self.ensemble = ensemble
     self.device = device
 
     # Model Parameters
