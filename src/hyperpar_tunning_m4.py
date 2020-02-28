@@ -194,7 +194,7 @@ def generate_grid(args, grid_file):
   model_specs_df['model_id'] = model_specs_df.index
   np.random.seed(1)
   print('model_specs_df', model_specs_df)
-  model_specs_df = model_specs_df.sample(100)
+  model_specs_df = model_specs_df.sample(200)
   model_specs_df.to_csv(grid_file, encoding='utf-8', index=None)
 
 def grid_main(args):
