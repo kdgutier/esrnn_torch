@@ -104,6 +104,7 @@ class _ESM(_ES):
     self.embeds = nn.Embedding(self.n_series, embeds_size)
     self.embeds.weight.data.copy_(init_embeds)
     self.register_buffer('seasonality', torch.LongTensor(self.mc.seasonality))
+    self.seas_prod = torch.ones(len(y[:,0]))
 
   @jit.script_method
   def compute_levels_seasons(self, y, idxs):
@@ -116,7 +117,6 @@ class _ESM(_ES):
     lev_sms = torch.sigmoid(embeds[:, 0])
 
     # Initialize seasonalities (cpp compiler)
-    seas_prod = torch.ones(len(y[:,0])).to(self.mc.device)
     seasonalities1 = torch.jit.annotate(List[Tensor], [])
     seasonalities2 = torch.jit.annotate(List[Tensor], [])
     seas_sms1 = torch.ones(1)
@@ -130,7 +130,7 @@ class _ESM(_ES):
       for i in range(len(init_seas1)):
         seasonalities1 += [init_seas1[i]]
       seasonalities1 += [init_seas1[0]]
-      seas_prod = seas_prod * init_seas1[0]
+      self.seas_prod = self.seas_prod * init_seas1[0]
 
     if len(self.seasonality)==2:
       seas_sms2 = torch.sigmoid(embeds[:, 2+self.seasonality[0]])
@@ -140,11 +140,11 @@ class _ESM(_ES):
       for i in range(len(init_seas2)):
         seasonalities2 += [init_seas2[i]]
       seasonalities2 += [init_seas2[0]]
-      seas_prod = seas_prod * init_seas2[0]
+      self.seas_prod = self.seas_prod * init_seas2[0]
 
     # Initialize levels
     levels = torch.jit.annotate(List[Tensor], [])
-    levels += [y[:,0]/seas_prod]
+    levels += [y[:,0]/self.seas_prod]
 
     # Recursive seasonalities and levels
     ys = y.unbind(1)
