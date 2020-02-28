@@ -116,7 +116,7 @@ class _ESM(_ES):
     lev_sms = torch.sigmoid(embeds[:, 0])
 
     # Initialize seasonalities (cpp compiler)
-    seas_prod = torch.ones(len(y[:,0]))
+    seas_prod = torch.ones(len(y[:,0])).to(self.mc.device)
     seasonalities1 = torch.jit.annotate(List[Tensor], [])
     seasonalities2 = torch.jit.annotate(List[Tensor], [])
     seas_sms1 = torch.ones(1)
