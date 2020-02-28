@@ -151,7 +151,7 @@ class _ESM(_ES):
     n_time = len(ys)
     for t in range(1, n_time):
       
-      seas_prod_t = torch.ones(len(y[:,t]))
+      seas_prod_t = torch.ones(len(y[:,t])).to(y.device)
       if len(self.seasonality)>0:
         seas_prod_t = seas_prod_t * seasonalities1[t]
       if len(self.seasonality)==2:
