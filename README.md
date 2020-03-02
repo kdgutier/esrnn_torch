@@ -7,6 +7,12 @@ Data obtained from M4 and M3 competitions.
   <img src="results/m4_results.png" width="800" />
 </p>
 
+# Install
+
+``python
+pip install git+https://github.com/kdgutier/esrnn_torch@dev
+```
+
 # Conda environment
 ```console
 local_user@local_host$ bash setup.sh
