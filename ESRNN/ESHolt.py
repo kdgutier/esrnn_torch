@@ -21,21 +21,21 @@ class ESHolt(object):
                 lr_scheduler_step_size=9, noise_std=0.001, level_variability_penalty=80, tau=0.5,
                 seasonality=4, input_size=4, output_size=8, frequency='D', max_periods=20, device='cpu', root_dir='./'):
     super(ESHolt, self).__init__()
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, learning_rate=learning_rate, per_series_lr_multip=np.nan, 
-                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, lr_scheduler_step_size=lr_scheduler_step_size, 
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, learning_rate=learning_rate, per_series_lr_multip=np.nan,
+                          gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold, lr_scheduler_step_size=lr_scheduler_step_size,
                           noise_std=noise_std, level_variability_penalty=level_variability_penalty, tau=tau,
-                          state_hsize=np.nan, dilations=[], add_nl_layer=False, 
+                          state_hsize=np.nan, dilations=[], add_nl_layer=False,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, device=device, root_dir=root_dir)
-  
+
   def train(self, dataloader, random_seed):
     print(10*'='+' Training ESHolt ' + 10*'=' + '\n')
 
     # Optimizers
     optimizer = optim.Adam(params=self.esholt.parameters(),
-                              lr=self.mc.learning_rate, 
+                              lr=self.mc.learning_rate,
                               betas=(0.9, 0.999), eps=self.mc.gradient_eps)
-    
+
     scheduler = StepLR(optimizer=optimizer,
                        step_size=self.mc.lr_scheduler_step_size,
                        gamma=0.9)
@@ -54,7 +54,7 @@ class ESHolt(object):
 
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, levels = self.esholt(batch)
-        
+
         loss = smyl_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.numpy())
         loss.backward()

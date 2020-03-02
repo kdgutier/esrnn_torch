@@ -48,16 +48,16 @@ def grid_main(args):
   X_train = pd.read_csv('./data/' + args.dataset + '/X_train.csv')
   y_train = pd.read_csv('./data/' + args.dataset + '/y_train.csv')
   X_test = pd.read_csv('./data/' + args.dataset + '/X_test.csv')
-  
+
   X_train['ds'] = pd.to_datetime(X_train['ds'])
   X_test['ds'] = pd.to_datetime(X_test['ds'])
 
   grid_file = './data/' + args.dataset + '/model_grid.csv'
   model_specs_df = pd.read_csv(grid_file)
-  
+
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
-    
+
     dilations = ast.literal_eval(mc.dilations)
     device = mc.device# + ':' + str(args.gpu_id)
 
@@ -118,4 +118,3 @@ if __name__ == '__main__':
       generate_grid(args)
 
   grid_main(args)
-

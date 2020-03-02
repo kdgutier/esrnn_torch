@@ -110,7 +110,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'level_variability_penalty' : [80, 100],
            'percentile' : [50],
            'training_percentile' : [45, 50],
-           'ensemble': [False, True],           
+           'ensemble': [False, True],
            'max_periods': [24, 36],
            'cell_type': ['LSTM', 'ResLSTM'],
            'state_hsize' : [40],
@@ -218,7 +218,7 @@ def grid_main(args):
   # Parse hyper parameter data frame
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
-    
+
     dilations = ast.literal_eval(mc.dilations)
     seasonality = ast.literal_eval(mc.seasonality)
     device = mc.device
@@ -245,7 +245,7 @@ def grid_main(args):
                   level_variability_penalty=int(mc.level_variability_penalty),
                   percentile=int(mc.percentile),
                   training_percentile=int(mc.training_percentile),
-                  cell_type=mc.cell_type, 
+                  cell_type=mc.cell_type,
                   state_hsize=int(mc.state_hsize),
                   dilations=dilations,
                   add_nl_layer=mc.add_nl_layer,
@@ -258,7 +258,7 @@ def grid_main(args):
 
     # Fit, predict and evaluate
     model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
-    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_train_df, 
+    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_train_df,
                                                                          X_test_df,
                                                                          y_test_df)
     evaluation_dict = {'id': mc.model_id,
@@ -278,12 +278,12 @@ def parse_grid_search(dataset_name):
   gs_directory = './results/grid_search/{}/'.format(dataset_name)
   gs_file = gs_directory+'model_grid.csv'
   gs_df = pd.read_csv(gs_directory+'model_grid.csv')
-  
+
   gs_df['min_owa'] = 0
   gs_df['min_epoch'] = 0
   gs_df['mase'] = 0
   gs_df['smape'] = 0
-  
+
   results = []
   files = os.listdir(gs_directory)
   files.remove('model_grid.csv')
@@ -304,7 +304,7 @@ def parse_grid_search(dataset_name):
         gs_df.loc[idx, 'mase'] = np.nan
         gs_df.loc[idx, 'smape'] = np.nan
         gs_df.loc[idx, 'owa'] = np.nan
-  
+
   return gs_df
 
 if __name__ == '__main__':

@@ -53,7 +53,7 @@ def evaluate_model_prediction(y_train_df, X_test_df, y_test_df, model):
     y_hat_panel = model.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
-    model_owa = owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, 
+    model_owa = owa(y_panel, y_hat_panel, y_naive2_panel, y_insample,
                     seasonality=model.mc.seasonality)
 
     print('=='+' Overall Weighted Average:{} '.format(model_owa) + '==')
@@ -134,10 +134,10 @@ def grid_main(args):
 
   grid_file = './data/' + args.dataset + '/model_grid.csv'
   model_specs_df = pd.read_csv(grid_file)
-  
+
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
-    
+
     dilations = ast.literal_eval(mc.dilations)
     device = mc.device# + ':' + str(args.gpu_id)
 
