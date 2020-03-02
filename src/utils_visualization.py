@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -98,6 +99,8 @@ def plot_grid_cat_distributions(df, cats, var):
         plot_single_cat_distributions(cat_dict, axs[row, col],
                                       fig_title=cat, xlabel=var)
     
-    fig.suptitle(var, fontsize=18)
+    min_owa = math.floor(df.min_owa.min() * 1000) / 1000
+    suptitle = var + ': ' + str(min_owa)
+    fig.suptitle(suptitle, fontsize=18)
     #axs[-1, -1].axis('off')
     plt.show()
