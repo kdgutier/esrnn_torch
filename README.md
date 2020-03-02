@@ -12,6 +12,11 @@ Data obtained from M4 and M3 competitions.
 ```python
 pip install git+https://github.com/kdgutier/esrnn_torch@dev
 ```
+# Use
+
+```python
+from ESRNN import *
+```
 
 # Conda environment
 ```console
