@@ -315,4 +315,13 @@ if __name__ == '__main__':
   parser.add_argument("--dataset", required=True, type=str)
   args = parser.parse_args()
 
-  grid_main(args)
+  if args.dataset=='All':
+    for dataset in ['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Daily', 'Hourly']:
+      args.dataset = dataset
+      grid_main(args)
+  if args.dataset=='Other':
+    for dataset in ['Weekly', 'Daily', 'Hourly']:
+      args.dataset = dataset
+      grid_main(args)
+  else:
+    grid_main(args)
