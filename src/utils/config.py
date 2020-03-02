@@ -1,11 +1,11 @@
 class ModelConfig(object):
   def __init__(self, max_epochs, batch_size, batch_size_test, freq_of_test,
-               learning_rate, lr_scheduler_step_size,
+               learning_rate, lr_scheduler_step_size, lr_decay,
                per_series_lr_multip, gradient_eps, gradient_clipping_threshold,
                rnn_weight_decay,
                noise_std,
                level_variability_penalty,
-               percentile, training_percentile,
+               percentile, training_percentile, ensemble,
                cell_type,
                state_hsize, dilations, add_nl_layer, seasonality, input_size, output_size, 
                frequency, max_periods, random_seed, device, root_dir):
@@ -17,6 +17,7 @@ class ModelConfig(object):
     self.freq_of_test = freq_of_test
     self.learning_rate = learning_rate
     self.lr_scheduler_step_size = lr_scheduler_step_size
+    self.lr_decay = lr_decay
     self.per_series_lr_multip = per_series_lr_multip
     self.gradient_eps = gradient_eps
     self.gradient_clipping_threshold = gradient_clipping_threshold
@@ -25,6 +26,7 @@ class ModelConfig(object):
     self.level_variability_penalty = level_variability_penalty
     self.percentile = percentile
     self.training_percentile = training_percentile
+    self.ensemble = ensemble
     self.device = device
 
     # Model Parameters
@@ -36,13 +38,17 @@ class ModelConfig(object):
 
     # Data Parameters
     self.seasonality = seasonality
+    if len(seasonality)>0:
+      self.naive_seasonality = seasonality[0]
+    else:
+      self.naive_seasonality = 1
     self.input_size = input_size
     self.input_size_i = self.input_size
     self.output_size = output_size
     self.output_size_i = self.output_size
     self.frequency = frequency
     self.min_series_length = self.input_size_i + self.output_size_i# + self.min_inp_seq_length + 2
-    self.max_series_length = (max_periods * self.seasonality) + self.min_series_length
+    self.max_series_length = (max_periods * self.input_size) + self.min_series_length
     self.root_dir = root_dir
 
     #self.numeric_threshold = float(config['train_parameters']['numeric_threshold'])

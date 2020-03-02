@@ -10,6 +10,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 
 from pathlib import Path
+from copy import deepcopy
+
 from src.utils.config import ModelConfig
 from src.utils.ESRNN import _ESRNN
 from src.utils.losses import SmylLoss, PinballLoss
@@ -67,9 +69,10 @@ class ESRNN(object):
     through the Pinball Loss.
   batch_size: int
     number of training examples for the stochastic gradient steps
-  seasonality: int
-    main frequency of the time series
-    Quarterly 4, Daily 7, Monthly 12
+  seasonality: int list
+    list of seasonalities of the time series
+    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12], 
+    Quarterly [4], Yearly [].
   input_size: int
     input size of the recursive neural network, usually a
     multiple of seasonality
@@ -108,25 +111,26 @@ class ESRNN(object):
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
   def __init__(self, max_epochs=15, batch_size=1, batch_size_test=128, freq_of_test=-1,
-               learning_rate=1e-3, lr_scheduler_step_size=9,
+               learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
                level_variability_penalty=80,
-               percentile=50, training_percentile=50,
+               percentile=50, training_percentile=50, ensemble=False,
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
-               add_nl_layer=False, seasonality=4, input_size=4, output_size=8,
+               add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test,
                           freq_of_test=freq_of_test, learning_rate=learning_rate,
-                          lr_scheduler_step_size=lr_scheduler_step_size, per_series_lr_multip=per_series_lr_multip,
+                          lr_scheduler_step_size=lr_scheduler_step_size, lr_decay=lr_decay,
+                          per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
                           level_variability_penalty=level_variability_penalty,
                           percentile=percentile,
-                          training_percentile=training_percentile,
+                          training_percentile=training_percentile, ensemble=ensemble,
                           cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
@@ -135,6 +139,9 @@ class ESRNN(object):
     self._fitted = False
 
   def train(self, dataloader):
+    if self.mc.ensemble:
+      self.esrnn_ensemble = [deepcopy(self.esrnn)] * 5
+
     print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
@@ -153,8 +160,13 @@ class ESRNN(object):
 
     rnn_scheduler = StepLR(optimizer=rnn_optimizer,
                            step_size=self.mc.lr_scheduler_step_size,
+<<<<<<< HEAD
                            gamma=0.9)
 
+=======
+                           gamma=self.mc.lr_decay)
+    
+>>>>>>> 6537dd4e2e70b5ba8b9077b813626781bf4fcb2e
     # Loss Functions
     train_tau = self.mc.training_percentile / 100
     train_loss = SmylLoss(tau=train_tau,
@@ -194,6 +206,13 @@ class ESRNN(object):
       es_scheduler.step()
       rnn_scheduler.step()
 
+      if self.mc.ensemble:
+        copy_esrnn = deepcopy(self.esrnn)
+        copy_esrnn.eval()
+        self.esrnn_ensemble.pop(0)
+        self.esrnn_ensemble.append(copy_esrnn)
+
+
       # Evaluation
       self.train_loss = np.mean(losses)
       print("========= Epoch {} finished =========".format(epoch))
@@ -203,8 +222,13 @@ class ESRNN(object):
         #self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
         #print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
         if self.y_test_df is not None:
+<<<<<<< HEAD
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df,
                                          self.y_test_df, epoch=epoch)
+=======
+          self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
+                                        self.y_test_df, epoch=epoch)
+>>>>>>> 6537dd4e2e70b5ba8b9077b813626781bf4fcb2e
           self.esrnn.train()
 
     print('Train finished! \n')
@@ -250,9 +274,15 @@ class ESRNN(object):
     y_hat_panel = self.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
+<<<<<<< HEAD
     model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel,
                                              y_naive2_panel, y_insample,
                                              seasonality=self.mc.seasonality)
+=======
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+                                             y_naive2_panel, y_insample,
+                                             seasonality=self.mc.naive_seasonality)
+>>>>>>> 6537dd4e2e70b5ba8b9077b813626781bf4fcb2e
 
     if self.min_owa > model_owa:
       self.min_owa = model_owa
@@ -353,8 +383,20 @@ class ESRNN(object):
     for j in range(dataloader.n_batches):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
+<<<<<<< HEAD
 
       y_hat = self.esrnn(batch)
+=======
+      
+      if self.mc.ensemble:
+        y_hat = torch.zeros((5,batch_size,output_size))
+        for i in range(5):
+          y_hat[i,:,:] = self.esrnn_ensemble[i].predict(batch)
+        y_hat = torch.mean(y_hat,0)
+      else:
+        y_hat = self.esrnn.predict(batch)
+      
+>>>>>>> 6537dd4e2e70b5ba8b9077b813626781bf4fcb2e
       y_hat = y_hat.data.cpu().numpy()
 
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
@@ -409,9 +451,7 @@ class ESRNN(object):
 
     data_dir = self.mc.dataset_name
     model_parent_dir = os.path.join(root_dir, data_dir)
-    model_path = ['num_series_{}'.format(self.mc.num_series),
-                    'lr_{}'.format(self.mc.learning_rate),
-                    str(self.mc.copy)]
+    model_path = ['esrnn_{}'.format(str(self.mc.copy))]
     model_dir = os.path.join(model_parent_dir, '_'.join(model_path))
     return model_dir
 

@@ -81,7 +81,7 @@ def plot_single_cat_distributions(distributions_dict, ax, fig_title=None, xlabel
 def plot_grid_cat_distributions(df, cats, var):
     cols = int(np.ceil(len(cats)/2))
     fig, axs = plt.subplots(2, cols, figsize=(4*cols, 5.5))
-    plt.subplots_adjust(wspace=0.85)
+    plt.subplots_adjust(wspace=0.95)
     plt.subplots_adjust(hspace=0.5)
     
     for idx, cat in enumerate(cats):

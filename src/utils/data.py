@@ -11,7 +11,7 @@ class Batch():
     # y: time series values
     n = len(y)
     y = np.float32(y)
-    self.idxs = torch.LongTensor(idxs)
+    self.idxs = torch.LongTensor(idxs).to(device)
     self.y = y
     if (self.y.shape[1] > mc.max_series_length):
         y = y[:, -mc.max_series_length:]

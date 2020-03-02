@@ -16,19 +16,44 @@ from src.utils_visualization import plot_cat_distributions
 # HYPER PARAMETER GRIDS
 #############################################################################
 
-HOURLY = {}
+HOURLY = {'model_type': ['esrnn'],
+          'dataset': ['Hourly'],
+          'max_epochs' : [100],
+          'batch_size' : [8, 32],
+          'freq_of_test': [5],
+          'learning_rate' : [1e-3, 1e-2],
+          'lr_scheduler_step_size' : [7],
+          'lr_decay' : [0.5],
+          'per_series_lr_multip' : [1.0, 1.5],
+          'gradient_clipping_threshold' : [50],
+          'rnn_weight_decay' : [0.0, 0.05],
+          'noise_std' : [1e-3],
+          'level_variability_penalty' : [10, 30],
+          'percentile' : [50],
+          'training_percentile' : [49, 50],
+          'max_periods': [371],
+          'cell_type': ['LSTM', 'ResLSTM'],
+          'state_hsize' : [40],
+          'dilations' : [[[1, 4], [24, 168]], [[1, 4, 24, 168]]],
+          'add_nl_layer' : [True, False],
+          'seasonality' : [[24, 168]],
+          'input_size' : [24],
+          'output_size' : [48],
+          'random_seed': [1],
+          'device' : ['cuda']}
 
 DAILY = {'model_type': ['esrnn'],
          'dataset': ['Daily'],
-         'max_epochs' : [20, 40],
+         'max_epochs' : [100],
          'batch_size' : [8, 32],
          'freq_of_test': [5],
          'learning_rate' : [1e-4, 3e-4],
-         'lr_scheduler_step_size' : [10],
+         'lr_scheduler_step_size' : [9],
+         'lr_decay' : [0.333],
          'per_series_lr_multip' : [1.0, 1.5],
-         'gradient_clipping_threshold' : [20],
+         'gradient_clipping_threshold' : [50],
          'rnn_weight_decay' : [0.0, 0.05],
-         'noise_std' : [1e-2],
+         'noise_std' : [1e-3],
          'level_variability_penalty' : [80, 100],
          'percentile' : [50],
          'training_percentile' : [45, 49],
@@ -37,77 +62,133 @@ DAILY = {'model_type': ['esrnn'],
          'state_hsize' : [40],
          'dilations' : [[[1, 7, 28]], [[1,7],[28]]],
          'add_nl_layer' : [True, False],
-         'seasonality' : [7],
+         'seasonality' : [[7]],
+         'input_size' : [7],
          'output_size' : [14],
          'random_seed': [1],
          'device' : ['cuda']}
 
-WEEKLY = {}
+WEEKLY = {'model_type': ['esrnn'],
+          'dataset': ['Weekly'],
+          'max_epochs' : [100],
+          'batch_size' : [8, 32],
+          'freq_of_test': [5],
+          'learning_rate' : [1e-3, 2e-3],
+          'lr_scheduler_step_size' : [10, 15],
+          'lr_decay' : [0.5],
+          'per_series_lr_multip' : [1.0],
+          'gradient_clipping_threshold' : [20],
+          'rnn_weight_decay' : [0.0, 0.05],
+          'noise_std' : [1e-3],
+          'level_variability_penalty' : [100],
+          'percentile' : [50],
+          'training_percentile' : [47, 50],
+          'ensemble': [True, False],
+          'max_periods': [31],
+          'cell_type': ['LSTM', 'ResLSTM'],
+          'state_hsize' : [40],
+          'dilations' : [[[1, 52]], [[1],[52]]],
+          'add_nl_layer' : [False],
+          'seasonality' : [[52], []],
+          'input_size' : [10],
+          'output_size' : [13],
+          'random_seed': [1, 2],
+          'device' : ['cuda']}
 
 MONTHLY = {'model_type': ['esrnn'],
            'dataset': ['Monthly'],
            'max_epochs' : [20],
-           'batch_size' : [4, 8, 32],
+           'batch_size' : [16, 32],
            'freq_of_test': [5],
-           'learning_rate' : [1e-4, 2e-4],
-           'lr_scheduler_step_size' : [10],
-           'per_series_lr_multip' : [0.8, 1.0],
+           'learning_rate' : [5e-4, 7e-4, 1e-3],
+           'lr_scheduler_step_size' : [12],
+           'lr_decay' : [0.2],
+           'per_series_lr_multip' : [0.7, 0.8],
            'gradient_clipping_threshold' : [20],
-           'rnn_weight_decay' : [0.0, 0.05],
-           'noise_std' : [1e-2],
-           'level_variability_penalty' : [50, 80],
+           'rnn_weight_decay' : [0.0, 0.01],
+           'noise_std' : [1e-3],
+           'level_variability_penalty' : [80, 100],
            'percentile' : [50],
-           'training_percentile' : [45, 49],
-           'max_periods': [10, 20],
+           'training_percentile' : [45, 50],
+           'ensemble': [False, True],           
+           'max_periods': [24, 36],
            'cell_type': ['LSTM', 'ResLSTM'],
            'state_hsize' : [40],
-           'dilations' : [[[1, 3, 6, 12]], [[1,3],[6, 12]]],
+           'dilations' : [[[1,3],[6, 12]]],
            'add_nl_layer' : [False],
-           'seasonality' : [12],
+           'seasonality' : [[12]],
+           'input_size' : [12],
            'output_size' : [18],
            'random_seed': [1, 2],
            'device' : ['cuda']}
 
-YEARLY = {}
-
 QUARTERLY = {'model_type': ['esrnn'],
              'dataset': ['Quarterly'],
-             'max_epochs' : [20, 40],
-             'batch_size' : [8, 32],
+             'max_epochs' : [30],
+             'batch_size' : [8, 32, 64],
              'freq_of_test': [5],
-             'learning_rate' : [1e-4, 1e-3],
+             'learning_rate' : [1e-4, 5e-4, 1e-3],
              'lr_scheduler_step_size' : [10],
-             'per_series_lr_multip' : [1.0, 1.5],
+             'lr_decay' : [0.1],
+             'per_series_lr_multip' : [1.5, 2.0],
              'gradient_clipping_threshold' : [20],
-             'rnn_weight_decay' : [0.0, 0.5],
-             'noise_std' : [1e-2],
-             'level_variability_penalty' : [80, 100],
+             'rnn_weight_decay' : [0.0, 0.005],
+             'noise_std' : [1e-3],
+             'level_variability_penalty' : [100],
              'percentile' : [50],
-             'training_percentile' : [45, 50],
-             'max_periods': [10, 20],
-             'cell_type': ['LSTM'],
+             'training_percentile' : [48, 50],
+             'ensemble': [False, True],
+             'max_periods': [15],
+             'cell_type': ['LSTM', 'ResLSTM'],
              'state_hsize' : [40],
              'dilations' : [[[1, 2], [4, 8]], [[1,2,4,8]]],
              'add_nl_layer' : [True, False],
-             'cell_type': 'LSTM',
-             'seasonality' : [4],
+             'seasonality' : [[4]],
+             'input_size' : [4],
              'output_size' : [8],
              'random_seed': [1],
              'device' : ['cuda']} #cuda:int
 
-ALL_MODEL_SPEC  = {'Hourly': HOURLY,
-                   'Daily': DAILY,
-                   'Weekly': WEEKLY,
-                   'Monthly': MONTHLY,
-                   'Yearly': YEARLY,
-                   'Quarterly': QUARTERLY}
+YEARLY = {'model_type': ['esrnn'],
+          'dataset': ['Yearly'],
+          'max_epochs' : [12, 20],
+          'batch_size' : [2, 4, 8],
+          'freq_of_test': [5],
+          'learning_rate' : [3e-4],
+          'lr_scheduler_step_size' : [10],
+          'lr_decay' : [0.1],
+          'per_series_lr_multip' : [1.5, 2.0, 3.0],
+          'gradient_clipping_threshold' : [50],
+          'rnn_weight_decay' : [0.0],
+          'noise_std' : [1e-3],
+          'level_variability_penalty' : [100, 110],
+          'percentile' : [50],
+          'training_percentile' : [50],
+          'ensemble': [False, True],
+          'max_periods': [20, 25],
+          'cell_type': ['ResLSTM'],
+          'state_hsize' : [40],
+          'dilations' : [[[1], [6]]],
+          'add_nl_layer' : [False],
+          'seasonality' : [[]],
+          'input_size' : [4],
+          'output_size' : [6],
+          'random_seed': [1,2,3],
+          'device' : ['cuda']}
+
+ALL_MODEL_SPECS  = {'Hourly': HOURLY,
+                    'Daily': DAILY,
+                    'Weekly': WEEKLY,
+                    'Monthly': MONTHLY,
+                    'Quarterly': QUARTERLY,
+                    'Yearly': YEARLY}
 
 #############################################################################
 # MAIN EXPERIMENT
 #############################################################################
 
 def generate_grid(args, grid_file):
-  model_specs = ALL_MODEL_SPEC[args.dataset]
+  model_specs = ALL_MODEL_SPECS[args.dataset]
 
   specs_list = list(itertools.product(*list(model_specs.values())))
   model_specs_df = pd.DataFrame(specs_list,
@@ -115,7 +196,8 @@ def generate_grid(args, grid_file):
 
   model_specs_df['model_id'] = model_specs_df.index
   np.random.seed(1)
-  model_specs_df = model_specs_df.sample(100)
+  print('model_specs_df', model_specs_df)
+  model_specs_df = model_specs_df.sample(200)
   model_specs_df.to_csv(grid_file, encoding='utf-8', index=None)
 
 def grid_main(args):
@@ -138,6 +220,7 @@ def grid_main(args):
     mc = model_specs_df.loc[i, :]
     
     dilations = ast.literal_eval(mc.dilations)
+    seasonality = ast.literal_eval(mc.seasonality)
     device = mc.device
 
     print(47*'=' + '\n')
@@ -166,8 +249,8 @@ def grid_main(args):
                   state_hsize=int(mc.state_hsize),
                   dilations=dilations,
                   add_nl_layer=mc.add_nl_layer,
-                  seasonality=int(mc.seasonality),
-                  input_size=int(mc.seasonality),
+                  seasonality=seasonality,
+                  input_size=int(mc.input_size),
                   output_size=int(mc.output_size),
                   freq_of_test=int(mc.freq_of_test),
                   random_seed=int(mc.random_seed),
