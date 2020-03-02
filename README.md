@@ -9,7 +9,7 @@ Data obtained from M4 and M3 competitions.
 
 # Install
 
-``python
+```python
 pip install git+https://github.com/kdgutier/esrnn_torch@dev
 ```
 
