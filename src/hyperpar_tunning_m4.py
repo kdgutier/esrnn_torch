@@ -151,7 +151,7 @@ QUARTERLY = {'model_type': ['esrnn'],
 
 YEARLY = {'model_type': ['esrnn'],
           'dataset': ['Yearly'],
-          'max_epochs' : [20],
+          'max_epochs' : [20, 40],
           'batch_size' : [8, 16, 32],
           'freq_of_test': [5],
           'learning_rate' : [3e-4],
@@ -211,7 +211,7 @@ def grid_main(args):
     if not os.path.exists('./results/grid_search/'):
       os.mkdir('./results/grid_search/')
     os.mkdir(grid_dir)
-  if not os.path.exists(grid_file):
+  if (not os.path.exists(grid_file)) or (args.gen_grid == 1):
     generate_grid(args, grid_file)
   model_specs_df = pd.read_csv(grid_file)
 
@@ -313,6 +313,7 @@ if __name__ == '__main__':
   parser.add_argument("--id_max", required=True, type=int)
   parser.add_argument("--gpu_id", required=False, type=int, default=0)
   parser.add_argument("--dataset", required=True, type=str)
+  parser.add_argument("--gen_grid", required=True, type=int)
   args = parser.parse_args()
 
   if args.dataset=='All':
