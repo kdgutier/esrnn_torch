@@ -151,13 +151,13 @@ QUARTERLY = {'model_type': ['esrnn'],
 
 YEARLY = {'model_type': ['esrnn'],
           'dataset': ['Yearly'],
-          'max_epochs' : [20],
+          'max_epochs' : [20, 40],
           'batch_size' : [8, 16, 32],
           'freq_of_test': [5],
           'learning_rate' : [3e-4],
           'lr_scheduler_step_size' : [10],
           'lr_decay' : [0.1],
-          'per_series_lr_multip' : [1.5, 2.0, 3.0],
+          'per_series_lr_multip' : [0.8, 1.5, 2.0, 3.0],
           'gradient_clipping_threshold' : [50],
           'rnn_weight_decay' : [0.0],
           'noise_std' : [1e-3],
@@ -173,7 +173,7 @@ YEARLY = {'model_type': ['esrnn'],
           'seasonality' : [[]],
           'input_size' : [4],
           'output_size' : [6],
-          'random_seed': [3,120652,117982,117,1210357],
+          'random_seed': [3,120652,117982,117,1210357, 123456],
           'device' : ['cuda']}
 
 ALL_MODEL_SPECS  = {'Hourly': HOURLY,
@@ -211,7 +211,7 @@ def grid_main(args):
     if not os.path.exists('./results/grid_search/'):
       os.mkdir('./results/grid_search/')
     os.mkdir(grid_dir)
-  if not os.path.exists(grid_file):
+  if (not os.path.exists(grid_file)) or (args.gen_grid == 1):
     generate_grid(args, grid_file)
   model_specs_df = pd.read_csv(grid_file)
 
@@ -313,6 +313,16 @@ if __name__ == '__main__':
   parser.add_argument("--id_max", required=True, type=int)
   parser.add_argument("--gpu_id", required=False, type=int, default=0)
   parser.add_argument("--dataset", required=True, type=str)
+  parser.add_argument("--gen_grid", required=True, type=int)
   args = parser.parse_args()
 
-  grid_main(args)
+  if args.dataset=='All':
+    for dataset in ['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Daily', 'Hourly']:
+      args.dataset = dataset
+      grid_main(args)
+  if args.dataset=='Other':
+    for dataset in ['Weekly', 'Daily', 'Hourly']:
+      args.dataset = dataset
+      grid_main(args)
+  else:
+    grid_main(args)
