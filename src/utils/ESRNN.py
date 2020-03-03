@@ -230,7 +230,7 @@ class _RNN(nn.Module):
         input_size = mc.state_hsize
       layer = DRNN(input_size,
                    mc.state_hsize,
-                   n_layers=1,
+                   n_layers=len(mc.dilations[grp_num]),
                    dilations=mc.dilations[grp_num],
                    cell_type=mc.cell_type)
       layers.append(layer)
