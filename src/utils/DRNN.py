@@ -184,7 +184,6 @@ class DRNN(nn.Module):
         for i, (cell, dilation) in enumerate(zip(self.cells, self.dilations)):
             if hidden is None:
                 inputs, _ = self.drnn_layer(cell, inputs, dilation)
-                print('hidden is none')
             else:
                 inputs, hidden[i] = self.drnn_layer(cell, inputs, dilation, hidden[i])
 
