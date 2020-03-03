@@ -107,6 +107,40 @@ class ResLSTMLayer(jit.ScriptModule):
         return outputs, hidden
 
 
+class AttentiveLSTMLayer(jit.ScriptModule):
+    def __init__(self, input_size, hidden_size, dropout=0.0):
+      super(AttentiveLSTMLayer, self).__init__()
+      self.input_size = input_size
+      self.hidden_size = hidden_size
+      attention_hsize = hidden_size
+      self.attention_hsize = attention_hsize
+
+      self.lstm_cell = LSTMCell(input_size, hidden_size)
+      self.attn_layer = nn.Sequential(nn.Linear(2 * hidden_size + input_size, attention_hsize),
+                                      nn.Tanh(),
+                                      nn.Linear(attention_hsize, 1))
+      #self.dropout_layer = nn.Dropout(dropout)
+      self.dropout = dropout
+
+    @jit.script_method
+    def forward(self, input, hidden):
+      inputs = input.unbind(0)
+      outputs = torch.jit.annotate(List[Tensor], [])
+      for t in range(len(inputs)):
+          # attention on windows
+          hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
+          hx_rep = hx.repeat(len(inputs), 1, 1)
+          cx_rep = cx.repeat(len(inputs), 1, 1)
+          x = torch.cat((input, hx_rep, cx_rep), dim=-1)
+          l = self.attn_layer(x)
+          beta = nn.Softmax(dim=0)(l)
+          context = torch.bmm(beta.permute(1, 2, 0), 
+                              input.permute(1, 0, 2)).squeeze(1)
+          out, hidden = self.cell(context, hidden)
+          outputs += [out]
+      outputs = torch.stack(outputs)
+      return outputs, hidden
+
 
 class DRNN(nn.Module):
 
@@ -127,6 +161,8 @@ class DRNN(nn.Module):
             cell = nn.LSTM
         elif self.cell_type == "ResLSTM":
             cell = ResLSTMLayer
+        elif self.cell_type == "AttentiveLSTM":
+            cell = AttentiveLSTMLayer
         else:
             raise NotImplementedError
 
