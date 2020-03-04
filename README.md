@@ -10,10 +10,10 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 local_user@local_host$ bash setup.sh
 ```
 
-## Experiment Configuration Files
+## Configuration Files
 Configuration fles at configs/config_m4yearly.yaml
 
-# Run original ESRNN
+## Run original ESRNN
 ```console
 local_user@local_host$ conda activate esrnn_torch
 local_user@local_host$ jupyter notebook m4_test.ipynb
@@ -21,20 +21,19 @@ local_user@local_host$ PYTHONPATH=. python src/M4_experiment.py --model_id 0
 local_user@local_host$ PYTHONPATH=. python src/hyperpar_tunning_m4.py --id_min 0 --id_max 1 --dataset 'Quarterly' --gpu_id (optional)
 ```
 
+## Usage Example
+```python
+s = "Python syntax highlighting"
+print s
+```
+
 ## Authors
-
-
+* **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier)
+* **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/LICENSE) file for details.
 
-# Run original ESRNN
-```console
-local_user@local_host$ conda activate esrnn_torch
-local_user@local_host$ jupyter notebook m4_test.ipynb
-local_user@local_host$ PYTHONPATH=. python src/M4_experiment.py --model_id 0
-local_user@local_host$ PYTHONPATH=. python src/hyperpar_tunning_m4.py --id_min 0 --id_max 1 --dataset 'Quarterly' --gpu_id (optional)
-```
 
 ## REFERENCES
 1. [A hybrid method of exponential smoothing and recurrent neural networks for time series forecasting](https://www.sciencedirect.com/science/article/pii/S0169207019301153)
