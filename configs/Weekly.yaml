@@ -20,7 +20,7 @@ data_parameters:
   input_size: 10
   output_size: 13
 model_parameters:
-  cell_type: 'LSTM'
+  cell_type: 'ResLSTM'
   state_hsize: 40
   dilations: [[1, 52]]
   add_nl_layer: False
