@@ -1,5 +1,5 @@
 # Pytorch Implementation of the ES-RNN
-Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. 
+Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. <br/>
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 
 <!-- <p float="center">
@@ -12,7 +12,7 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 | Yearly    | 0.785 | 0.778  |
 | Quarterly | 0.879 | 0.847  |
 | Monthly   | 0.872 | 0.836  |
-| Hourly    | 0.548 | 0.920  |
+| Hourly    | 0.615 | 0.920  |
 | Weekly    | 0.952 | 0.920  |
 | Daily     |       | 0.920  |
 
