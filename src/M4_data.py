@@ -94,7 +94,7 @@ def naive2_predictions(dataset_name, num_obs):
     output_size = seas_dict[dataset_name]['output_size']
 
     print('Preparing {} dataset'.format(dataset_name))
-    print(9*'='+' Predicting Naive2 ' + 8*'='+'\n')
+    print('Preparing Naive2 {} dataset predictions'.format(dataset_name))
     
     # Naive2
     y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
