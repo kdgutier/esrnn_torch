@@ -1,4 +1,7 @@
-# lovingly borrowed from https://github.com/zalandoresearch/pytorch-dilated-rnn
+# Dilated Recurrent Neural Networks. https://papers.nips.cc/paper/6613-dilated-recurrent-neural-networks.pdf
+# implementation from https://github.com/zalandoresearch/pytorch-dilated-rnn
+# Residual LSTM: Design of a Deep Recurrent Architecture for Distant Speech Recognition. https://arxiv.org/abs/1701.03360
+# A Dual-Stage Attention-Based recurrent neural network for time series prediction. https://arxiv.org/abs/1704.02971
 
 import torch
 import torch.nn as nn
