@@ -65,6 +65,7 @@ def main(args):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
   parser.add_argument("--dataset", required=True, type=str)
+  parser.add_argument("--gpu_id", required=False, type=int)
   args = parser.parse_args()
 
   main(args)
