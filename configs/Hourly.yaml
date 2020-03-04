@@ -13,7 +13,7 @@ train_parameters:
   level_variability_penalty: 30
   percentile: 50
   training_percentile: 50
-  ensemble: False
+  ensemble: True
 data_parameters:
   max_periods: 371
   seasonality: [24, 168]
