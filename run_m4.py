@@ -14,8 +14,6 @@ from src.M4_data import prepare_M4_data
 from src.utils_evaluation import evaluate_prediction_owa
 
 def main(args):
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, num_obs=100000)
-
   config_file = './configs/{}.yaml'.format(args.dataset)
   with open(config_file, 'r') as stream:
     config = yaml.safe_load(stream)
@@ -23,6 +21,8 @@ def main(args):
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
   from src.ESRNN import ESRNN
 
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, num_obs=100000)
+  
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
                 batch_size=config['train_parameters']['batch_size'],
