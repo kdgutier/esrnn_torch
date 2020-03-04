@@ -6,12 +6,12 @@ import ast
 import pickle
 import time
 
-import pandas as pd
+import os
 import numpy as np
+import pandas as pd
 
 from src.M4_data import prepare_M4_data
 from src.utils_evaluation import evaluate_prediction_owa
-from src.ESRNN import ESRNN
 
 def main(args):
   X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, num_obs=100000)
@@ -19,6 +19,9 @@ def main(args):
   config_file = './configs/{}.yaml'.format(args.dataset)
   with open(config_file, 'r') as stream:
     config = yaml.safe_load(stream)
+
+  os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
+  from src.ESRNN import ESRNN
 
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
