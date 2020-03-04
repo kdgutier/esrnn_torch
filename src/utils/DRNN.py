@@ -9,6 +9,8 @@ import torch.autograd as autograd
 
 import torch.jit as jit
 
+use_cuda = torch.cuda.is_available()
+
 
 class LSTMCell(jit.ScriptModule):
     def __init__(self, input_size, hidden_size, dropout=0.):
