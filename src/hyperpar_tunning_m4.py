@@ -22,7 +22,7 @@ from statsmodels.formula.api import ols
 HOURLY = {'model_type': ['esrnn'],
           'dataset': ['Hourly'],
           'max_epochs' : [30],
-          'batch_size' : [32, 64],
+          'batch_size' : [16, 32],
           'freq_of_test': [5],
           'learning_rate' : [1e-3, 1e-2],
           'lr_scheduler_step_size' : [7],
