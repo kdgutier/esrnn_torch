@@ -48,7 +48,7 @@ HOURLY = {'model_type': ['esrnn'],
 DAILY = {'model_type': ['esrnn'],
          'dataset': ['Daily'],
          'max_epochs' : [30],
-         'batch_size' : [8, 16],
+         'batch_size' : [8, 32],
          'freq_of_test': [4],
          'learning_rate': [3e-4, 5e-4, 1.0e-3, 1.5e-3],
          'lr_scheduler_step_size' : [9],
@@ -274,8 +274,9 @@ def grid_main(args):
     # Output evaluation
     grid_dir = './results/grid_search/{}/'.format(args.dataset)
     output_file = '{}/model_{}.p'.format(grid_dir, mc.model_id)
-    outfile = open(output_file, "wb")
-    pickle.dump(evaluation_dict, outfile)
+
+    with open(output_file, "wb") as f:
+      pickle.dump(evaluation_dict, f)
 
 def parse_grid_search(dataset_name):
   gs_directory = './results/grid_search/{}/'.format(dataset_name)
