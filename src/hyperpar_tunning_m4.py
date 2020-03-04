@@ -321,7 +321,7 @@ if __name__ == '__main__':
       args.dataset = dataset
       grid_main(args)
   if args.dataset=='Other':
-    for dataset in ['Weekly', 'Daily', 'Hourly']:
+    for dataset in ['Hourly', 'Daily', 'Weekly']:
       args.dataset = dataset
       grid_main(args)
   else:
