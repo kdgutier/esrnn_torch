@@ -278,25 +278,9 @@ if __name__ == '__main__':
     n_windows = 2
     cell_type = 'ResLSTM'
 
-    print("\n\n")
-    print("cell_type", cell_type)
-    print("n_inp", n_inp)
-    print("n_windows {}, batch_size {}, n_hidden {}".format(n_windows, batch_size, n_hidden))
-    print("\n")
-
     model = DRNN(n_inp, n_hidden, n_layers=n_layers, cell_type=cell_type, dilations=[1,2])
 
     test_x1 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
     test_x2 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
 
     out, hidden = model(test_x1)
-
-    print("out.size()", out.size())
-    print("type(hidden)", type(hidden))
-    print("len(hidden)", len(hidden))
-    print("hidden[0].size()", hidden[0].size())
-    print("hidden[1].size()", hidden[1].size())
-    print("\n")
-
-    print("hidden[0] \n", hidden[0])
-    print("hidden[1] \n", hidden[1])
