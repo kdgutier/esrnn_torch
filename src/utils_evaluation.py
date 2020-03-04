@@ -365,7 +365,6 @@ def evaluate_prediction_owa(y_hat_df, y_train_df, X_test_df, y_test_df,
     model: python class
       python class with predict method
     """
-
     y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
     y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
     y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
@@ -376,6 +375,7 @@ def evaluate_prediction_owa(y_hat_df, y_train_df, X_test_df, y_test_df,
                                              y_naive2_panel, y_insample,
                                              seasonality=naive2_seasonality)
 
+    print(15*'=', ' Model evaluation ', 14*'=')
     print('OWA: {} '.format(np.round(model_owa, 3)))
     print('SMAPE: {} '.format(np.round(model_smape, 3)))
     print('MASE: {} '.format(np.round(model_mase, 3)))

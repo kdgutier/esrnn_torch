@@ -57,7 +57,6 @@ model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 y_hat_df = model.predict(X_test_df)
 
 # Evaluate predictions
-print(15*'=', ' Final evaluation ', 14*'=')
 final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df, 
                                                              X_test_df, y_test_df,
                                                              naive2_seasonality=1)
