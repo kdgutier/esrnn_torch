@@ -1,18 +1,17 @@
-# TIME SERIES TRANSFER LEARNING
-
-Repository intended to explore extensions to exponential smoothing RNN, and transferability of learned features.
-Data obtained from M4 and M3 competitions.
+# Pytorch Implementation of the ES-RNN
+Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 
 <p float="center">
   <img src="results/m4_results.png" width="800" />
 </p>
 
-# Conda environment
+# Conda Environment
 ```console
 local_user@local_host$ bash setup.sh
 ```
-# Experiment Config File
-Experiment Config File at configs/config_m4.yaml
+
+# Experiment Configuration Files
+Configuration fles at configs/config_m4yearly.yaml
 
 # Run original ESRNN
 ```console
@@ -23,20 +22,14 @@ local_user@local_host$ PYTHONPATH=. python src/hyperpar_tunning_m4.py --id_min 0
 ```
 
 # REFERENCES
-## GENERAL
-1. [History](https://robjhyndman.com/hyndsight/forecasting-competitions/)
-2. [How transferable are features in deep neural networks?](https://arxiv.org/abs/1411.1792)
-3. [Dilated RNN](https://papers.nips.cc/paper/6613-dilated-recurrent-neural-networks.pdf)
-4. [Residual LSTM](https://arxiv.org/abs/1701.03360)
-5. [Attention RNN](https://arxiv.org/abs/1704.02971)
+## Recurrent Neural Networks
+1. [Dilated Recurrent Neural Networks](https://papers.nips.cc/paper/6613-dilated-recurrent-neural-networks.pdf)
+2. [Residual LSTM: Design of a Deep Recurrent Architecture for Distant Speech Recognition](https://arxiv.org/abs/1701.03360)
+3. [A Dual-Stage Attention-Based recurrent neural network for time series prediction](https://arxiv.org/abs/1704.02971)
 
-## M4
-1. [M4 Methods](https://github.com/M4Competition/M4-methods)
-2. [M4 Hyndman](https://github.com/M4Competition/M4-methods/tree/master/245%20-%20pmontman)
-3. [M4 Smyl](https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17)
-4. [M4 Competition Conclusions](https://rpubs.com/fotpetr/m4competition)
+## M4 Competition and Data
+1. [The M4 Competition: Results, findings, conclusion and way forward](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward)
 5. [M4 Data](https://github.com/M4Competition/M4-methods/tree/master/Dataset)
 
-## M3
-1. [M3 Competition Conclusions](https://www.sciencedirect.com/science/article/pii/S0169207011000616?via%3Dihub)
-2. [M3 Data](http://www.neural-forecasting-competition.com/NN3/datasets.htm)
+## ES-RNN
+1. [A hybrid method of exponential smoothing and recurrent neural networks for time series forecasting](https://www.sciencedirect.com/science/article/pii/S0169207019301153)
