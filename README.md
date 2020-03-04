@@ -16,10 +16,11 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 | Weekly    |       | 0.92   |
 | Daily     |       | 0.92   |
 
-## Conda Environment
-```console
-local_user@local_host$ bash setup.sh
-```
+## Prerequisites
+* numpy==1.16.1
+* pandas==0.25.2
+* pytorch=1.3.1
+* pyyaml
 
 ## Configuration Files
 Configuration fles at configs/config_m4yearly.yaml
