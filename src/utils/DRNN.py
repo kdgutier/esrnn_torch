@@ -1,13 +1,8 @@
 # lovingly borrowed from https://github.com/zalandoresearch/pytorch-dilated-rnn
-# https://mlexplained.com/2019/02/15/building-an-lstm-from-scratch-in-pytorch-lstms-in-depth-part-1/
-# https://github.com/pytorch/pytorch/blob/master/benchmarks/fastrnns/custom_lstms.py
-# https://github.com/Zhenye-Na/DA-RNN
 
 import torch
 import torch.nn as nn
 import torch.autograd as autograd
-
-use_cuda = torch.cuda.is_available()
 
 import torch.jit as jit
 
@@ -283,25 +278,9 @@ if __name__ == '__main__':
     n_windows = 2
     cell_type = 'ResLSTM'
 
-    print("\n\n")
-    print("cell_type", cell_type)
-    print("n_inp", n_inp)
-    print("n_windows {}, batch_size {}, n_hidden {}".format(n_windows, batch_size, n_hidden))
-    print("\n")
-
     model = DRNN(n_inp, n_hidden, n_layers=n_layers, cell_type=cell_type, dilations=[1,2])
 
     test_x1 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
     test_x2 = torch.autograd.Variable(torch.randn(n_windows, batch_size, n_inp))
 
     out, hidden = model(test_x1)
-
-    print("out.size()", out.size())
-    print("type(hidden)", type(hidden))
-    print("len(hidden)", len(hidden))
-    print("hidden[0].size()", hidden[0].size())
-    print("hidden[1].size()", hidden[1].size())
-    print("\n")
-
-    print("hidden[0] \n", hidden[0])
-    print("hidden[1] \n", hidden[1])

@@ -12,6 +12,9 @@ from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
 from src.utils_visualization import plot_cat_distributions
 
+from statsmodels.formula.api import ols
+
+
 #############################################################################
 # HYPER PARAMETER GRIDS
 #############################################################################
@@ -130,23 +133,23 @@ QUARTERLY = {'model_type': ['esrnn'],
              'learning_rate': [5e-4, 7e-4],
              'lr_scheduler_step_size' : [10],
              'lr_decay' : [0.1, 0.5],
-             'per_series_lr_multip': [2.0, 2.5, 3.0],
+             'per_series_lr_multip': [1.0, 2.0, 2.5, 3.0],
              'gradient_clipping_threshold' : [20],
              'rnn_weight_decay' : [0.0],
              'noise_std' : [1e-3],
              'level_variability_penalty' : [80, 100, 120],
              'percentile' : [50],
              'training_percentile' : [50],
-             'ensemble': [False],
+             'ensemble': [False, True],
              'max_periods': [12, 16, 20],
              'cell_type': ['LSTM'],
              'state_hsize' : [40],
-             'dilations' : [[[1, 2], [4, 8]]],
-             'add_nl_layer' : [True],
+             'dilations' : [[[1, 2], [4, 8]], [[1, 2, 4, 8]]],
+             'add_nl_layer' : [False, True],
              'seasonality' : [[4]],
              'input_size' : [4],
              'output_size' : [8],
-             'random_seed': [1, 117, 120652, 117982, 1210357],
+             'random_seed': [1, 2, 3, 4, 5],
              'device' : ['cuda']} #cuda:int
 
 YEARLY = {'model_type': ['esrnn'],
@@ -277,7 +280,7 @@ def grid_main(args):
 def parse_grid_search(dataset_name):
   gs_directory = './results/grid_search/{}/'.format(dataset_name)
   gs_file = gs_directory+'model_grid.csv'
-  gs_df = pd.read_csv(gs_directory+'model_grid.csv')
+  gs_df = pd.read_csv(gs_directory+'model_grid.csv', dtype=str)
   
   gs_df['min_owa'] = 0
   gs_df['min_epoch'] = 0
@@ -304,6 +307,13 @@ def parse_grid_search(dataset_name):
         gs_df.loc[idx, 'mase'] = np.nan
         gs_df.loc[idx, 'smape'] = np.nan
         gs_df.loc[idx, 'owa'] = np.nan
+  
+  results = ols('min_owa ~ \
+                learning_rate + per_series_lr_multip + batch_size + \
+                dilations + ensemble + max_periods + \
+                training_percentile + level_variability_penalty + state_hsize + \
+                random_seed', data=gs_df).fit()
+  print(results.summary())
   
   return gs_df
 
