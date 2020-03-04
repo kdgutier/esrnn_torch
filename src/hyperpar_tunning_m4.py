@@ -21,8 +21,8 @@ from statsmodels.formula.api import ols
 
 HOURLY = {'model_type': ['esrnn'],
           'dataset': ['Hourly'],
-          'max_epochs' : [100],
-          'batch_size' : [8, 32],
+          'max_epochs' : [30],
+          'batch_size' : [32, 64],
           'freq_of_test': [5],
           'learning_rate' : [1e-3, 1e-2],
           'lr_scheduler_step_size' : [7],
@@ -47,7 +47,7 @@ HOURLY = {'model_type': ['esrnn'],
 
 DAILY = {'model_type': ['esrnn'],
          'dataset': ['Daily'],
-         'max_epochs' : [100],
+         'max_epochs' : [30],
          'batch_size' : [8, 16],
          'freq_of_test': [4],
          'learning_rate': [3e-4, 5e-4, 1.0e-3, 1.5e-3],
@@ -73,7 +73,7 @@ DAILY = {'model_type': ['esrnn'],
 
 WEEKLY = {'model_type': ['esrnn'],
           'dataset': ['Weekly'],
-          'max_epochs' : [100],
+          'max_epochs' : [30],
           'batch_size' : [16, 32, 64],
           'freq_of_test': [5],
           'learning_rate': [5e-4, 1e-3, 1.5e-3],
@@ -308,12 +308,12 @@ def parse_grid_search(dataset_name):
         gs_df.loc[idx, 'smape'] = np.nan
         gs_df.loc[idx, 'owa'] = np.nan
   
-  results = ols('min_owa ~ \
-                learning_rate + per_series_lr_multip + batch_size + \
-                dilations + ensemble + max_periods + \
-                training_percentile + level_variability_penalty + state_hsize + \
-                random_seed', data=gs_df).fit()
-  print(results.summary())
+  # results = ols('min_owa ~ \
+  #               learning_rate + per_series_lr_multip + batch_size + \
+  #               dilations + ensemble + max_periods + \
+  #               training_percentile + level_variability_penalty + state_hsize + \
+  #               random_seed', data=gs_df).fit()
+  #print(results.summary())
   
   return gs_df
 
