@@ -5,13 +5,28 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
   <img src="results/m4_results.png" width="800" />
 </p>
 
-# Conda Environment
+## Conda Environment
 ```console
 local_user@local_host$ bash setup.sh
 ```
 
-# Experiment Configuration Files
+## Experiment Configuration Files
 Configuration fles at configs/config_m4yearly.yaml
+
+# Run original ESRNN
+```console
+local_user@local_host$ conda activate esrnn_torch
+local_user@local_host$ jupyter notebook m4_test.ipynb
+local_user@local_host$ PYTHONPATH=. python src/M4_experiment.py --model_id 0
+local_user@local_host$ PYTHONPATH=. python src/hyperpar_tunning_m4.py --id_min 0 --id_max 1 --dataset 'Quarterly' --gpu_id (optional)
+```
+
+## Authors
+
+
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/LICENSE) file for details.
 
 # Run original ESRNN
 ```console
