@@ -47,12 +47,6 @@ class ModelConfig(object):
     self.output_size = output_size
     self.output_size_i = self.output_size
     self.frequency = frequency
-    self.min_series_length = self.input_size_i + self.output_size_i# + self.min_inp_seq_length + 2
+    self.min_series_length = self.input_size_i + self.output_size_i
     self.max_series_length = (max_periods * self.input_size) + self.min_series_length
     self.root_dir = root_dir
-
-    #self.numeric_threshold = float(config['train_parameters']['numeric_threshold'])
-    #self.attention_hsize = self.state_hsize
-    #self.min_inp_seq_length = config['data_parameters']['min_inp_seq_length']
-    #self.num_series = config['data_parameters']['num_series']
-    #self.output_dir = config['data_parameters']['output_dir']

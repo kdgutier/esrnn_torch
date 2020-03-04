@@ -16,7 +16,6 @@ class LSTMCell(jit.ScriptModule):
         self.weight_hh = nn.Parameter(torch.randn(4 * hidden_size, hidden_size))
         self.bias_ih = nn.Parameter(torch.randn(4 * hidden_size))
         self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
-        #self.dropout_layer = nn.Dropout(dropout)
         self.dropout = dropout
 
     @jit.script_method
@@ -52,7 +51,6 @@ class ResLSTMCell(jit.ScriptModule):
         self.weight_hh = nn.Parameter(torch.randn(1 * hidden_size, hidden_size))
         self.bias_hh = nn.Parameter(torch.randn(1 * hidden_size))
         self.weight_ir = nn.Parameter(torch.randn(hidden_size, input_size))
-        #self.dropout_layer = nn.Dropout(dropout)
         self.dropout = dropout
 
     @jit.script_method
@@ -87,8 +85,7 @@ class ResLSTMLayer(jit.ScriptModule):
         super(ResLSTMLayer, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.cell = LSTMCell(input_size, hidden_size, dropout=0.)
-        #self.cell = ResLSTMCell(input_size, hidden_size, dropout=0.)
+        self.cell = ResLSTMCell(input_size, hidden_size, dropout=0.)
 
     @jit.script_method
     def forward(self, input, hidden):
@@ -115,7 +112,6 @@ class AttentiveLSTMLayer(jit.ScriptModule):
                                       nn.Tanh(),
                                       nn.Linear(attention_hsize, 1))
       self.softmax = nn.Softmax(dim=0)
-      #self.dropout_layer = nn.Dropout(dropout)
       self.dropout = dropout
 
     #@jit.script_method

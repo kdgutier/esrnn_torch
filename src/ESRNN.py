@@ -214,8 +214,6 @@ class ESRNN(object):
       print("Training time: {}".format(round(time.time()-start, 5)))
       print("Training loss: {}".format(round(self.train_loss, 5)))
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
-        #self.test_evaluation = self.evaluation(dataloader=dataloader, criterion=eval_loss)
-        #print("Test Pinball loss: {}".format(round(self.test_evaluation, 5)))
         if self.y_test_df is not None:
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
                                         self.y_test_df, epoch=epoch)
@@ -334,9 +332,6 @@ class ESRNN(object):
 
     self.esrnn.eval()
     
-    # TODO: Filter unique_ids
-    # TODO: Declare new dataloader
-    
     # Create fast dataloader
     if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
     else: new_batch_size = self.mc.batch_size_test
@@ -352,7 +347,6 @@ class ESRNN(object):
     # TODO: Improve wasted computation
     panel_delta = list(range(1, output_size+1)) * n_unique_id 
     panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
-    #panel_delta = pd.Series(panel_delta.tolist() * n_unique_id)
     
     panel_ds = panel_last_ds + panel_delta
     
@@ -415,8 +409,6 @@ class ESRNN(object):
     X = df_wide.filter(items=['unique_id', 'x', 'last_ds']).values
     y = df_wide.filter(items=ds_cols).values
 
-    # TODO: assert "completeness" of the series (frequency-wise)
-    # TODO: assert "trainability" of the series (sparsity-wise)
     return X, y
 
   def get_dir_name(self, root_dir=None):

@@ -11,7 +11,6 @@ class _ES(jit.ScriptModule):
     super(_ES, self).__init__()
     self.mc = mc
     self.n_series = self.mc.n_series
-    #self.seasonality = self.mc.seasonality
     self.output_size = self.mc.output_size
     assert len(self.mc.seasonality) in [0, 1, 2]
   

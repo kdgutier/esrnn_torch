@@ -32,7 +32,6 @@ def deseasonalize(original_ts, ppy):
   original_ts = original_ts[:-out_of_sample]
   """
   if seasonality_test(original_ts, ppy):
-    #print("seasonal")
     # ==== get moving averages
     ma_ts = moving_averages(original_ts, ppy)
 
@@ -44,7 +43,6 @@ def deseasonalize(original_ts, ppy):
     norm = np.sum(si) / (ppy * 100)
     si = si / norm
   else:
-    #print("NOT seasonal")
     si = np.ones(ppy)
 
   return si
@@ -70,13 +68,10 @@ def moving_averages(ts_init, window):
   ts_init = pd.Series(ts_init)
   
   if len(ts_init) % 2 == 0:
-    #ts_ma = pd.rolling_mean(ts_init, window, center=True)
-    #ts_ma = pd.rolling_mean(ts_ma, 2, center=True)
     ts_ma = ts_init.rolling(window, center=True).mean()
     ts_ma = ts_ma.rolling(2, center=True).mean()
     ts_ma = np.roll(ts_ma, -1)
   else:
-    #ts_ma = pd.rolling_mean(ts_init, window, center=True)
     ts_ma = ts_init.rolling(window, center=True).mean()
 
   return ts_ma
@@ -350,9 +345,6 @@ def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
 
   model_mase = np.mean(total_mase)
   model_smape = np.mean(total_smape) * 100
-
-  #perc_delta_mase = np.round((1-(model_mase/naive2_mase)) * 100)
-  #perc_delta_smape = np.round((1-(model_smape/naive2_smape)) * 100)
   
   model_owa = ((model_mase/naive2_mase) + (model_smape/naive2_smape))/2
   return model_owa, model_mase, model_smape
