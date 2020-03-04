@@ -1,4 +1,4 @@
-device: cpu
+device: cuda
 train_parameters:
   max_epochs: 30
   batch_size: 16
