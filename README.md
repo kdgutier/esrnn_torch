@@ -38,7 +38,7 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 ## REFERENCES
 1. [A hybrid method of exponential smoothing and recurrent neural networks for time series forecasting](https://www.sciencedirect.com/science/article/pii/S0169207019301153)
 2. [The M4 Competition: Results, findings, conclusion and way forward](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward)
-3. [M4 Data](https://github.com/M4Competition/M4-methods/tree/master/Dataset)
+3. [M4 Competition Data](https://github.com/M4Competition/M4-methods/tree/master/Dataset)
 4. [Dilated Recurrent Neural Networks](https://papers.nips.cc/paper/6613-dilated-recurrent-neural-networks.pdf)
 5. [Residual LSTM: Design of a Deep Recurrent Architecture for Distant Speech Recognition](https://arxiv.org/abs/1701.03360)
 6. [A Dual-Stage Attention-Based recurrent neural network for time series prediction](https://arxiv.org/abs/1704.02971)
