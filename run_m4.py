@@ -54,11 +54,11 @@ def main(args):
   model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 
   # Predict on test set
-  y_hat = model.predict(X_test_df)
+  y_hat_df = model.predict(X_test_df)
 
   # Evaluate predictions
   print(15*'=', ' Final evaluation ', 14*'=')
-  final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat, y_train_df, 
+  final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df, 
                                                                X_test_df, y_test_df,
                                                                naive2_seasonality=config['data_parameters']['seasonality'][0])
 
