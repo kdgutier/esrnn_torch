@@ -1,33 +1,27 @@
-name: M4 quarterly ESRNN Experiment
-dataset_name: m4quarterly
-architecture: diluted rnn
-device: cuda
+device: cpu
 train_parameters:
-  max_epochs: 15
-  batch_size: 1
-  freq_of_test: 1
+  max_epochs: 2
+  batch_size: 8
+  freq_of_test: 5
   learning_rate: 1e-3
   lr_scheduler_step_size: 10
+  lr_decay: 0.5
   per_series_lr_multip: 1.0
-  gradient_eps: 1e-6
   gradient_clipping_threshold: 20
   rnn_weight_decay: 0
   noise_std: 0.001
   level_variability_penalty: 80
   percentile: 50
   training_percentile: 45
+  ensemble: False
 data_parameters:
+  max_periods: 12
   seasonality: [4]
   input_size: 4
   output_size: 8
-  exogenous_size: 6
-  min_inp_seq_length: 0
-  data_dir: "./data/m4/"
-  output_dir: "./results/m4/"
-  max_num_series: 100
 model_parameters:
+  cell_type: 'LSTM'
   state_hsize: 40
-  lback: 0
   dilations: [[1, 2], [4, 8]]
   add_nl_layer: FALSE
-  averaging_level: 5
+  random_seed: 120652

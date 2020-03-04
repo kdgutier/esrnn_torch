@@ -1,0 +1,27 @@
+device: cpu
+train_parameters:
+  max_epochs: 2
+  batch_size: 8
+  freq_of_test: 5
+  learning_rate: 1e-3
+  lr_scheduler_step_size: 10
+  lr_decay: 0.5
+  per_series_lr_multip: 1.0
+  gradient_clipping_threshold: 20
+  rnn_weight_decay: 0
+  noise_std: 0.001
+  level_variability_penalty: 80
+  percentile: 50
+  training_percentile: 45
+  ensemble: False
+data_parameters:
+  max_periods: 12
+  seasonality: [4]
+  input_size: 4
+  output_size: 8
+model_parameters:
+  cell_type: 'LSTM'
+  state_hsize: 40
+  dilations: [[1, 2], [4, 8]]
+  add_nl_layer: FALSE
+  random_seed: 120652

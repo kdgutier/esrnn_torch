@@ -27,7 +27,6 @@ def plot_distributions(distributions_dict, fig_title=None, xlabel=None):
   plt.subplots_adjust(wspace=0.35)
   
   n_colors = len(distributions_dict.keys())
-  #colors = sns.color_palette("plasma", n_colors)
   colors = sns.color_palette("hls", n_colors)
   
   for idx, dist_name in enumerate(distributions_dict.keys()):
@@ -61,7 +60,6 @@ def plot_single_cat_distributions(distributions_dict, ax, fig_title=None, xlabel
     n_distributions = len(distributions_dict.keys())
 
     n_colors = len(distributions_dict.keys())
-    #colors = sns.color_palette("plasma", n_colors)
     colors = sns.color_palette("hls", n_colors)
 
     for idx, dist_name in enumerate(distributions_dict.keys()):
@@ -102,5 +100,4 @@ def plot_grid_cat_distributions(df, cats, var):
     min_owa = math.floor(df.min_owa.min() * 1000) / 1000
     suptitle = var + ': ' + str(min_owa)
     fig.suptitle(suptitle, fontsize=18)
-    #axs[-1, -1].axis('off')
     plt.show()
