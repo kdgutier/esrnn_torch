@@ -47,7 +47,7 @@ def main(args):
                 device=config['device'])
 
   # Fit model
-  # if y_test_df is provided the model will evaluate predictions on this set every freq_test epochs
+  # If y_test_df is provided the model will evaluate predictions on this set every freq_test epochs
   model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 
   # Predict on test set
@@ -62,7 +62,6 @@ def main(args):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
   parser.add_argument("--dataset", required=True, type=str)
-  parser.add_argument("--gpu_id", required=False, type=int)
   args = parser.parse_args()
 
   main(args)
