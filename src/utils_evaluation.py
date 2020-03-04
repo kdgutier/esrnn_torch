@@ -349,8 +349,8 @@ def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
   model_owa = ((model_mase/naive2_mase) + (model_smape/naive2_smape))/2
   return model_owa, model_mase, model_smape
 
-  def evaluate_prediction_owa(y_hat_df, y_train_df, X_test_df, y_test_df, 
-                              naive2_seasonality):
+def evaluate_prediction_owa(y_hat_df, y_train_df, X_test_df, y_test_df, 
+                            naive2_seasonality):
     """
     y_hat_df: pandas df
       panel with columns unique_id, ds, y_hat
