@@ -348,3 +348,35 @@ def owa(y_panel, y_hat_panel, y_naive2_panel, y_insample, seasonality):
   
   model_owa = ((model_mase/naive2_mase) + (model_smape/naive2_smape))/2
   return model_owa, model_mase, model_smape
+
+  def evaluate_prediction_owa(y_hat_df, y_train_df, X_test_df, y_test_df, 
+                              naive2_seasonality):
+    """
+    y_hat_df: pandas df
+      panel with columns unique_id, ds, y_hat
+    y_train_df: pandas df
+      panel with columns unique_id, ds, y
+    X_test_df: pandas df
+      panel with columns unique_id, ds, x
+    y_test_df: pandas df
+      panel with columns unique_id, ds, y, y_hat_naive2
+    naive2_seasonality: int
+      seasonality for the Naive2 predictions (needed for owa)
+    model: python class
+      python class with predict method
+    """
+
+    y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
+    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
+    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
+    y_hat_panel = y_hat_df
+    y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
+
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+                                             y_naive2_panel, y_insample,
+                                             seasonality=naive2_seasonality)
+
+    print('OWA: {} '.format(np.round(model_owa, 3)))
+    print('SMAPE: {} '.format(np.round(model_smape, 3)))
+    print('MASE: {} '.format(np.round(model_mase, 3)))
+    return model_owa, model_mase, model_smape
