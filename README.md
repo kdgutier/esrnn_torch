@@ -6,6 +6,16 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
   <img src="results/m4_results.png" width="800" />
 </p>
 
+## Current Results
+| DATASET   | OWA   | M4 OWA |
+|-----------|-------|--------|
+| Yearly    | 0.785 | 0.778  |
+| Quarterly | 0.879 | 0.847  |
+| Monthly   | 0.872 | 0.836  |
+| Hourly    | 0.548 | 0.92   |
+| Weekly    |       | 0.92   |
+| Daily     |       | 0.92   |
+
 ## Conda Environment
 ```console
 local_user@local_host$ bash setup.sh
