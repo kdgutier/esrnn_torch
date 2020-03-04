@@ -1,5 +1,6 @@
 # Pytorch Implementation of the ES-RNN
-Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
+Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. 
+[Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 
 <p float="center">
   <img src="results/m4_results.png" width="800" />
