@@ -24,7 +24,7 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 
 ## Replicating M4 results
 ```console
-local_user@local_host$ PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
+PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
 ```
 
 ## Usage Example
