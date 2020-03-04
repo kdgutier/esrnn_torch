@@ -2,9 +2,9 @@
 Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smyl at the M4 Competition. 
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 
-<p float="center">
+<!-- <p float="center">
   <img src="results/m4_results.png" width="800" />
-</p>
+</p> -->
 
 ## Current Results
 | DATASET   | OWA   | M4 OWA |
@@ -13,8 +13,8 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 | Quarterly | 0.879 | 0.847  |
 | Monthly   | 0.872 | 0.836  |
 | Hourly    | 0.548 | 0.920  |
-| Weekly    | 0.952 | -      |
-| Daily     |       | -      |
+| Weekly    | 0.952 | 0.920  |
+| Daily     |       | 0.920  |
 
 ## Prerequisites
 * numpy==1.16.1
@@ -22,15 +22,9 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
 * pytorch==1.3.1
 * pyyaml
 
-## Configuration Files
-Configuration fles at configs/config_m4yearly.yaml
-
-## Run original ESRNN
+## Replicating M4 results
 ```console
-local_user@local_host$ conda activate esrnn_torch
-local_user@local_host$ jupyter notebook m4_test.ipynb
-local_user@local_host$ PYTHONPATH=. python src/M4_experiment.py --model_id 0
-local_user@local_host$ PYTHONPATH=. python src/hyperpar_tunning_m4.py --id_min 0 --id_max 1 --dataset 'Quarterly' --gpu_id (optional)
+local_user@local_host$ PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
 ```
 
 ## Usage Example
