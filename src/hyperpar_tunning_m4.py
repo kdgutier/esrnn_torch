@@ -12,6 +12,9 @@ from src.M4_data import prepare_M4_data
 from src.utils_evaluation import owa
 from src.utils_visualization import plot_cat_distributions
 
+from statsmodels.formula.api import ols
+
+
 #############################################################################
 # HYPER PARAMETER GRIDS
 #############################################################################
@@ -277,7 +280,7 @@ def grid_main(args):
 def parse_grid_search(dataset_name):
   gs_directory = './results/grid_search/{}/'.format(dataset_name)
   gs_file = gs_directory+'model_grid.csv'
-  gs_df = pd.read_csv(gs_directory+'model_grid.csv')
+  gs_df = pd.read_csv(gs_directory+'model_grid.csv', dtype=str)
   
   gs_df['min_owa'] = 0
   gs_df['min_epoch'] = 0
@@ -304,6 +307,13 @@ def parse_grid_search(dataset_name):
         gs_df.loc[idx, 'mase'] = np.nan
         gs_df.loc[idx, 'smape'] = np.nan
         gs_df.loc[idx, 'owa'] = np.nan
+  
+  results = ols('min_owa ~ \
+                learning_rate + per_series_lr_multip + batch_size + \
+                dilations + ensemble + max_periods + \
+                training_percentile + level_variability_penalty + state_hsize + \
+                random_seed', data=gs_df).fit()
+  print(results.summary())
   
   return gs_df
 
