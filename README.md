@@ -67,7 +67,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 * **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu)
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE) file for details.
 
 
 ## REFERENCES
