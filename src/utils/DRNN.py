@@ -7,12 +7,12 @@ import torch
 import torch.nn as nn
 import torch.autograd as autograd
 
-import torch.jit as jit
+#import torch.jit as jit
 
 use_cuda = torch.cuda.is_available()
 
 
-class LSTMCell(jit.ScriptModule):
+class LSTMCell(nn.Module): #jit.ScriptModule
     def __init__(self, input_size, hidden_size, dropout=0.):
         super(LSTMCell, self).__init__()
         self.input_size = input_size
@@ -23,7 +23,7 @@ class LSTMCell(jit.ScriptModule):
         self.bias_hh = nn.Parameter(torch.randn(4 * hidden_size))
         self.dropout = dropout
 
-    @jit.script_method
+    #@jit.script_method
     def forward(self, input, hidden):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
@@ -42,7 +42,7 @@ class LSTMCell(jit.ScriptModule):
         return hy, (hy, cy)
 
 
-class ResLSTMCell(jit.ScriptModule):
+class ResLSTMCell(nn.Module):
     def __init__(self, input_size, hidden_size, dropout=0.):
         super(ResLSTMCell, self).__init__()
         self.register_buffer('input_size', torch.Tensor([input_size]))
@@ -58,7 +58,7 @@ class ResLSTMCell(jit.ScriptModule):
         self.weight_ir = nn.Parameter(torch.randn(hidden_size, input_size))
         self.dropout = dropout
 
-    @jit.script_method
+    #@jit.script_method
     def forward(self, input, hidden):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
@@ -85,18 +85,19 @@ class ResLSTMCell(jit.ScriptModule):
         return hy, (hy, cy)
 
 
-class ResLSTMLayer(jit.ScriptModule):
+class ResLSTMLayer(nn.Module):
     def __init__(self, input_size, hidden_size, dropout=0.):
         super(ResLSTMLayer, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.cell = ResLSTMCell(input_size, hidden_size, dropout=0.)
 
-    @jit.script_method
+    #@jit.script_method
     def forward(self, input, hidden):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         inputs = input.unbind(0)
-        outputs = torch.jit.annotate(List[Tensor], [])
+        #outputs = torch.jit.annotate(List[Tensor], [])
+        outputs = []
         for i in range(len(inputs)):
             out, hidden = self.cell(inputs[i], hidden)
             outputs += [out]
@@ -104,7 +105,7 @@ class ResLSTMLayer(jit.ScriptModule):
         return outputs, hidden
 
 
-class AttentiveLSTMLayer(jit.ScriptModule):
+class AttentiveLSTMLayer(nn.Module):
     def __init__(self, input_size, hidden_size, dropout=0.0):
       super(AttentiveLSTMLayer, self).__init__()
       self.input_size = input_size

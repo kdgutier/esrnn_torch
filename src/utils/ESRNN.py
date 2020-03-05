@@ -3,10 +3,10 @@ import torch.nn as nn
 from src.utils.DRNN import DRNN
 import numpy as np
 
-import torch.jit as jit
+#import torch.jit as jit
 
 
-class _ES(jit.ScriptModule):
+class _ES(nn.Module):
   def __init__(self, mc):
     super(_ES, self).__init__()
     self.mc = mc
@@ -19,7 +19,7 @@ class _ES(jit.ScriptModule):
     noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
     return input_data + noise
   
-  @jit.script_method
+  #@jit.script_method
   def compute_levels_seasons(self, y, idxs):
     pass
 
@@ -104,7 +104,7 @@ class _ESM(_ES):
     self.embeds.weight.data.copy_(init_embeds)
     self.register_buffer('seasonality', torch.LongTensor(self.mc.seasonality))
 
-  @jit.script_method
+  #@jit.script_method
   def compute_levels_seasons(self, y, idxs):
     """
     Computes levels and seasons
@@ -114,10 +114,12 @@ class _ESM(_ES):
     embeds = self.embeds(idxs)
     lev_sms = torch.sigmoid(embeds[:, 0])
 
-    # Initialize seasonalities (cpp compiler)
+    # Initialize seasonalities
     seas_prod = torch.ones(len(y[:,0])).to(y.device)
-    seasonalities1 = torch.jit.annotate(List[Tensor], [])
-    seasonalities2 = torch.jit.annotate(List[Tensor], [])
+    #seasonalities1 = torch.jit.annotate(List[Tensor], [])
+    #seasonalities2 = torch.jit.annotate(List[Tensor], [])
+    seasonalities1 = []
+    seasonalities2 = []
     seas_sms1 = torch.ones(1).to(y.device)
     seas_sms2 = torch.ones(1).to(y.device)
 
@@ -142,7 +144,8 @@ class _ESM(_ES):
       seas_prod = seas_prod * init_seas2[0]
 
     # Initialize levels
-    levels = torch.jit.annotate(List[Tensor], [])
+    #levels = torch.jit.annotate(List[Tensor], [])
+    levels = []
     levels += [y[:,0]/seas_prod]
 
     # Recursive seasonalities and levels
@@ -173,7 +176,8 @@ class _ESM(_ES):
     
     levels = torch.stack(levels).transpose(1,0)
 
-    seasonalities = torch.jit.annotate(List[Tensor], [])
+    #seasonalities = torch.jit.annotate(List[Tensor], [])
+    seasonalities = []
 
     if len(self.seasonality)>0:
       seasonalities += [torch.stack(seasonalities1).transpose(1,0)]
