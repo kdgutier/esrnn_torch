@@ -100,6 +100,7 @@ WEEKLY = {'model_type': ['esrnn'],
 
 MONTHLY = {'model_type': ['esrnn'],
            'dataset': ['Monthly'],
+           'num_splits': [2],
            'max_epochs' : [30],
            'batch_size' : [8, 32, 128],
            'freq_of_test': [4],
@@ -234,10 +235,11 @@ def grid_main(args):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
 
-    from src.ESRNN import ESRNN
+    from src.ensemble_esrnn import ESRNN_ensemble
 
     # Instantiate, fit, predict and evaluate
-    model = ESRNN(max_epochs=int(mc.max_epochs),
+    model = ESRNN_ensemble(num_splits=int(mc.num_splits),
+                  max_epochs=int(mc.max_epochs),
                   batch_size=int(mc.batch_size),
                   learning_rate=mc.learning_rate,
                   lr_scheduler_step_size=mc.lr_scheduler_step_size,
