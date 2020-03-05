@@ -38,6 +38,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 ```
 
 ## Current Results
+Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 <br/>
 | DATASET   | OWA   | M4 OWA |
