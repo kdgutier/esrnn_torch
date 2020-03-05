@@ -27,8 +27,8 @@ class LSTMCell(nn.Module): #jit.ScriptModule
     def forward(self, input, hidden):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
-        gates = (torch.mm(input, self.weight_ih.t()) + self.bias_ih +
-                 torch.mm(hx, self.weight_hh.t()) + self.bias_hh)
+        gates = (torch.matmul(input, self.weight_ih.t()) + self.bias_ih +
+                 torch.matmul(hx, self.weight_hh.t()) + self.bias_hh)
         ingate, forgetgate, cellgate, outgate = gates.chunk(4, 1)
 
         ingate = torch.sigmoid(ingate)
@@ -63,12 +63,12 @@ class ResLSTMCell(nn.Module):
         # type: (Tensor, Tuple[Tensor, Tensor]) -> Tuple[Tensor, Tuple[Tensor, Tensor]]
         hx, cx = hidden[0].squeeze(0), hidden[1].squeeze(0)
 
-        ifo_gates = (torch.mm(input, self.weight_ii.t()) + self.bias_ii +
-                     torch.mm(hx, self.weight_ih.t()) + self.bias_ih +
-                     torch.mm(cx, self.weight_ic.t()) + self.bias_ic)
+        ifo_gates = (torch.matmul(input, self.weight_ii.t()) + self.bias_ii +
+                     torch.matmul(hx, self.weight_ih.t()) + self.bias_ih +
+                     torch.matmul(cx, self.weight_ic.t()) + self.bias_ic)
         ingate, forgetgate, outgate = ifo_gates.chunk(3, 1)
         
-        cellgate = torch.mm(hx, self.weight_hh.t()) + self.bias_hh
+        cellgate = torch.matmul(hx, self.weight_hh.t()) + self.bias_hh
         
         ingate = torch.sigmoid(ingate)
         forgetgate = torch.sigmoid(forgetgate)
@@ -81,7 +81,7 @@ class ResLSTMCell(nn.Module):
         if self.input_size == self.hidden_size:
           hy = outgate * (ry + input)
         else:
-          hy = outgate * (ry + torch.mm(input, self.weight_ir.t()))
+          hy = outgate * (ry + torch.matmul(input, self.weight_ir.t()))
         return hy, (hy, cy)
 
 
