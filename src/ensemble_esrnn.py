@@ -75,7 +75,9 @@ class ESRNN_ensemble(object):
     def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
         assert self._fitted, "Model not fitted yet"
 
-        self.owa = 0, self.mase = 0, self.smape = 0
+        self.owa = 0
+        self.mase = 0
+        self.smape = 0
         for i in range(self.num_splits):
             y_train_df_chunk = y_train_df[i*chunk_size:(i+1)*chunk_size]
             X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
