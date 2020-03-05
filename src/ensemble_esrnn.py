@@ -81,7 +81,9 @@ class ESRNN_ensemble(object):
             X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
             y_test_df_chunk = y_test_df[i*chunk_size:(i+1)*chunk_size]
             owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
-            self.owa += owa_i, self.mase += mase_i, self.smape += smape_i
+            self.owa += owa_i
+            self.mase += mase_i
+            self.smape += smape_i
 
         self.owa /= self.num_splits
         self.mase /= self.num_splits
