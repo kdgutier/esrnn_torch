@@ -6,26 +6,11 @@ Repository with a pytorch implementation of the ES-RNN algorithm proposed by Smy
   <img src="results/m4_results.png" width="800" />
 </p> -->
 
-## Current Results
-| DATASET   | OWA   | M4 OWA |
-|-----------|-------|--------|
-| Yearly    | 0.785 | 0.778  |
-| Quarterly | 0.879 | 0.847  |
-| Monthly   | 0.872 | 0.836  |
-| Hourly    | 0.615 | 0.920  |
-| Weekly    | 0.952 | 0.920  |
-| Daily     |       | 0.920  |
-
 ## Prerequisites
 * numpy==1.16.1
 * pandas==0.25.2
 * pytorch==1.3.1
 * pyyaml
-
-## Replicating M4 results
-```console
-PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
-```
 
 ## Usage Example
 ```python
@@ -55,6 +40,22 @@ y_hat_df = model.predict(X_test_df)
 final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df, 
                                                              X_test_df, y_test_df,
                                                              naive2_seasonality=1)
+```
+
+## Current Results
+| DATASET   | OWA   | M4 OWA |
+|-----------|-------|--------|
+| Yearly    | 0.785 | 0.778  |
+| Quarterly | 0.879 | 0.847  |
+| Monthly   | 0.872 | 0.836  |
+| Hourly    | 0.615 | 0.920  |
+| Weekly    | 0.952 | 0.920  |
+| Daily     |       | 0.920  |
+
+
+## Replicating M4 results
+```console
+PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
 ```
 
 ## Authors
