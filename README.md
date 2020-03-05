@@ -1,5 +1,5 @@
 # Pytorch Implementation of the ES-RNN
-In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines.
+In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
 
 ## Installation Prerequisites
 * numpy==1.16.1
@@ -38,6 +38,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 ```
 
 ## Current Results
+Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 <br/>
 | DATASET   | OWA   | M4 OWA |
@@ -47,7 +48,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 | Monthly   | 0.872 | 0.836  |
 | Hourly    | 0.615 | 0.920  |
 | Weekly    | 0.952 | 0.920  |
-| Daily     |       | 0.920  |
+| Daily     | 1.006 | 0.920  |
 
 
 ## Replicating M4 results
