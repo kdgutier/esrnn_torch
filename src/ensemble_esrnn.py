@@ -64,10 +64,12 @@ class ESRNN_ensemble(object):
         min_owa = 0
         for i in range(self.num_splits):
             print('Training ESRNN ', i)
-            X_df_chunk = X_df[i*chunk_size:(i+1)*chunk_size]
-            y_df_chunk = y_df[i*chunk_size:(i+1)*chunk_size]
-            X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
-            y_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
+            start = int(i*chunk_size)
+            end = int((i+1)*chunk_size)
+            X_df_chunk = X_df[start:end]
+            y_df_chunk = y_df[start:end]
+            X_test_df_chunk = X_test_df[start:end]
+            y_test_df_chunk = X_test_df[start:end]
             self.esrnn_ensemble[i].fit(X_df_chunk, y_df_chunk, X_test_df_chunk, y_test_df_chunk)
 
         self._fitted = True
@@ -80,9 +82,11 @@ class ESRNN_ensemble(object):
         self.smape = 0
         chunk_size = np.ceil(self.num_series/self.num_splits)
         for i in range(self.num_splits):
-            y_train_df_chunk = y_train_df[i*chunk_size:(i+1)*chunk_size]
-            X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
-            y_test_df_chunk = y_test_df[i*chunk_size:(i+1)*chunk_size]
+            start = int(i*chunk_size)
+            end = int((i+1)*chunk_size)
+            y_train_df_chunk = y_train_df[start:end]
+            X_test_df_chunk = X_test_df[start:end]
+            y_test_df_chunk = y_test_df[start:end]
             owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
             self.owa += owa_i
             self.mase += mase_i
