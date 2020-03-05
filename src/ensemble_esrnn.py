@@ -50,8 +50,7 @@ class ESRNN_ensemble(object):
         self.esrnn_ensemble = [deepcopy(self.esrnn)] * num_splits
 
 
-    def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, 
-          shuffle=True):
+    def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):
         # Transform long dfs to wide numpy
         assert type(X_df) == pd.core.frame.DataFrame
         assert type(y_df) == pd.core.frame.DataFrame
@@ -70,31 +69,25 @@ class ESRNN_ensemble(object):
             X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
             y_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
             self.esrnn_ensemble[i].fit(X_df_chunk, y_df_chunk, X_test_df_chunk, y_test_df_chunk)
-            min_owa += self.esrnn_ensemble[i].min_owa
-        
-        print('Ensemble OWA: ', min_owa/self.num_splits)
+
         self._fitted = True
 
     def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
         assert self._fitted, "Model not fitted yet"
 
-        model_owa = 0
-        model_mase = 0
-        model_smape = 0
-        for i in range(self.num_splits)
+        self.owa = 0, self.mase = 0, self.smape = 0
+        for i in range(self.num_splits):
             y_train_df_chunk = y_train_df[i*chunk_size:(i+1)*chunk_size]
             X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
             y_test_df_chunk = y_test_df[i*chunk_size:(i+1)*chunk_size]
-            owa, mase, smape = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
-            model_owa += owa
-            model_mase += mase
-            model_smape += smape
+            owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
+            self.owa += owa_i, self.mase += mase_i, self.smape += smape_i
 
-        model_owa = model_owa/self.num_splits
-        model_mase = model_mase/self.num_splits
-        model_smape = model_smape/self.num_splits
+        self.owa /= self.num_splits
+        self.mase /= self.num_splits
+        self.smape /= self.num_splits
 
-        return model_owa, model_mase, model_smape
+        return self.owa, self.mase, self.smape
 
 
     

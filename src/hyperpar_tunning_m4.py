@@ -268,8 +268,6 @@ def grid_main(args):
                                                                          X_test_df,
                                                                          y_test_df)
     evaluation_dict = {'id': mc.model_id,
-                       'min_owa': model.min_owa,
-                       'min_epoch': model.min_epoch,
                        'owa': final_owa,
                        'mase': final_mase,
                        'smape': final_smape}
