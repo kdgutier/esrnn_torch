@@ -1,5 +1,6 @@
 # Pytorch Implementation of the ES-RNN
-In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines.
+In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines. <br/>
+Contributions are welcome.
 
 ## Installation Prerequisites
 * numpy==1.16.1
