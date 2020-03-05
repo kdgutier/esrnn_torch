@@ -58,7 +58,7 @@ class ESRNN_ensemble(object):
         assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
 
         self.num_series = len(X_df)
-        self.chunk_size = np.ceil(self.num_series/self.num_splits)
+        chunk_size = np.ceil(self.num_series/self.num_splits)
 
         # Create list with splits
         min_owa = 0
@@ -78,6 +78,7 @@ class ESRNN_ensemble(object):
         self.owa = 0
         self.mase = 0
         self.smape = 0
+        chunk_size = np.ceil(self.num_series/self.num_splits)
         for i in range(self.num_splits):
             y_train_df_chunk = y_train_df[i*chunk_size:(i+1)*chunk_size]
             X_test_df_chunk = X_test_df[i*chunk_size:(i+1)*chunk_size]
