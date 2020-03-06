@@ -28,7 +28,7 @@ def maybe_download(filename):
     print('Successfully downloaded', filename, size, 'bytes.')
   return filepath
 
-def M4_parser(dataset_name, num_obs=1000000):
+def M4_parser(dataset_name, num_obs=200): #1000000
   m4_info = pd.read_csv(DATA_DIRECTORY+'/M4-info.csv', usecols=['M4id','category'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
   
