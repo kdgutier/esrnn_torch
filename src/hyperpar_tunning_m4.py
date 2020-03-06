@@ -100,7 +100,7 @@ WEEKLY = {'model_type': ['esrnn'],
 
 MONTHLY = {'model_type': ['esrnn'],
            'dataset': ['Monthly'],
-           'num_splits': [2],
+           'num_splits': [10],
            'max_epochs' : [15, 25],
            'batch_size' : [8, 32, 128],
            'freq_of_test': [4],
