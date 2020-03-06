@@ -1,5 +1,6 @@
 import os
 import time
+import random
 
 import numpy as np
 import pandas as pd
@@ -7,6 +8,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from copy import deepcopy
 from pathlib import Path
 
@@ -66,7 +68,7 @@ class ESRNN_ensemble(object):
         min_owa = 0
         for i in range(self.num_splits):
             print('Training ESRNN ', i)
-            ids_split = self.uniques_ids[int(i*chunk_size):int((i+1)*chunk_size)]
+            ids_split = self.unique_ids[int(i*chunk_size):int((i+1)*chunk_size)]
             X_df_chunk = X_df[X_df['unique_id'].isin(ids_split)]
             y_df_chunk = y_df[y_df['unique_id'].isin(ids_split)]
             X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)]
@@ -83,7 +85,7 @@ class ESRNN_ensemble(object):
         self.smape = 0
         chunk_size = np.ceil(self.num_series/self.num_splits)
         for i in range(self.num_splits):
-            ids_split = self.uniques_ids[int(i*chunk_size):int((i+1)*chunk_size)]
+            ids_split = self.unique_ids[int(i*chunk_size):int((i+1)*chunk_size)]
             y_train_df_chunk = y_train_df[y_train_df['unique_id'].isin(ids_split)]
             X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)]
             y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)]
