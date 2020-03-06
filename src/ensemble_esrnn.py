@@ -59,10 +59,10 @@ class ESRNN_ensemble(object):
         assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
         assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
 
-        self.num_series = len(X_df)
+        self.unique_ids = X_df['unique_id'].unique()
+        self.num_series = len(self.unique_ids)
         chunk_size = np.ceil(self.num_series/self.num_splits)
 
-        self.unique_ids = X_df['unique_id'].unique()
         #random.seed(self.random_seed)
         #random.shuffle(self.unique_ids)
 
