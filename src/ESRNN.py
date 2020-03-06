@@ -345,7 +345,7 @@ class ESRNN(object):
     panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
     
     # TODO: Improve wasted computation
-    panel_delta = list(range(1, output_size+1)) * n_unique_id 
+    panel_delta = list(range(1, output_size+1)) * n_unique_id
     panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
     
     panel_ds = panel_last_ds + panel_delta
