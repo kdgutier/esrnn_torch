@@ -105,9 +105,9 @@ class ESRNN_ensemble(object):
         chunk_size = np.ceil(self.num_series/self.num_splits)
         for i in range(self.num_splits):
             ids_split = self.unique_ids[int(i*chunk_size):int((i+1)*chunk_size)]
-            y_train_df_chunk = y_train_df[y_train_df['unique_id'].isin(ids_split)]
-            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)]
-            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)]
+            y_train_df_chunk = y_train_df[y_train_df['unique_id'].isin(ids_split)].reset_index(drop=True)
+            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
+            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
             owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
             self.owa += owa_i
             self.mase += mase_i
