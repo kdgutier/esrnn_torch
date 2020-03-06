@@ -60,16 +60,17 @@ class ESRNN_ensemble(object):
         self.num_series = len(X_df)
         chunk_size = np.ceil(self.num_series/self.num_splits)
 
+        self.unique_ids = X_df['unique_id'].uniques()
+
         # Create list with splits
         min_owa = 0
         for i in range(self.num_splits):
             print('Training ESRNN ', i)
-            start = int(i*chunk_size)
-            end = int((i+1)*chunk_size)
-            X_df_chunk = X_df[start:end]
-            y_df_chunk = y_df[start:end]
-            X_test_df_chunk = X_test_df[start:end]
-            y_test_df_chunk = X_test_df[start:end]
+            ids_split = uniques_ids[int(i*chunk_size):int((i+1)*chunk_size)]
+            X_df_chunk = X_df[X_df['unique_id'].isin(ids_split)]
+            y_df_chunk = y_df[y_df['unique_id'].isin(ids_split)]
+            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)]
+            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)]
             self.esrnn_ensemble[i].fit(X_df_chunk, y_df_chunk, X_test_df_chunk, y_test_df_chunk)
 
         self._fitted = True
@@ -82,11 +83,10 @@ class ESRNN_ensemble(object):
         self.smape = 0
         chunk_size = np.ceil(self.num_series/self.num_splits)
         for i in range(self.num_splits):
-            start = int(i*chunk_size)
-            end = int((i+1)*chunk_size)
-            y_train_df_chunk = y_train_df[start:end]
-            X_test_df_chunk = X_test_df[start:end]
-            y_test_df_chunk = y_test_df[start:end]
+            ids_split = uniques_ids[int(i*chunk_size):int((i+1)*chunk_size)]
+            y_train_df_chunk = y_train_df[y_train_df['unique_id'].isin(ids_split)]
+            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)]
+            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)]
             owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
             self.owa += owa_i
             self.mase += mase_i
