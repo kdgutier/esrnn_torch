@@ -50,7 +50,7 @@ class ESRNNensemble(object):
                           frequency=frequency, max_periods=max_periods, random_seed=random_seed,
                           device=device, root_dir=root_dir)
 
-        self.esrnn_ensemble = [deepcopy(esrnn).to(device)] * num_splits
+        self.esrnn_ensemble = [deepcopy(esrnn)] * num_splits
         self.random_seed = random_seed
 
     def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):
