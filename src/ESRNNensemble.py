@@ -28,7 +28,7 @@ class ESRNNensemble(object):
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
-               device='cpu', root_dir='./'):
+               device='cuda', root_dir='./'):
         super(ESRNNensemble, self).__init__()
 
         self.num_splits = num_splits
@@ -49,7 +49,7 @@ class ESRNNensemble(object):
                           frequency=frequency, max_periods=max_periods, random_seed=random_seed,
                           device=device, root_dir=root_dir)
 
-        self.esrnn_ensemble = [deepcopy(esrnn)] * num_splits
+        self.esrnn_ensemble = [deepcopy(esrnn).to(device)] * num_splits
         self.random_seed = random_seed
 
     def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):

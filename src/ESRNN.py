@@ -140,7 +140,7 @@ class ESRNN(object):
 
   def train(self, dataloader):
     if self.mc.ensemble:
-      self.esrnn_ensemble = [deepcopy(self.esrnn)] * 5
+      self.esrnn_ensemble = [deepcopy(self.esrnn).to(self.mc.device)] * 5
 
     print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
