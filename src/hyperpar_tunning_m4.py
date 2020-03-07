@@ -235,10 +235,10 @@ def grid_main(args):
 
     os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
 
-    from src.ESRNNensemble import ESRNN_ensemble
+    from src.ESRNNensemble import ESRNNensemble
 
     # Instantiate, fit, predict and evaluate
-    model = ESRNN_ensemble(num_splits=int(mc.num_splits),
+    model = ESRNNensemble(num_splits=int(mc.num_splits),
                   max_epochs=int(mc.max_epochs),
                   batch_size=int(mc.batch_size),
                   learning_rate=mc.learning_rate,
