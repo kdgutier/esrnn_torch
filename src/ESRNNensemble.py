@@ -74,7 +74,7 @@ class ESRNNensemble(object):
             y_df_chunk = y_df[y_df['unique_id'].isin(ids_split)].reset_index(drop=True)
             X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
             y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            self.esrnn_ensemble[i].esrnn.to(self.device)
+            #self.esrnn_ensemble[i].esrnn.to(self.device)
             self.esrnn_ensemble[i].fit(X_df_chunk, y_df_chunk, X_test_df_chunk, y_test_df_chunk)
 
         self._fitted = True
