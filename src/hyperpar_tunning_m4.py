@@ -70,7 +70,7 @@ DAILY = {'model_type': ['esrnn'],
          'seasonality' : [[7]],
          'input_size' : [7],
          'output_size' : [14],
-         'random_seed': [1, 2, 117, 120652, 117982, 1210357],
+         'random_seed': [1, 2, 3],
          'device' : ['cuda']}
 
 WEEKLY = {'model_type': ['esrnn'],
