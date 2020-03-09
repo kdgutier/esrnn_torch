@@ -110,7 +110,7 @@ class ESRNN(object):
   `Original Dynet Implementation of ESRNN
   <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
-  def __init__(self, max_epochs=15, batch_size=1, batch_size_test=128, freq_of_test=-1,
+  def __init__(self, max_epochs=15, batch_size=1, batch_size_test=64, freq_of_test=-1,
                learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
