@@ -243,7 +243,8 @@ def grid_main(args):
     from src.ESRNNensemble import ESRNNensemble
 
     # Instantiate, fit, predict and evaluate
-    model = ESRNNensemble(num_splits=int(mc.num_splits),
+    #model = ESRNNensemble(num_splits=int(mc.num_splits),
+    model = ESRNN(
                           max_epochs=int(mc.max_epochs),
                           batch_size=int(mc.batch_size),
                           learning_rate=mc.learning_rate,
