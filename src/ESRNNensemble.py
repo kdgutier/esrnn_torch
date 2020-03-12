@@ -6,98 +6,186 @@ import numpy as np
 import pandas as pd
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
 
-from copy import deepcopy
 from pathlib import Path
+
+from src.utils.config import ModelConfig
+from src.utils.losses import DisaggregatedPinballLoss
+from src.utils.data import Iterator
 
 from src.ESRNN import ESRNN
 
 from src.utils_evaluation import owa
 
-
 class ESRNNensemble(object):
-    def __init__(self, num_splits = 1, max_epochs=15, batch_size=1, batch_size_test=128, freq_of_test=-1,
-               learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
+  """ Exponential Smoothing Recursive Neural Network Ensemble.
+    n_models=1
+    n_top=1
+  """
+  def __init__(self, n_models=1, n_top=1, max_epochs=15, batch_size=1, batch_size_test=128,
+               freq_of_test=-1, learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
-               rnn_weight_decay=0, noise_std=0.001,
-               level_variability_penalty=80,
-               percentile=50, training_percentile=50, ensemble=False,
-               cell_type='LSTM',
+               rnn_weight_decay=0, noise_std=0.001, level_variability_penalty=80,
+               percentile=50, training_percentile=50, ensemble=False, cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
                device='cuda', root_dir='./'):
-        super(ESRNNensemble, self).__init__()
+    super(ESRNNensemble, self).__init__()
 
-        self.num_splits = num_splits
-        self._fitted = False
-        self.device = device
-
-        esrnn = ESRNN(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
+    self.n_models = n_models
+    self.n_top = n_top
+    self.big_float = 1e6
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
                           freq_of_test=freq_of_test, learning_rate=learning_rate,
                           lr_scheduler_step_size=lr_scheduler_step_size, lr_decay=lr_decay,
                           per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
-                          level_variability_penalty=level_variability_penalty,
-                          percentile=percentile,
-                          training_percentile=training_percentile, ensemble=ensemble,
-                          cell_type=cell_type,
+                          level_variability_penalty=level_variability_penalty, percentile=percentile,
+                          training_percentile=training_percentile, ensemble=ensemble, cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, random_seed=random_seed,
                           device=device, root_dir=root_dir)
+    self._fitted = False
 
-        self.esrnn_ensemble = [deepcopy(esrnn)] * num_splits
-        self.random_seed = random_seed
+  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):
+    # Transform long dfs to wide numpy
+    assert type(X_df) == pd.core.frame.DataFrame
+    assert type(y_df) == pd.core.frame.DataFrame
+    assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
+    assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
 
-    def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):
-        assert type(X_df) == pd.core.frame.DataFrame
-        assert type(y_df) == pd.core.frame.DataFrame
-        assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
-        assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
+    # Storing dfs for OWA evaluation, initializing min_owa
+    self.y_train_df = y_df
+    self.X_test_df = X_test_df
+    self.y_test_df = y_test_df
+    self.min_owa = 4.0
+    self.min_epoch = 0
 
-        self.unique_ids = X_df['unique_id'].unique()
-        self.num_series = len(self.unique_ids)
-        chunk_size = np.ceil(self.num_series/self.num_splits)
+    # Exogenous variables
+    unique_categories = X_df['x'].unique()
+    self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
+    self.mc.exogenous_size = len(unique_categories)
 
-        #random.seed(self.random_seed)
-        #random.shuffle(self.unique_ids)
+    self.unique_ids = X_df['unique_id'].unique()
+    self.mc.n_series = len(self.unique_ids)
 
-        # Create list with splits
-        for i in range(self.num_splits):
-            print('Training ESRNN ', i)
-            ids_split = self.unique_ids[int(i*chunk_size):int((i+1)*chunk_size)]
-            X_df_chunk = X_df[X_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            y_df_chunk = y_df[y_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            #self.esrnn_ensemble[i].esrnn.to(self.device)
-            self.esrnn_ensemble[i].fit(X_df_chunk, y_df_chunk, X_test_df_chunk, y_test_df_chunk)
+    # Set seeds
+    torch.manual_seed(self.mc.random_seed)
+    np.random.seed(self.mc.random_seed)
 
-        self._fitted = True
+    # Initial series random assignment to models
+    self.series_models_map = np.zeros((self.mc.n_series, self.n_models))
+    n_initial_models = int(np.ceil(self.n_models/2))
+    for i in range(self.mc.n_series):
+      id_models = np.random.choice(self.n_models, n_initial_models)
+      self.series_models_map[i,id_models] = 1
 
-    def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
-        assert self._fitted, "Model not fitted yet"
+    self.esrnn_ensemble = []
+    for _ in range(self.n_models):
+      esrnn = ESRNN(max_epochs=self.mc.max_epochs, batch_size=self.mc.batch_size, batch_size_test=self.mc.batch_size_test, 
+                    freq_of_test=-1, learning_rate=self.mc.learning_rate,
+                    lr_scheduler_step_size=self.mc.lr_scheduler_step_size, lr_decay=self.mc.lr_decay,
+                    per_series_lr_multip=self.mc.per_series_lr_multip,
+                    gradient_eps=self.mc.gradient_eps, gradient_clipping_threshold=self.mc.gradient_clipping_threshold,
+                    rnn_weight_decay=self.mc.rnn_weight_decay, noise_std=self.mc.noise_std,
+                    level_variability_penalty=self.mc.level_variability_penalty,
+                    percentile=self.mc.percentile,
+                    training_percentile=self.mc.training_percentile, ensemble=self.mc.ensemble,
+                    cell_type=self.mc.cell_type,
+                    state_hsize=self.mc.state_hsize, dilations=self.mc.dilations, add_nl_layer=self.mc.add_nl_layer,
+                    seasonality=self.mc.seasonality, input_size=self.mc.input_size, output_size=self.mc.output_size,
+                    frequency=self.mc.frequency, max_periods=self.mc.max_periods, random_seed=self.mc.random_seed,
+                    device=self.mc.device, root_dir=self.mc.root_dir)
 
-        self.owa = 0
-        self.mase = 0
-        self.smape = 0
-        chunk_size = np.ceil(self.num_series/self.num_splits)
-        for i in range(self.num_splits):
-            ids_split = self.unique_ids[int(i*chunk_size):int((i+1)*chunk_size)]
-            y_train_df_chunk = y_train_df[y_train_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            X_test_df_chunk = X_test_df[X_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            y_test_df_chunk = y_test_df[y_test_df['unique_id'].isin(ids_split)].reset_index(drop=True)
-            owa_i, mase_i, smape_i = self.esrnn_ensemble[i].evaluate_model_prediction(y_train_df_chunk, X_test_df_chunk, y_test_df_chunk)
-            self.owa += owa_i
-            self.mase += mase_i
-            self.smape += smape_i
+      # To instantiate _ESRNN object within ESRNN class we need n_series      
+      esrnn.instantiate_esrnn(self.mc.exogenous_size, self.mc.n_series)
+      self.esrnn_ensemble.append(esrnn)
 
-        self.owa /= self.num_splits
-        self.mase /= self.num_splits
-        self.smape /= self.num_splits
+    self.X, self.y = esrnn.long_to_wide(X_df, y_df)
+    assert len(self.X)==len(self.y)
+    assert self.X.shape[1]>=3
 
-        return self.owa, self.mase, self.smape
+    # Train model
+    self._fitted = True
+    self.train()
+
+  def train(self):
+    # Initial performance matrix
+    self.performance_matrix = np.ones((self.mc.n_series, self.n_models)) * self.big_float
+    warm_start = False
+    train_tau = self.mc.training_percentile/100
+    criterion = DisaggregatedPinballLoss(train_tau)
+
+    # Train epoch loop
+    for epoch in range(self.mc.max_epochs):
+      start = time.time()
+      # Model loop
+      for model_id, esrnn in enumerate(self.esrnn_ensemble):
+        # Train model with subset data
+        dataloader = Iterator(mc = self.mc, X=self.X, y=self.y,
+                                      weights=self.series_models_map[:, model_id])
+        esrnn.train(dataloader, max_epochs=1, warm_start=warm_start, shuffle=True, verbose=False)
+
+        # Compute model performance for each series
+        dataloader = Iterator(mc=self.mc, X=self.X, y=self.y)
+        per_series_evaluation = esrnn.per_series_evaluation(dataloader, criterion=criterion)
+        self.performance_matrix[:, model_id] = per_series_evaluation
+
+      # Reassign series to models
+      self.series_models_map = np.zeros((self.mc.n_series, self.n_models))
+      top_models = np.argpartition(self.performance_matrix, self.n_top)[:, :self.n_top]
+      for i in range(self.mc.n_series):
+        self.series_models_map[i, top_models[i,:]] = 1
+      
+      # Solve degenerate models
+      for model_id in range(self.n_models):
+        if np.sum(self.series_models_map[:,model_id])==0:
+          print('Reassigning random series to model ', model_id)
+          n_sample_series= int(self.mc.n_series/2)
+          index_series = np.random.choice(self.mc.n_series, n_sample_series, replace=False)
+          self.series_models_map[index_series, model_id] = 1
+
+      warm_start = True
+
+      if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
+        print("========= Epoch {} finished =========".format(epoch))
+        print("Training time: {}".format(round(time.time()-start, 5)))
+        #print("Training loss: {}".format(round(self.train_loss, 5)))
+        print('Models num series', np.sum(self.series_models_map, axis=0))
+
+      # freq of test
+        # predict()
+    print('Train finished! \n')
+
+  def predict(self, X_df):
+    """
+        Predictions for all stored time series
+    Returns:
+        Y_hat_panel : array-like (n_samples, 1).
+          Predicted values for models in Family for ids in Panel.
+        ds: Corresponding list of date stamps
+        unique_id: Corresponding list of unique_id
+    """
+    assert type(X_df) == pd.core.frame.DataFrame
+    assert 'unique_id' in X_df
+    assert self._fitted, "Model not fitted yet"
+
+    self.esrnn.eval()
+
+    dataloader = Iterator(mc=self.mc, X=self.X, y=self.y)
+    
+    for model_id, esrnn in enumerate(self.esrnn_ensemble):
+      # Compute model performance for each series
+
+    # Create fast dataloader
+    if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
+    else: new_batch_size = self.mc.batch_size_test
+    self.train_dataloader.update_batch_size(new_batch_size)
+    dataloader = self.train_dataloader
+        
+
+
+    

@@ -138,11 +138,11 @@ class ESRNN(object):
                           device=device, root_dir=root_dir)
     self._fitted = False
 
-  def train(self, dataloader):
+  def train(self, dataloader, max_epochs, warm_start, shuffle, verbose):
     if self.mc.ensemble:
       self.esrnn_ensemble = [deepcopy(self.esrnn).to(self.mc.device)] * 5
 
-    print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
+    if verbose: print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
     es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
@@ -170,10 +170,10 @@ class ESRNN(object):
     eval_tau = self.mc.percentile / 100
     eval_loss = PinballLoss(tau=eval_tau)
 
-    for epoch in range(self.mc.max_epochs):
+    for epoch in range(max_epochs):
       self.esrnn.train()
       start = time.time()
-      if self.shuffle:
+      if shuffle:
         dataloader.shuffle_dataset(random_seed=epoch)
       losses = []
       for j in range(dataloader.n_batches):
@@ -210,38 +210,43 @@ class ESRNN(object):
 
       # Evaluation
       self.train_loss = np.mean(losses)
-      print("========= Epoch {} finished =========".format(epoch))
-      print("Training time: {}".format(round(time.time()-start, 5)))
-      print("Training loss: {}".format(round(self.train_loss, 5)))
+      if verbose: 
+        print("========= Epoch {} finished =========".format(epoch))
+        print("Training time: {}".format(round(time.time()-start, 5)))
+        print("Training loss: {}".format(round(self.train_loss, 5)))
+
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
         if self.y_test_df is not None:
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
                                         self.y_test_df, epoch=epoch)
           self.esrnn.train()
 
-    print('Train finished! \n')
+    if verbose: print('Train finished! \n')
   
-  def evaluation(self, dataloader, criterion):
-      """
-      Evaluate the model against data
-      Args:
-        mc: model parameters
-        model: the trained model
-        dataloader: a data loader
-        criterion: loss to evaluate
-      """
-      losses = 0.0
-      n_series = 0
-      with torch.no_grad():
-        for j in range(dataloader.n_batches):
-          batch = dataloader.get_batch()
-          windows_y, windows_y_hat, _ = self.esrnn(batch)
-          loss = criterion(windows_y, windows_y_hat)
-          losses += loss.data.cpu().numpy()
-          n_series += len(batch.idxs)
+  def per_series_evaluation(self, dataloader, criterion):
+    """
+    Evaluate the model against data
+    Args:
+      mc: model parameters
+      model: the trained model
+      dataloader: a data loader
+      criterion: loss to evaluate
+    """
+    with torch.no_grad():
+      # Create fast dataloader
+      if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
+      else: new_batch_size = self.mc.batch_size_test
+      dataloader.update_batch_size(new_batch_size)
 
-      losses /= n_series
-      return losses
+      per_series_losses = []
+      for j in range(dataloader.n_batches):
+        batch = dataloader.get_batch()
+        windows_y, windows_y_hat, _ = self.esrnn(batch)
+        loss = criterion(windows_y, windows_y_hat)
+        per_series_losses += loss.data.cpu().numpy().tolist()
+
+      dataloader.update_batch_size(self.mc.batch_size)
+    return per_series_losses
   
   def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
     """
@@ -274,10 +279,11 @@ class ESRNN(object):
     print('OWA: {} '.format(np.round(model_owa, 3)))
     print('SMAPE: {} '.format(np.round(model_smape, 3)))
     print('MASE: {} '.format(np.round(model_mase, 3)))
+    
     return model_owa, model_mase, model_smape
   
   def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, 
-          shuffle=True):
+          warm_start=False, shuffle=True, verbose=True):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
@@ -298,23 +304,29 @@ class ESRNN(object):
     # Exogenous variables
     unique_categories = np.unique(X[:, 1])
     self.mc.category_to_idx = dict((word, index) for index, word in enumerate(unique_categories))
-    self.mc.exogenous_size = len(unique_categories)
+    exogenous_size = len(unique_categories)
 
     # Create batches (device in mc)
     self.train_dataloader = Iterator(mc=self.mc, X=X, y=y)
-    self.shuffle = shuffle
 
     # Random Seeds (model initialization)
     torch.manual_seed(self.mc.random_seed)
     np.random.seed(self.mc.random_seed)
 
     # Initialize model
-    self.mc.n_series = self.train_dataloader.n_series
-    self.esrnn = _ESRNN(self.mc).to(self.mc.device)
+    n_series = self.train_dataloader.n_series
+    self.instantiate_esrnn(exogenous_size, n_series)
 
     # Train model
     self._fitted = True
-    self.train(dataloader=self.train_dataloader)
+    self.train(dataloader=self.train_dataloader, max_epochs=self.mc.max_epochs,
+               warm_start=warm_start, shuffle=shuffle, verbose=verbose)
+
+
+  def instantiate_esrnn(self, exogenous_size, n_series):
+    self.mc.exogenous_size = exogenous_size
+    self.mc.n_series = n_series
+    self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
   def predict(self, X_df, decomposition=False):
     """

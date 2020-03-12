@@ -49,4 +49,5 @@ class ModelConfig(object):
     self.frequency = frequency
     self.min_series_length = self.input_size_i + self.output_size_i
     self.max_series_length = (max_periods * self.input_size) + self.min_series_length
+    self.max_periods = max_periods
     self.root_dir = root_dir

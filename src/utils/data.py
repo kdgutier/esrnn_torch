@@ -53,8 +53,15 @@ class Iterator(object):
     Iterator method get_batch() returns a batch of time
     series objects defined by the Batch class.
   """
-  def __init__(self, mc, X, y):
-    self.X, self.y = X, y
+  def __init__(self, mc, X, y, weights=None):
+    if weights is not None:
+      assert len(weights)==len(X)
+      train_ids = np.where(weights==1)[0]
+      self.X = X[train_ids,:]
+      self.y = y[train_ids,:]
+    else:
+      self.X = X
+      self.y = y
     assert len(X)==len(y)
     
     # Parse Model config
@@ -65,7 +72,7 @@ class Iterator(object):
     assert len(self.unique_idxs)==len(self.X)
     self.n_series = len(self.unique_idxs)
 
-    assert self.batch_size <= self.n_series
+    assert self.batch_size <= self.n_series 
     
     # Initialize batch iterator
     self.b = 0
