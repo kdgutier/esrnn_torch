@@ -173,19 +173,30 @@ class ESRNNensemble(object):
     assert 'unique_id' in X_df
     assert self._fitted, "Model not fitted yet"
 
-    self.esrnn.eval()
-
     dataloader = Iterator(mc=self.mc, X=self.X, y=self.y)
+
+    output_size = self.mc.output_size
+    n_unique_id = len(dataloader.sort_key['unique_id'])
+    
+    panel_y_hat = np.zeros((self.n_models, n_unique_id, output_size))
     
     for model_id, esrnn in enumerate(self.esrnn_ensemble):
-      # Compute model performance for each series
-
-    # Create fast dataloader
-    if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
-    else: new_batch_size = self.mc.batch_size_test
-    self.train_dataloader.update_batch_size(new_batch_size)
-    dataloader = self.train_dataloader
+      esrnn.esrnn.eval()
+      
+      # Predict
+      count = 0
+      for j in range(dataloader.n_batches):
+        batch = dataloader.get_batch()
+        batch_size = batch.y.shape[0]
         
+        y_hat = esrnn.predict(batch)
+
+        y_hat = y_hat.data.cpu().numpy()
+
+        panel_y_hat[model_id, count:count+batch_size, :] = y_hat
+        count += batch_size
+
+    return panel_y_hat
 
 
     
