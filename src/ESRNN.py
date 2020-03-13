@@ -138,29 +138,30 @@ class ESRNN(object):
                           device=device, root_dir=root_dir)
     self._fitted = False
 
-  def train(self, dataloader, max_epochs, warm_start, shuffle, verbose):
+  def train(self, dataloader, max_epochs, warm_start=False, shuffle, verbose):
     if self.mc.ensemble:
       self.esrnn_ensemble = [deepcopy(self.esrnn).to(self.mc.device)] * 5
 
     if verbose: print(15*'='+' Training ESRNN  ' + 15*'=' + '\n')
 
     # Optimizers
-    es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
-                              lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
-                              betas=(0.9, 0.999), eps=self.mc.gradient_eps)
+    if not warm_start:
+      self.es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
+                                lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
+                                betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
-    es_scheduler = StepLR(optimizer=es_optimizer,
-                          step_size=self.mc.lr_scheduler_step_size,
-                          gamma=0.9)
+      self.es_scheduler = StepLR(optimizer=self.es_optimizer,
+                            step_size=self.mc.lr_scheduler_step_size,
+                            gamma=0.9)
 
-    rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
-                               lr=self.mc.learning_rate,
-                               betas=(0.9, 0.999), eps=self.mc.gradient_eps,
-                               weight_decay=self.mc.rnn_weight_decay)
+      self.rnn_optimizer = optim.Adam(params=self.esrnn.rnn.parameters(),
+                                lr=self.mc.learning_rate,
+                                betas=(0.9, 0.999), eps=self.mc.gradient_eps,
+                                weight_decay=self.mc.rnn_weight_decay)
 
-    rnn_scheduler = StepLR(optimizer=rnn_optimizer,
-                           step_size=self.mc.lr_scheduler_step_size,
-                           gamma=self.mc.lr_decay)
+      self.rnn_scheduler = StepLR(optimizer=self.rnn_optimizer,
+                            step_size=self.mc.lr_scheduler_step_size,
+                            gamma=self.mc.lr_decay)
     
     # Loss Functions
     train_tau = self.mc.training_percentile / 100
@@ -177,8 +178,8 @@ class ESRNN(object):
         dataloader.shuffle_dataset(random_seed=epoch)
       losses = []
       for j in range(dataloader.n_batches):
-        es_optimizer.zero_grad()
-        rnn_optimizer.zero_grad()
+        self.es_optimizer.zero_grad()
+        self.rnn_optimizer.zero_grad()
 
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, levels = self.esrnn(batch)
@@ -194,12 +195,12 @@ class ESRNN(object):
                                        self.mc.gradient_clipping_threshold)
         torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), 
                                        self.mc.gradient_clipping_threshold)
-        rnn_optimizer.step()
-        es_optimizer.step()
+        self.rnn_optimizer.step()
+        self.es_optimizer.step()
 
       # Decay learning rate
-      es_scheduler.step()
-      rnn_scheduler.step()
+      self.es_scheduler.step()
+      self.rnn_scheduler.step()
 
       if self.mc.ensemble:
         copy_esrnn = deepcopy(self.esrnn)
