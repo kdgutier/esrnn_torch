@@ -72,7 +72,7 @@ class Iterator(object):
     assert len(self.unique_idxs)==len(self.X)
     self.n_series = len(self.unique_idxs)
 
-    assert self.batch_size <= self.n_series 
+    #assert self.batch_size <= self.n_series 
     
     # Initialize batch iterator
     self.b = 0

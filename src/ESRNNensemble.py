@@ -123,6 +123,15 @@ class ESRNNensemble(object):
     # Train epoch loop
     for epoch in range(self.mc.max_epochs):
       start = time.time()
+
+      # Solve degenerate models
+      for model_id in range(self.n_models):
+        if np.sum(self.series_models_map[:,model_id])==0:
+          print('Reassigning random series to model ', model_id)
+          n_sample_series= int(self.mc.n_series/2)
+          index_series = np.random.choice(self.mc.n_series, n_sample_series, replace=False)
+          self.series_models_map[index_series, model_id] = 1
+
       # Model loop
       for model_id, esrnn in enumerate(self.esrnn_ensemble):
         # Train model with subset data
@@ -140,25 +149,20 @@ class ESRNNensemble(object):
       top_models = np.argpartition(self.performance_matrix, self.n_top)[:, :self.n_top]
       for i in range(self.mc.n_series):
         self.series_models_map[i, top_models[i,:]] = 1
-      
-      # Solve degenerate models
-      for model_id in range(self.n_models):
-        if np.sum(self.series_models_map[:,model_id])<self.mc.batch_size:
-          print('Reassigning random series to model ', model_id)
-          n_sample_series= int(self.mc.n_series/2)
-          index_series = np.random.choice(self.mc.n_series, n_sample_series, replace=False)
-          self.series_models_map[index_series, model_id] = 1
 
       warm_start = True
 
-      if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
-        print("========= Epoch {} finished =========".format(epoch))
-        print("Training time: {}".format(round(time.time()-start, 5)))
-        #print("Training loss: {}".format(round(self.train_loss, 5)))
-        print('Models num series', np.sum(self.series_models_map, axis=0))
+      print("========= Epoch {} finished =========".format(epoch))
+      print("Training time: {}".format(round(time.time()-start, 5)))
+      self.train_loss = np.einsum('ij,ij->i',self.performance_matrix, self.series_models_map)/self.n_top
+      self.train_loss = np.mean(self.train_loss)
+      print("Training loss: {}".format(round(self.train_loss, 5)))
+      print('Models num series', np.sum(self.series_models_map, axis=0))
 
-      # freq of test
-        # predict()
+      if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
+        if self.y_test_df is not None:
+          self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
+                                        self.y_test_df, epoch=epoch)
     print('Train finished! \n')
 
   def predict(self, X_df):
@@ -184,7 +188,7 @@ class ESRNNensemble(object):
     for model_id, esrnn in enumerate(self.esrnn_ensemble):
       esrnn.esrnn.eval()
       
-      # Predict all series
+      # Predict ALL series
       count = 0
       for j in range(dataloader.n_batches):
         batch = dataloader.get_batch()
@@ -203,6 +207,8 @@ class ESRNNensemble(object):
     y_hat = y_hat.flatten() 
 
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
+    panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
+
     panel_delta = list(range(1, output_size+1)) * n_unique_id
     panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
     panel_ds = panel_last_ds + panel_delta
@@ -221,4 +227,38 @@ class ESRNNensemble(object):
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id'], how='left')
 
     return Y_hat_panel
+
+  def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
+    """
+    y_train_df: pandas df
+      panel with columns unique_id, ds, y
+    X_test_df: pandas df
+      panel with columns unique_id, ds, x
+    y_test_df: pandas df
+      panel with columns unique_id, ds, y, y_hat_naive2
+    model: python class
+      python class with predict method
+    """
+    assert self._fitted, "Model not fitted yet"
+
+    y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
+    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
+    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
+    y_hat_panel = self.predict(X_test_df)
+    y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
+
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+                                             y_naive2_panel, y_insample,
+                                             seasonality=self.mc.naive_seasonality)
+
+    if self.min_owa > model_owa:
+      self.min_owa = model_owa
+      if epoch is not None:
+        self.min_epoch = epoch
+
+    print('OWA: {} '.format(np.round(model_owa, 3)))
+    print('SMAPE: {} '.format(np.round(model_smape, 3)))
+    print('MASE: {} '.format(np.round(model_mase, 3)))
+    
+    return model_owa, model_mase, model_smape
   
