@@ -201,7 +201,7 @@ class ESRNNensemble(object):
         ensemble_y_hat[model_id, count:count+batch_size, :] = y_hat
         count += batch_size
 
-    # Weighted average with for n_top best models per series
+    # Weighted average of prediction for n_top best models per series
     # (n_models x n_unique_id x output_size) (n_unique_id x n_models)
     y_hat = np.einsum('ijk,ji->jk', ensemble_y_hat, self.series_models_map) / self.n_top
     y_hat = y_hat.flatten() 
