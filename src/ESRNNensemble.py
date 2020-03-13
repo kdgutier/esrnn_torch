@@ -184,7 +184,7 @@ class ESRNNensemble(object):
     for model_id, esrnn in enumerate(self.esrnn_ensemble):
       esrnn.esrnn.eval()
       
-      # Predict
+      # Predict all series
       count = 0
       for j in range(dataloader.n_batches):
         batch = dataloader.get_batch()
@@ -200,7 +200,25 @@ class ESRNNensemble(object):
     # Weighted average with for n_top best models per series
     # (n_models x n_unique_id x output_size) (n_unique_id x n_models)
     y_hat = np.einsum('ijk,ji->jk', ensemble_y_hat, self.series_models_map) / self.n_top
-    return y_hat
+    y_hat = y_hat.flatten() 
 
+    panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
+    panel_delta = list(range(1, output_size+1)) * n_unique_id
+    panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
+    panel_ds = panel_last_ds + panel_delta
 
+    assert len(panel_ds) == len(y_hat) == len(panel_unique_id)
+
+    Y_hat_panel_dict = {'unique_id': panel_unique_id, 
+                        'ds': panel_ds,
+                        'y_hat': y_hat}
+
+    Y_hat_panel = pd.DataFrame.from_dict(Y_hat_panel_dict)
     
+    if 'ds' in X_df:
+      Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
+    else:
+      Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id'], how='left')
+
+    return Y_hat_panel
+  
