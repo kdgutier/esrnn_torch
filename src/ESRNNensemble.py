@@ -102,6 +102,7 @@ class ESRNNensemble(object):
 
       # To instantiate _ESRNN object within ESRNN class we need n_series      
       esrnn.instantiate_esrnn(self.mc.exogenous_size, self.mc.n_series)
+      esrnn._fitted = True
       self.esrnn_ensemble.append(esrnn)
 
     self.X, self.y = esrnn.long_to_wide(X_df, y_df)
@@ -142,7 +143,7 @@ class ESRNNensemble(object):
       
       # Solve degenerate models
       for model_id in range(self.n_models):
-        if np.sum(self.series_models_map[:,model_id])==0:
+        if np.sum(self.series_models_map[:,model_id])<self.mc.batch_size:
           print('Reassigning random series to model ', model_id)
           n_sample_series= int(self.mc.n_series/2)
           index_series = np.random.choice(self.mc.n_series, n_sample_series, replace=False)
@@ -189,7 +190,7 @@ class ESRNNensemble(object):
         batch = dataloader.get_batch()
         batch_size = batch.y.shape[0]
         
-        y_hat = esrnn.predict(batch)
+        y_hat = esrnn.esrnn.predict(batch)
 
         y_hat = y_hat.data.cpu().numpy()
 
