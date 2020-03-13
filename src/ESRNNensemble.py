@@ -179,7 +179,7 @@ class ESRNNensemble(object):
     output_size = self.mc.output_size
     n_unique_id = len(dataloader.sort_key['unique_id'])
     
-    panel_y_hat = np.zeros((self.n_models, n_unique_id, output_size))
+    ensemble_y_hat = np.zeros((self.n_models, n_unique_id, output_size))
     
     for model_id, esrnn in enumerate(self.esrnn_ensemble):
       esrnn.esrnn.eval()
@@ -194,10 +194,13 @@ class ESRNNensemble(object):
 
         y_hat = y_hat.data.cpu().numpy()
 
-        panel_y_hat[model_id, count:count+batch_size, :] = y_hat
+        ensemble_y_hat[model_id, count:count+batch_size, :] = y_hat
         count += batch_size
 
-    return panel_y_hat
+    # Weighted average with for n_top best models per series
+    # (n_models x n_unique_id x output_size) (n_unique_id x n_models)
+    y_hat = np.einsum('ijk,ji->jk', ensemble_y_hat, self.series_models_map) / self.n_top
+    return y_hat
 
 
     
