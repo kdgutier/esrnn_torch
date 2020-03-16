@@ -138,7 +138,8 @@ class ESRNN(object):
                           device=device, root_dir=root_dir)
     self._fitted = False
 
-  def train(self, dataloader, max_epochs, warm_start=False, shuffle, verbose):
+  def train(self, dataloader, max_epochs,
+            warm_start=False, shuffle=True, verbose=True):
     if self.mc.ensemble:
       self.esrnn_ensemble = [deepcopy(self.esrnn).to(self.mc.device)] * 5
 
