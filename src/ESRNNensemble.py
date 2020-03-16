@@ -34,6 +34,7 @@ class ESRNNensemble(object):
     super(ESRNNensemble, self).__init__()
 
     self.n_models = n_models
+    assert n_models>=2, "Number of models for ensemble should be greater than 1"
     self.n_top = n_top
     self.big_float = 1e6
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
