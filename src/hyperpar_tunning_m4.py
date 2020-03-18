@@ -49,7 +49,7 @@ HOURLY = {'model_type': ['esrnn'],
 
 DAILY = {'model_type': ['esrnn'],
          'dataset': ['Daily'],
-         'n_models': [8, 16],
+         'n_models': [5],
          'n_top': [4],
          'max_epochs' : [30],
          'batch_size' : [64],
