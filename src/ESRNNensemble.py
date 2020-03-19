@@ -26,7 +26,7 @@ class ESRNNensemble(object):
                freq_of_test=-1, learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001, level_variability_penalty=80,
-               percentile=50, training_percentile=50, ensemble=False, cell_type='LSTM',
+               testing_percentile=50, training_percentile=50, ensemble=False, cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
                frequency='D', max_periods=20, random_seed=1,
@@ -38,14 +38,15 @@ class ESRNNensemble(object):
     assert n_models>=2, "Number of models for ensemble should be greater than 1"
     assert n_top<=n_models, "Number of top models should be smaller than models to ensemble"
     self.big_float = 1e6
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test,
                           freq_of_test=freq_of_test, learning_rate=learning_rate,
                           lr_scheduler_step_size=lr_scheduler_step_size, lr_decay=lr_decay,
                           per_series_lr_multip=per_series_lr_multip,
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
-                          level_variability_penalty=level_variability_penalty, percentile=percentile,
-                          training_percentile=training_percentile, ensemble=ensemble, cell_type=cell_type,
+                          level_variability_penalty=level_variability_penalty,
+                          testing_percentile=testing_percentile, training_percentile=training_percentile,
+                          ensemble=ensemble, cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
                           frequency=frequency, max_periods=max_periods, random_seed=random_seed,
@@ -94,7 +95,7 @@ class ESRNNensemble(object):
                     gradient_eps=self.mc.gradient_eps, gradient_clipping_threshold=self.mc.gradient_clipping_threshold,
                     rnn_weight_decay=self.mc.rnn_weight_decay, noise_std=self.mc.noise_std,
                     level_variability_penalty=self.mc.level_variability_penalty,
-                    percentile=self.mc.percentile,
+                    testing_percentile=self.mc.testing_percentile,
                     training_percentile=self.mc.training_percentile, ensemble=self.mc.ensemble,
                     cell_type=self.mc.cell_type,
                     state_hsize=self.mc.state_hsize, dilations=self.mc.dilations, add_nl_layer=self.mc.add_nl_layer,
@@ -158,7 +159,8 @@ class ESRNNensemble(object):
       print("Training time: {}".format(round(time.time()-start, 5)))
       self.train_loss = np.einsum('ij,ij->i',self.performance_matrix, self.series_models_map)/self.n_top
       self.train_loss = np.mean(self.train_loss)
-      print("Training loss: {}".format(round(self.train_loss, 5)))
+      print("Training loss ({} prc): {:.5f}".format(self.mc.training_percentile,
+                                                    self.train_loss))
       print('Models num series', np.sum(self.series_models_map, axis=0))
 
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):

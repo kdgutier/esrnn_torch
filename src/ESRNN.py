@@ -58,7 +58,7 @@ class ESRNN(object):
     this parameter controls the strength of the penalization 
     to the wigglines of the level vector, induces smoothness
     in the output
-  percentile: float
+  testing_percentile: float
     This value is only for diagnostic evaluation.
     In case of percentile predictions this parameter controls
     for the value predicted, when forecasting point value, 
@@ -115,7 +115,7 @@ class ESRNN(object):
                per_series_lr_multip=1.0, gradient_eps=1e-8, gradient_clipping_threshold=20,
                rnn_weight_decay=0, noise_std=0.001,
                level_variability_penalty=80,
-               percentile=50, training_percentile=50, ensemble=False,
+               testing_percentile=50, training_percentile=50, ensemble=False,
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
@@ -129,8 +129,8 @@ class ESRNN(object):
                           gradient_eps=gradient_eps, gradient_clipping_threshold=gradient_clipping_threshold,
                           rnn_weight_decay=rnn_weight_decay, noise_std=noise_std,
                           level_variability_penalty=level_variability_penalty,
-                          percentile=percentile,
-                          training_percentile=training_percentile, ensemble=ensemble,
+                          testing_percentile=testing_percentile, training_percentile=training_percentile,
+                          ensemble=ensemble,
                           cell_type=cell_type,
                           state_hsize=state_hsize, dilations=dilations, add_nl_layer=add_nl_layer,
                           seasonality=seasonality, input_size=input_size, output_size=output_size,
@@ -169,7 +169,7 @@ class ESRNN(object):
     train_loss = SmylLoss(tau=train_tau, 
                           level_variability_penalty=self.mc.level_variability_penalty)
 
-    eval_tau = self.mc.percentile / 100
+    eval_tau = self.mc.testing_percentile / 100
     eval_loss = PinballLoss(tau=eval_tau)
 
     for epoch in range(max_epochs):
@@ -215,14 +215,14 @@ class ESRNN(object):
       if verbose: 
         print("========= Epoch {} finished =========".format(epoch))
         print("Training time: {}".format(round(time.time()-start, 5)))
-        print("Training loss ({} prc): {}".format(round(self.train_loss, 5),
-                                                  self.mc.training_percentile))
+        print("Training loss ({} prc): {:.5f}".format(self.mc.training_percentile,
+                                                      self.train_loss))
 
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
         if self.y_test_df is not None:
           self.test_loss = self.model_evaluation(dataloader, eval_loss)
-          print("Training loss ({} prc): {}".format(round(self.test_loss, 5),
-                                                self.mc.test_percentile))
+          print("Testing loss  ({} prc): {:.5f}".format(self.mc.testing_percentile,
+                                                        self.test_loss))
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
                                         self.y_test_df, epoch=epoch)
           self.esrnn.train()
@@ -273,7 +273,7 @@ class ESRNN(object):
       for j in range(dataloader.n_batches):
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, _ = self.esrnn(batch)
-        loss += criterion(windows_y, windows_y_hat)
+        loss = criterion(windows_y, windows_y_hat)
         model_loss += loss.data.cpu().numpy()
 
       model_loss /= dataloader.n_batches
