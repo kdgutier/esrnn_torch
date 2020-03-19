@@ -6,13 +6,13 @@ train_parameters:
   learning_rate: 1e-2
   lr_scheduler_step_size: 4
   lr_decay: 0.3333
-  per_series_lr_multip: 1.0
+  per_series_lr_multip: 0.5
   gradient_clipping_threshold: 50
   rnn_weight_decay: 0
   noise_std: 0.0001
   level_variability_penalty: 100
   percentile: 50
-  training_percentile: 60
+  training_percentile: 65
   ensemble: False
 data_parameters:
   max_periods: 15

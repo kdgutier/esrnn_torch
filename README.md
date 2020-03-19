@@ -48,7 +48,7 @@ Here we used the model directly to compare to the original implementation. It is
 | Monthly   | 0.872 | 0.836  |
 | Hourly    | 0.615 | 0.920  |
 | Weekly    | 0.952 | 0.920  |
-| Daily     | 0.980 | 0.920  |
+| Daily     | 0.968 | 0.920  |
 
 
 ## Replicating M4 results
