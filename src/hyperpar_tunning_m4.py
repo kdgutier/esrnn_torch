@@ -310,15 +310,12 @@ def parse_grid_search(dataset_name):
   files = os.listdir(gs_directory)
   files.remove('model_grid.csv')
 
-  print("files \n", files)
   for idx, row in gs_df.iterrows():
       file = gs_directory + 'model_' + str(row.model_id) + '.p'
 
       try:
         with open(file, 'rb') as pickle_file:
-            print("file", file)
             results = pickle.load(pickle_file)
-            print("results", results)
         gs_df.loc[idx, 'min_owa'] = results['min_owa']
         gs_df.loc[idx, 'min_epoch'] = results['min_epoch']
         gs_df.loc[idx, 'mase'] = results['mase']
