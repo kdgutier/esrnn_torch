@@ -215,10 +215,14 @@ class ESRNN(object):
       if verbose: 
         print("========= Epoch {} finished =========".format(epoch))
         print("Training time: {}".format(round(time.time()-start, 5)))
-        print("Training loss: {}".format(round(self.train_loss, 5)))
+        print("Training loss ({} prc): {}".format(round(self.train_loss, 5),
+                                                  self.mc.training_percentile))
 
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
         if self.y_test_df is not None:
+          self.test_loss = self.model_evaluation(dataloader, eval_loss)
+          print("Training loss ({} prc): {}".format(round(self.test_loss, 5),
+                                                self.mc.test_percentile))
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
                                         self.y_test_df, epoch=epoch)
           self.esrnn.train()
@@ -227,7 +231,7 @@ class ESRNN(object):
   
   def per_series_evaluation(self, dataloader, criterion):
     """
-    Evaluate the model against data
+    Evaluate the model against data, with loss per series
     Args:
       mc: model parameters
       model: the trained model
@@ -249,17 +253,43 @@ class ESRNN(object):
 
       dataloader.update_batch_size(self.mc.batch_size)
     return per_series_losses
+
+  def model_evaluation(self, dataloader, criterion):
+    """
+    Evaluate the model against data, with overall average loss
+    Args:
+      mc: model parameters
+      model: the trained model
+      dataloader: a data loader
+      criterion: loss to evaluate
+    """
+    with torch.no_grad():
+      # Create fast dataloader
+      if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
+      else: new_batch_size = self.mc.batch_size_test
+      dataloader.update_batch_size(new_batch_size)
+
+      model_loss = 0.0
+      for j in range(dataloader.n_batches):
+        batch = dataloader.get_batch()
+        windows_y, windows_y_hat, _ = self.esrnn(batch)
+        loss += criterion(windows_y, windows_y_hat)
+        model_loss += loss.data.cpu().numpy()
+
+      model_loss /= dataloader.n_batches
+      dataloader.update_batch_size(self.mc.batch_size)
+    return model_loss
   
   def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
     """
-    y_train_df: pandas df
-      panel with columns unique_id, ds, y
-    X_test_df: pandas df
-      panel with columns unique_id, ds, x
-    y_test_df: pandas df
-      panel with columns unique_id, ds, y, y_hat_naive2
-    model: python class
-      python class with predict method
+    Evaluate the model against baseline Naive2 model in y_test_df
+    Args:
+      y_train_df: pandas df
+        panel with columns unique_id, ds, y
+      X_test_df: pandas df
+        panel with columns unique_id, ds, x
+      y_test_df: pandas df
+        panel with columns unique_id, ds, y, y_hat_naive2
     """
     assert self._fitted, "Model not fitted yet"
 
