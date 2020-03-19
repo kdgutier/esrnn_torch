@@ -59,6 +59,7 @@ PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
 ## Authors
 * **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier)
 * **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu)
+* **Federico Garza** - [FedericoGarza](https://github.com/FedericoGarza)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE) file for details.
