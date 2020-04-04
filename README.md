@@ -1,5 +1,5 @@
 # Pytorch Implementation of the ES-RNN
-In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
+In this project we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
 
 ## Installation Prerequisites
 * numpy==1.16.1
@@ -25,7 +25,7 @@ from ESRNN.utils_evaluation import evaluate_prediction_owa
 
 from ESRNN import ESRNN
 
-X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name='Yearly', num_obs=23000)
+X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name='Yearly', directory = './data', num_obs=23000)
 
 # Instantiate model
 model = ESRNN(max_epochs=25, freq_of_test=5, batch_size=4, learning_rate=1e-4, per_series_lr_multip=0.8,
@@ -53,6 +53,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 <br/>
+
 | DATASET   | OWA   | M4 OWA |
 |-----------|-------|--------|
 | Yearly    | 0.785 | 0.778  |
@@ -64,6 +65,8 @@ Here we used the model directly to compare to the original implementation. It is
 
 
 ## Replicating M4 results
+
+
 ```console
 PYTHONPATH=. python run_m4.py --dataset 'Yearly' --directory './data' --gpu_id 0
 ```
