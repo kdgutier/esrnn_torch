@@ -19,4 +19,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires =[
+        "numpy==1.16.1",
+        "pandas==0.25.2",
+        "torch==1.3.1",
+        "pyyaml"
+    ]
 )
