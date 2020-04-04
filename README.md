@@ -54,7 +54,7 @@ Here we used the model directly to compare to the original implementation. It is
 
 ## Replicating M4 results
 ```console
-PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
+PYTHONPATH=. python run_m4.py --dataset 'Yearly' --directory './data' --gpu_id 0
 ```
 
 ## Authors

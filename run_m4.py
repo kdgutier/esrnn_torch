@@ -10,8 +10,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from src.M4_data import prepare_M4_data
-from src.utils_evaluation import evaluate_prediction_owa
+from ESRNN.M4_data import prepare_M4_data
+from ESRNN.utils_evaluation import evaluate_prediction_owa
 
 def main(args):
   config_file = './configs/{}.yaml'.format(args.dataset)
@@ -19,10 +19,10 @@ def main(args):
     config = yaml.safe_load(stream)
 
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
-  from src.ESRNN import ESRNN
+  from ESRNN import ESRNN
 
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, num_obs=100000)
-  
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=100000)
+
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
                 batch_size=config['train_parameters']['batch_size'],
@@ -58,13 +58,14 @@ def main(args):
 
   # Evaluate predictions
   print(15*'=', ' Final evaluation ', 14*'=')
-  final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df, 
+  final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df,
                                                                X_test_df, y_test_df,
                                                                naive2_seasonality=config['data_parameters']['seasonality'][0])
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
   parser.add_argument("--dataset", required=True, type=str)
+  parser.add_argument("--directory", required=True, type=str)
   parser.add_argument("--gpu_id", required=False, type=int)
   args = parser.parse_args()
 
