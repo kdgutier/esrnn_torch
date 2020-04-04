@@ -12,19 +12,19 @@ from torch.optim.lr_scheduler import StepLR
 from pathlib import Path
 from copy import deepcopy
 
-from src.utils.config import ModelConfig
-from src.utils.ESRNN import _ESRNN
-from src.utils.losses import SmylLoss, PinballLoss
-from src.utils.data import Iterator
+from ESRNN.utils.config import ModelConfig
+from ESRNN.utils.ESRNN import _ESRNN
+from ESRNN.utils.losses import SmylLoss, PinballLoss
+from ESRNN.utils.data import Iterator
 
-from src.utils_evaluation import owa
+from ESRNN.utils_evaluation import owa
 
 
 class ESRNN(object):
   """ Exponential Smoothing Recursive Neural Network.
 
   Pytorch Implementation of the M4 time series forecasting competition winner.
-  Proposed by Smyl. The model uses a hybrid approach of Machine Learning and 
+  Proposed by Smyl. The model uses a hybrid approach of Machine Learning and
   statistical methods by combining recursive neural networks to model a common
   trend with shared parameters across series, and multiplicative Holt-Winter
   exponential smoothing.
@@ -46,44 +46,44 @@ class ESRNN(object):
     term added to the Adam optimizer denominator to improve
     numerical stability (default: 1e-8)
   gradient_clipping_threshold: float
-    max norm of gradient vector, with all parameters treated 
+    max norm of gradient vector, with all parameters treated
     as a single vector
   rnn_weight_decay: float
     parameter to control classic L2/Tikhonov regularization
     of the rnn parameters
   noise_std: float
-    standard deviation of white noise added to input during 
+    standard deviation of white noise added to input during
     fit to avoid the model from memorizing the train data
   level_variability_penalty: float
-    this parameter controls the strength of the penalization 
+    this parameter controls the strength of the penalization
     to the wigglines of the level vector, induces smoothness
     in the output
   testing_percentile: float
     This value is only for diagnostic evaluation.
     In case of percentile predictions this parameter controls
-    for the value predicted, when forecasting point value, 
+    for the value predicted, when forecasting point value,
     the forecast is the median, so percentile=50.
   training_percentile: float
-    To reduce the model's tendency to over estimate, the 
-    training_percentile can be set to fit a smaller value 
+    To reduce the model's tendency to over estimate, the
+    training_percentile can be set to fit a smaller value
     through the Pinball Loss.
   batch_size: int
     number of training examples for the stochastic gradient steps
   seasonality: int list
     list of seasonalities of the time series
-    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12], 
+    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12],
     Quarterly [4], Yearly [].
   input_size: int
-    input size of the recursive neural network, usually a 
+    input size of the recursive neural network, usually a
     multiple of seasonality
   output_size: int
-    output_size or forecast horizon of the recursive neural 
+    output_size or forecast horizon of the recursive neural
     network, usually multiple of seasonality
   random_seed: int
-    random_seed for pseudo random pytorch initializer and 
+    random_seed for pseudo random pytorch initializer and
     numpy random generator
   exogenous_size: int
-    size of one hot encoded categorical variable, invariannt 
+    size of one hot encoded categorical variable, invariannt
     per time series of the panel
   min_inp_seq_length: int
     description
@@ -95,10 +95,10 @@ class ESRNN(object):
   state_hsize: int
     dimension of hidden state of the recursive neural network
   dilations: int list
-    each list represents one chunk of Dilated LSTMS, connected in 
+    each list represents one chunk of Dilated LSTMS, connected in
     standard ResNet fashion
   add_nl_layer: bool
-    whether to insert a tanh() layer between the RNN stack and the 
+    whether to insert a tanh() layer between the RNN stack and the
     linear adaptor (output) layers
   device: str
     pytorch device either 'cpu' or 'cuda'
@@ -122,7 +122,7 @@ class ESRNN(object):
                frequency='D', max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
-    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
+    self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test,
                           freq_of_test=freq_of_test, learning_rate=learning_rate,
                           lr_scheduler_step_size=lr_scheduler_step_size, lr_decay=lr_decay,
                           per_series_lr_multip=per_series_lr_multip,
@@ -148,7 +148,7 @@ class ESRNN(object):
     # Optimizers
     if not warm_start:
       self.es_optimizer = optim.Adam(params=self.esrnn.es.parameters(),
-                                lr=self.mc.learning_rate*self.mc.per_series_lr_multip, 
+                                lr=self.mc.learning_rate*self.mc.per_series_lr_multip,
                                 betas=(0.9, 0.999), eps=self.mc.gradient_eps)
 
       self.es_scheduler = StepLR(optimizer=self.es_optimizer,
@@ -163,10 +163,10 @@ class ESRNN(object):
       self.rnn_scheduler = StepLR(optimizer=self.rnn_optimizer,
                             step_size=self.mc.lr_scheduler_step_size,
                             gamma=self.mc.lr_decay)
-    
+
     # Loss Functions
     train_tau = self.mc.training_percentile / 100
-    train_loss = SmylLoss(tau=train_tau, 
+    train_loss = SmylLoss(tau=train_tau,
                           level_variability_penalty=self.mc.level_variability_penalty)
 
     eval_tau = self.mc.testing_percentile / 100
@@ -184,7 +184,7 @@ class ESRNN(object):
 
         batch = dataloader.get_batch()
         windows_y, windows_y_hat, levels = self.esrnn(batch)
-        
+
         # Pinball loss on normalized values
         loss = train_loss(windows_y, windows_y_hat, levels)
         losses.append(loss.data.cpu().numpy())
@@ -192,9 +192,9 @@ class ESRNN(object):
 
         loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(), 
+        torch.nn.utils.clip_grad_norm_(self.esrnn.rnn.parameters(),
                                        self.mc.gradient_clipping_threshold)
-        torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(), 
+        torch.nn.utils.clip_grad_norm_(self.esrnn.es.parameters(),
                                        self.mc.gradient_clipping_threshold)
         self.rnn_optimizer.step()
         self.es_optimizer.step()
@@ -212,7 +212,7 @@ class ESRNN(object):
 
       # Evaluation
       self.train_loss = np.mean(losses)
-      if verbose: 
+      if verbose:
         print("========= Epoch {} finished =========".format(epoch))
         print("Training time: {}".format(round(time.time()-start, 5)))
         print("Training loss ({} prc): {:.5f}".format(self.mc.training_percentile,
@@ -223,12 +223,12 @@ class ESRNN(object):
           self.test_loss = self.model_evaluation(dataloader, eval_loss)
           print("Testing loss  ({} prc): {:.5f}".format(self.mc.testing_percentile,
                                                         self.test_loss))
-          self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
+          self.evaluate_model_prediction(self.y_train_df, self.X_test_df,
                                         self.y_test_df, epoch=epoch)
           self.esrnn.train()
 
     if verbose: print('Train finished! \n')
-  
+
   def per_series_evaluation(self, dataloader, criterion):
     """
     Evaluate the model against data, with loss per series
@@ -279,7 +279,7 @@ class ESRNN(object):
       model_loss /= dataloader.n_batches
       dataloader.update_batch_size(self.mc.batch_size)
     return model_loss
-  
+
   def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
     """
     Evaluate the model against baseline Naive2 model in y_test_df
@@ -299,7 +299,7 @@ class ESRNN(object):
     y_hat_panel = self.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
-    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel,
                                              y_naive2_panel, y_insample,
                                              seasonality=self.mc.naive_seasonality)
 
@@ -311,10 +311,10 @@ class ESRNN(object):
     print('OWA: {} '.format(np.round(model_owa, 3)))
     print('SMAPE: {} '.format(np.round(model_smape, 3)))
     print('MASE: {} '.format(np.round(model_mase, 3)))
-    
+
     return model_owa, model_mase, model_smape
-  
-  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, 
+
+  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None,
           warm_start=False, shuffle=True, verbose=True):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
@@ -375,7 +375,7 @@ class ESRNN(object):
     assert self._fitted, "Model not fitted yet"
 
     self.esrnn.eval()
-    
+
     # Create fast dataloader
     if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
     else: new_batch_size = self.mc.batch_size_test
@@ -387,21 +387,21 @@ class ESRNN(object):
     n_unique_id = len(dataloader.sort_key['unique_id'])
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
     panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
-    
+
     # TODO: Improve wasted computation
     panel_delta = list(range(1, output_size+1)) * n_unique_id
     panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
-    
+
     panel_ds = panel_last_ds + panel_delta
-    
+
     panel_y_hat= np.zeros((output_size * n_unique_id))
-    
+
     # Predict
     count = 0
     for j in range(dataloader.n_batches):
       batch = dataloader.get_batch()
       batch_size = batch.y.shape[0]
-      
+
       if self.mc.ensemble:
         y_hat = torch.zeros((5,batch_size,output_size))
         for i in range(5):
@@ -409,20 +409,20 @@ class ESRNN(object):
         y_hat = torch.mean(y_hat,0)
       else:
         y_hat = self.esrnn.predict(batch)
-      
+
       y_hat = y_hat.data.cpu().numpy()
-      
+
       panel_y_hat[count:count+output_size*batch_size] = y_hat.flatten()
       count += output_size*batch_size
-    
+
     Y_hat_panel_dict = {'unique_id': panel_unique_id,
-                        'ds': panel_ds, 
+                        'ds': panel_ds,
                         'y_hat': panel_y_hat}
-    
+
     assert len(panel_ds) == len(panel_y_hat) == len(panel_unique_id)
-    
+
     Y_hat_panel = pd.DataFrame.from_dict(Y_hat_panel_dict)
-    
+
     if 'ds' in X_df:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
     else:
@@ -430,7 +430,7 @@ class ESRNN(object):
 
     self.train_dataloader.update_batch_size(self.mc.batch_size)
     return Y_hat_panel
-  
+
   def long_to_wide(self, X_df, y_df):
     data = X_df.copy()
     data['y'] = y_df['y'].copy()
@@ -441,14 +441,14 @@ class ESRNN(object):
     data['ds_map'] = data['ds'].map(ds_map)
     data = data.sort_values(by=['ds_map','unique_id'])
     df_wide = data.pivot(index='unique_id', columns='ds_map')['y']
-    
+
     x_unique = data[['unique_id', 'x']].groupby('unique_id').first()
     last_ds =  data[['unique_id', 'ds']].groupby('unique_id').last()
     assert len(x_unique)==len(data.unique_id.unique())
     df_wide['x'] = x_unique
     df_wide['last_ds'] = last_ds
     df_wide = df_wide.reset_index().rename_axis(None, axis=1)
-    
+
     ds_cols = data.ds_map.unique().tolist()
     X = df_wide.filter(items=['unique_id', 'x', 'last_ds']).values
     y = df_wide.filter(items=ds_cols).values
@@ -502,7 +502,7 @@ class ESRNN(object):
       checkpoint = torch.load(es_filepath, map_location=self.mc.device)
       self.es.load_state_dict(checkpoint['model_state_dict'])
       self.es.to(self.mc.device)
-      
+
       checkpoint = torch.load(rnn_filepath, map_location=self.mc.device)
       self.rnn.load_state_dict(checkpoint['model_state_dict'])
       self.rnn.to(self.mc.device)

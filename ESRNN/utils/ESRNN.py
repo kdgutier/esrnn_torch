@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from src.utils.DRNN import DRNN
+from ESRNN.utils.DRNN import DRNN
 import numpy as np
 
 #import torch.jit as jit
@@ -13,22 +13,22 @@ class _ES(nn.Module):
     self.n_series = self.mc.n_series
     self.output_size = self.mc.output_size
     assert len(self.mc.seasonality) in [0, 1, 2]
-  
+
   def gaussian_noise(self, input_data, std=0.2):
     size = input_data.size()
     noise = torch.autograd.Variable(input_data.data.new(size).normal_(0, std))
     return input_data + noise
-  
+
   #@jit.script_method
   def compute_levels_seasons(self, y, idxs):
     pass
 
   def normalize(self, y, level, seasonalities):
     pass
-  
+
   def predict(self, trend, levels, seasonalities):
     pass
-  
+
   def forward(self, ts_object):
     # parse mc
     input_size = self.mc.input_size
@@ -48,7 +48,7 @@ class _ES(nn.Module):
     else:
       windows_start = n_time-input_size-output_size+1
       windows_end = n_time-input_size+1
-      
+
       windows_range = range(windows_start, windows_end)
     n_windows = len(windows_range)
     assert n_windows>0
@@ -64,7 +64,7 @@ class _ES(nn.Module):
       # Windows yhat
       y_hat_start = window
       y_hat_end = input_size + window
-      
+
       # Y_hat deseasonalization and normalization
       window_y_hat = self.normalize(y=y[:, y_hat_start:y_hat_end],
                                     level=levels[:, [y_hat_end-1]],
@@ -77,7 +77,7 @@ class _ES(nn.Module):
       # Concatenate categories
       if exogenous_size>0:
         window_y_hat = torch.cat((window_y_hat, ts_object.categories), 1)
-    
+
       windows_y_hat[i, :, :] += window_y_hat
 
       # Windows y (for loss during train)
@@ -152,7 +152,7 @@ class _ESM(_ES):
     ys = y.unbind(1)
     n_time = len(ys)
     for t in range(1, n_time):
-      
+
       seas_prod_t = torch.ones(len(y[:,t])).to(y.device)
       if len(self.seasonality)>0:
         seas_prod_t = seas_prod_t * seasonalities1[t]
@@ -173,7 +173,7 @@ class _ESM(_ES):
         newseason2 = seas_sms2 * (ys[t] / (newlev * seasonalities1[t])) + \
                      (1-seas_sms2) * seasonalities2[t]
         seasonalities2 += [newseason2]
-    
+
     levels = torch.stack(levels).transpose(1,0)
 
     #seasonalities = torch.jit.annotate(List[Tensor], [])
@@ -194,7 +194,7 @@ class _ESM(_ES):
       y_n /= seasonalities[s][:, start:end]
     y_n = torch.log(y_n)
     return y_n
-  
+
   def predict(self, trend, levels, seasonalities):
     output_size = self.mc.output_size
     seasonality = self.mc.seasonality
@@ -244,7 +244,7 @@ class _RNN(nn.Module):
       self.MLPW  = nn.Linear(mc.state_hsize, mc.state_hsize)
 
     self.adapterW  = nn.Linear(mc.state_hsize, mc.output_size)
-  
+
   def forward(self, input_data):
     for layer_num in range(len(self.rnn_stack)):
       residual = input_data
@@ -274,9 +274,9 @@ class _ESRNN(nn.Module):
 
     # RNN Forward
     windows_y_hat = self.rnn(windows_y_hat)
-    
+
     return windows_y, windows_y_hat, levels
-  
+
   def predict(self, ts_object):
     # ES Forward
     windows_y_hat, _, levels, seasonalities = self.es(ts_object)
@@ -284,6 +284,6 @@ class _ESRNN(nn.Module):
     # RNN Forward
     windows_y_hat = self.rnn(windows_y_hat)
     trend = windows_y_hat[-1,:,:] # Last observation prediction
-    
-    y_hat = self.es.predict(trend, levels, seasonalities)    
+
+    y_hat = self.es.predict(trend, levels, seasonalities)
     return y_hat

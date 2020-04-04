@@ -8,9 +8,9 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from src.M4_data import prepare_M4_data
-from src.utils_evaluation import owa
-from src.utils_visualization import plot_cat_distributions
+from ESRNN.M4_data import prepare_M4_data
+from ESRNN.utils_evaluation import owa
+from ESRNN.utils_visualization import plot_cat_distributions
 
 from statsmodels.formula.api import ols
 
@@ -122,7 +122,7 @@ MONTHLY = {'model_type': ['esrnn'],
            'level_variability_penalty' : [50, 70, 80],
            'testing_percentile' : [50],
            'training_percentile' : [45, 50],
-           'ensemble': [True, False],           
+           'ensemble': [True, False],
            'max_periods': [36, 72],
            'cell_type': ['LSTM', 'ResLSTM'],
            'state_hsize' : [40, 50],
@@ -234,7 +234,7 @@ def grid_main(args):
   # Parse hyper parameter data frame
   for i in range(args.id_min, args.id_max):
     mc = model_specs_df.loc[i, :]
-    
+
     dilations = ast.literal_eval(mc.dilations)
     seasonality = ast.literal_eval(mc.seasonality)
     device = mc.device
@@ -265,7 +265,7 @@ def grid_main(args):
                           level_variability_penalty=int(mc.level_variability_penalty),
                           testing_percentile=int(mc.testing_percentile),
                           training_percentile=int(mc.training_percentile),
-                          cell_type=mc.cell_type, 
+                          cell_type=mc.cell_type,
                           ensemble=mc.cell_type,
                           state_hsize=int(mc.state_hsize),
                           dilations=dilations,
@@ -279,7 +279,7 @@ def grid_main(args):
 
     # Fit, predict and evaluate
     model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
-    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_train_df, 
+    final_owa, final_mase, final_smape = model.evaluate_model_prediction(y_train_df,
                                                                          X_test_df,
                                                                          y_test_df)
     evaluation_dict = {'id': mc.model_id,
@@ -300,12 +300,12 @@ def parse_grid_search(dataset_name):
   gs_directory = './results/grid_search/{}/'.format(dataset_name)
   gs_file = gs_directory+'model_grid.csv'
   gs_df = pd.read_csv(gs_directory+'model_grid.csv', dtype=str)
-  
+
   gs_df['min_owa'] = 0
   gs_df['min_epoch'] = 0
   gs_df['mase'] = 0
   gs_df['smape'] = 0
-  
+
   results = []
   files = os.listdir(gs_directory)
   files.remove('model_grid.csv')
@@ -327,14 +327,14 @@ def parse_grid_search(dataset_name):
         gs_df.loc[idx, 'mase'] = np.nan
         gs_df.loc[idx, 'smape'] = np.nan
         gs_df.loc[idx, 'owa'] = np.nan
-  
+
   # results = ols('min_owa ~ \
   #               learning_rate + per_series_lr_multip + batch_size + \
   #               dilations + ensemble + max_periods + \
   #               training_percentile + level_variability_penalty + state_hsize + \
   #               random_seed', data=gs_df).fit()
   #print(results.summary())
-  
+
   return gs_df
 
 if __name__ == '__main__':
