@@ -4,9 +4,19 @@ from six.moves import urllib
 import numpy as np
 import pandas as pd
 
+
 from ESRNN.utils_evaluation import Naive2
+from ESRNN.utils_datetime import custom_offset
+
+FREQ_DICT = {'Hourly': 'H',
+             'Daily': 'D',
+             'Weekly': 'W',
+             'Monthly': 'M',
+             'Quarterly': 'Q',
+             'Yearly': 'Y'}
 
 SOURCE_URL = 'https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/'
+
 
 def maybe_download(filename, directory):
   """
@@ -53,9 +63,16 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   data_directory = directory + "/m4"
   train_directory = data_directory + "/Train/"
   test_directory = data_directory + "/Test/"
+  frcy = FREQ_DICT[dataset_name]
+  offset_fun = custom_offset(frcy)
 
-  m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category'])
+  m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
+  m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'])
+
+  # Some starting dates are parsed wrongly: ex 01-01-67 12:00	is parsed to 2067-01-01 12:00:00
+  repair_dates = m4_info['StartingDate'].dt.strftime('%y').apply(lambda x: (int(x)<70) & (int(x)>17))
+  m4_info.loc[repair_dates, 'StartingDate'] = m4_info.loc[repair_dates, 'StartingDate'].apply(lambda x: '19'+x.strftime('%y')+'-'+ x.strftime('%m-%d %H:%M:%S'))
 
   # train data
   train_path='{}{}-train.csv'.format(train_directory, dataset_name)
@@ -65,8 +82,12 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
   dataset = dataset.rename(columns={'V':'y'})
   dataset = dataset.dropna()
-  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
+  #dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='Y')
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
+  #print(dataset.groupby('unique_id').max().reset_index()['ds'].value_counts())
+  #print(dataset[dataset['unique_id']=='Y13190'])
+  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: offset_fun(x-2))
+
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
   dataset.sort_values(by=['unique_id', 'ds'], inplace=True)
@@ -90,7 +111,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
   dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
-  dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='d')
+  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: offset_fun(x-2))
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
@@ -129,6 +150,9 @@ def naive2_predictions(dataset_name, directory, num_obs):
     seasonality = seas_dict[dataset_name]['seasonality']
     input_size = seas_dict[dataset_name]['input_size']
     output_size = seas_dict[dataset_name]['output_size']
+    frcy = FREQ_DICT[dataset_name]
+    offset_fun = custom_offset(frcy)
+
 
     print('Preparing {} dataset'.format(dataset_name))
     print('Preparing Naive2 {} dataset predictions'.format(dataset_name))
@@ -150,8 +174,12 @@ def naive2_predictions(dataset_name, directory, num_obs):
         y_id = y_train_df[top_row:bottom_row]
 
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-        y_naive2['ds'] = pd.date_range(start=y_id.ds.max(),
-                                       periods=output_size+1, freq='D')[1:]
+        y_naive2['ds'] = np.arange(1, output_size+1)#pd.date_range(start=y_id.ds.max(),
+                         #               periods=output_size+1, freq=frcy)[1:]
+        y_naive2['StartingDate'] = y_id.ds.max()
+        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: offset_fun(x))
+        y_naive2.drop(columns='StartingDate', inplace=True)
+
         y_naive2['unique_id'] = unique_id
         y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
         y_naive2_df = y_naive2_df.append(y_naive2)
