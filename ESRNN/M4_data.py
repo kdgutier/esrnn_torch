@@ -81,10 +81,33 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
   dataset = dataset.rename(columns={'V':'y'})
   dataset = dataset.dropna()
-  #dataset.loc[:,'ds'] = pd.to_datetime(dataset['ds']-1, unit='Y')
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-  #print(dataset.groupby('unique_id').max().reset_index()['ds'].value_counts())
-  #print(dataset[dataset['unique_id']=='Y13190'])
+  # Some yearly time series has more than 200 observations
+  # Example: Y13190 has 835 obs
+  # In this cases we only use the last 200 obs
+  if frcy == 'Y':
+      fix_ids = dataset.loc[dataset['ds'] >= 200, 'unique_id'].unique()
+      if  not (fix_ids.size == 0):
+          print('Some yearly time series have more than 200 observations')
+          print('Returning only last 200 obs of this time series ({} time series)\n'.format(len(fix_ids)))
+          #
+          # fixing ds for problematic ts
+          problematic_ts = dataset[dataset['unique_id'].isin(fix_ids)]
+          problematic_ts = problematic_ts.groupby('unique_id').tail(200)
+          min_ds = problematic_ts.groupby('unique_id').min().reset_index()[['unique_id', 'ds']]
+          min_ds.rename(columns={'ds': 'min_ds'}, inplace=True)
+
+          problematic_ts = problematic_ts.merge(min_ds, how='left', on=['unique_id'])
+          problematic_ts['ds'] -= (problematic_ts['min_ds'] - 2)
+          problematic_ts.drop(columns='min_ds', inplace=True)
+
+          non_problematic_ts = dataset[~dataset['unique_id'].isin(fix_ids)]
+
+          dataset = pd.concat([non_problematic_ts, problematic_ts])
+          dataset = dataset.sort_values(['unique_id', 'ds'])
+
+          del non_problematic_ts, problematic_ts
+
   dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
 
   dataset.drop(columns=['M4id'], inplace=True)
@@ -235,5 +258,6 @@ def prepare_M4_data(dataset_name, directory, num_obs):
 
   else:
     y_naive2_df = pd.read_csv(naive2_file)
+    y_naive2_df['ds'] = pd.to_datetime(y_naive2_df['ds'])
 
   return X_train_df, y_train_df, X_test_df, y_naive2_df
