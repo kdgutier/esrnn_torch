@@ -18,6 +18,7 @@ from ESRNN.utils.losses import SmylLoss, PinballLoss
 from ESRNN.utils.data import Iterator
 
 from ESRNN.utils_evaluation import owa
+from ESRNN.utils_datetime import custom_offset
 
 
 class ESRNN(object):
@@ -387,10 +388,10 @@ class ESRNN(object):
     n_unique_id = len(dataloader.sort_key['unique_id'])
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
     panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
-
     # TODO: Improve wasted computation
     panel_delta = list(range(1, output_size+1)) * n_unique_id
-    panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
+    panel_delta = pd.Series(panel_delta).apply(lambda x: custom_offset(self.mc.frequency, x))
+    panel_delta.index = panel_last_ds.index
 
     panel_ds = panel_last_ds + panel_delta
 

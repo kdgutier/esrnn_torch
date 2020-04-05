@@ -1,15 +1,17 @@
 from pandas.tseries.offsets import DateOffset
 
 
-def custom_offset(freq):
+def custom_offset(freq, x):
 
     if freq == 'Y':
-        return lambda x: DateOffset(years = x)
+        return DateOffset(years = x)
     elif freq == 'M':
-        return lambda x: DateOffset(months = x)
+        return DateOffset(months = x)
     elif freq == 'W':
-        return lambda x: DateOffset(weeks = x)
+        return DateOffset(weeks = x)
     elif freq == 'H':
-        return lambda x: DateOffset(hours = x)
+        return DateOffset(hours = x)
     elif freq == 'Q':
-        return lambda x: DateOffset(months = 3*x)
+        return DateOffset(months = 3*x)
+    elif freq == 'D':
+        return DateOffset(days = x)

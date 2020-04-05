@@ -64,7 +64,6 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   train_directory = data_directory + "/Train/"
   test_directory = data_directory + "/Test/"
   frcy = FREQ_DICT[dataset_name]
-  offset_fun = custom_offset(frcy)
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
@@ -86,7 +85,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
   #print(dataset.groupby('unique_id').max().reset_index()['ds'].value_counts())
   #print(dataset[dataset['unique_id']=='Y13190'])
-  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: offset_fun(x-2))
+  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
 
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
@@ -111,7 +110,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
   dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
-  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: offset_fun(x-2))
+  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
@@ -151,7 +150,6 @@ def naive2_predictions(dataset_name, directory, num_obs):
     input_size = seas_dict[dataset_name]['input_size']
     output_size = seas_dict[dataset_name]['output_size']
     frcy = FREQ_DICT[dataset_name]
-    offset_fun = custom_offset(frcy)
 
 
     print('Preparing {} dataset'.format(dataset_name))
@@ -177,7 +175,7 @@ def naive2_predictions(dataset_name, directory, num_obs):
         y_naive2['ds'] = np.arange(1, output_size+1)#pd.date_range(start=y_id.ds.max(),
                          #               periods=output_size+1, freq=frcy)[1:]
         y_naive2['StartingDate'] = y_id.ds.max()
-        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: offset_fun(x))
+        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: custom_offset(frcy, x))
         y_naive2.drop(columns='StartingDate', inplace=True)
 
         y_naive2['unique_id'] = unique_id
