@@ -13,13 +13,14 @@ import pandas as pd
 from ESRNN.M4_data import prepare_M4_data
 from ESRNN.utils_evaluation import evaluate_prediction_owa
 
+from ESRNN import ESRNN
+
 def main(args):
   config_file = './configs/{}.yaml'.format(args.dataset)
   with open(config_file, 'r') as stream:
     config = yaml.safe_load(stream)
 
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
-  from ESRNN import ESRNN
 
   X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=100000)
 
@@ -35,7 +36,7 @@ def main(args):
                 rnn_weight_decay=config['train_parameters']['rnn_weight_decay'],
                 noise_std=config['train_parameters']['noise_std'],
                 level_variability_penalty=config['train_parameters']['level_variability_penalty'],
-                percentile=config['train_parameters']['percentile'],
+                testing_percentile=config['train_parameters']['testing_percentile'],
                 training_percentile=config['train_parameters']['training_percentile'],
                 ensemble=config['train_parameters']['ensemble'],
                 max_periods=config['data_parameters']['max_periods'],
@@ -47,6 +48,7 @@ def main(args):
                 dilations=config['model_parameters']['dilations'],
                 add_nl_layer=config['model_parameters']['add_nl_layer'],
                 random_seed=config['model_parameters']['random_seed'],
+                frequency=config['model_parameters']['frequency'],
                 device=config['device'])
 
   # Fit model

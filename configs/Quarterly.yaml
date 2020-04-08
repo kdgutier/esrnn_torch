@@ -11,7 +11,7 @@ train_parameters:
   rnn_weight_decay: 0
   noise_std: 0.001
   level_variability_penalty: 100
-  percentile: 50
+  testing_percentile: 50
   training_percentile: 50
   ensemble: False
 data_parameters:
@@ -25,3 +25,4 @@ model_parameters:
   dilations: [[1, 2, 4, 8]]
   add_nl_layer: FALSE
   random_seed: 3
+  frequency: 'Q'
