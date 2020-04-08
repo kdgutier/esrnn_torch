@@ -6,7 +6,7 @@ import pandas as pd
 
 
 from ESRNN.utils_evaluation import Naive2
-from ESRNN.utils_datetime import custom_offset
+from ESRNN.utils_datetime import custom_offset, date_to_start_week
 
 FREQ_DICT = {'Hourly': 'H',
              'Daily': 'D',
@@ -67,7 +67,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
-  m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'])
+  m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'], dayfirst = True)
 
   # Some starting dates are parsed wrongly: ex 01-01-67 12:00	is parsed to 2067-01-01 12:00:00
   repair_dates = m4_info['StartingDate'].dt.strftime('%y').apply(lambda x: (int(x)<70) & (int(x)>17))
@@ -113,6 +113,10 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
   dataset.sort_values(by=['unique_id', 'ds'], inplace=True)
+
+  if frcy=='W':
+      dataset['ds'] = date_to_start_week(dataset['ds'])
+
   X_train_df = dataset.filter(items=['unique_id', 'ds', 'x'])
   y_train_df = dataset.filter(items=['unique_id', 'ds', 'y'])
 
@@ -134,6 +138,9 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
   dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
   dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
+
+  if frcy=='W':
+      dataset['ds'] = date_to_start_week(dataset['ds'])
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
