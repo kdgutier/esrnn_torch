@@ -110,7 +110,9 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
           del non_problematic_ts, problematic_ts
 
-  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
+  unique_ds = dataset['ds'].unique()
+  dict_ds_offset = {val: custom_offset(frcy, val-2) for val in unique_ds}
+  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].replace(dict_ds_offset)
 
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
@@ -135,7 +137,10 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = dataset.rename(columns={'category': 'x'})
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
-  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset.apply(lambda df: custom_offset(frcy, df['ds_x'] + df['ds_y']-2), axis=1)
+  dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
+  unique_ds = dataset['ds'].unique()
+  dict_ds_offset = {val: custom_offset(frcy, val-2) for val in unique_ds}
+  dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].replace(dict_ds_offset)
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
@@ -189,6 +194,10 @@ def naive2_predictions(dataset_name, directory, num_obs):
     # List of uniques ids
     unique_ids = y_train_df['unique_id'].unique()
 
+    #ds preds for all series
+    ds_preds_offset =  np.arange(1, output_size+1)
+    ds_preds_offset = pd.Series([custom_offset(frcy, x) for x in ds_preds_offset])
+
     # Panel of fitted models
     for unique_id in unique_ids:
         # Fast filter X and y by id.
@@ -197,10 +206,10 @@ def naive2_predictions(dataset_name, directory, num_obs):
         y_id = y_train_df[top_row:bottom_row]
 
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-        y_naive2['ds'] = np.arange(1, output_size+1)#pd.date_range(start=y_id.ds.max(),
-                         #               periods=output_size+1, freq=frcy)[1:]
+        y_naive2['ds'] = ds_preds_offset
+
         y_naive2['StartingDate'] = y_id.ds.max()
-        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: custom_offset(frcy, x))
+        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds']
         y_naive2.drop(columns='StartingDate', inplace=True)
 
         y_naive2['unique_id'] = unique_id
