@@ -45,7 +45,7 @@ def test_dates(dataset_name, n_obs=1000000):
     bool_test_hat_equals = X_test_df.equals(y_hat_df[X_test_df.columns])
 
     # Non null predicitons
-    null_preds = all(evals)
+    null_preds = all(map(np.isnan, evals))
 
     return freqs, bool_test_hat_equals, null_preds
 
@@ -60,7 +60,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, [np.array('D')])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
@@ -71,7 +71,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, [np.array('H')])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
@@ -82,7 +82,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, [np.array('MS')])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
@@ -93,7 +93,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, [np.array('QS-OCT')])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
@@ -104,7 +104,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, [np.array('W-SUN')])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
@@ -115,7 +115,7 @@ class TestDates(unittest.TestCase):
 
         self.assertEqual(freqs, ['AS-JAN'])
         self.assertTrue(equals)
-        self.assertTrue(null_preds)
+        self.assertFalse(null_preds)
 
         del freqs, equals, null_preds
 
