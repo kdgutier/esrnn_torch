@@ -6,7 +6,7 @@ import pandas as pd
 
 
 from ESRNN.utils_evaluation import Naive2
-from ESRNN.utils_datetime import custom_offset, date_to_start_week
+from ESRNN.utils_datetime import custom_offset, fix_date
 
 FREQ_DICT = {'Hourly': 'H',
              'Daily': 'D',
@@ -72,6 +72,8 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   # Some starting dates are parsed wrongly: ex 01-01-67 12:00	is parsed to 2067-01-01 12:00:00
   repair_dates = m4_info['StartingDate'].dt.strftime('%y').apply(lambda x: (int(x)<70) & (int(x)>17))
   m4_info.loc[repair_dates, 'StartingDate'] = m4_info.loc[repair_dates, 'StartingDate'].apply(lambda x: '19'+x.strftime('%y')+'-'+ x.strftime('%m-%d %H:%M:%S'))
+  m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'])
+  m4_info['StartingDate'] = fix_date(m4_info['StartingDate'], frcy)
 
   # train data
   train_path='{}{}-train.csv'.format(train_directory, dataset_name)
@@ -108,14 +110,11 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
           del non_problematic_ts, problematic_ts
 
-  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
+  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
 
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
   dataset.sort_values(by=['unique_id', 'ds'], inplace=True)
-
-  if frcy=='W':
-      dataset['ds'] = date_to_start_week(dataset['ds'])
 
   X_train_df = dataset.filter(items=['unique_id', 'ds', 'x'])
   y_train_df = dataset.filter(items=['unique_id', 'ds', 'y'])
@@ -136,11 +135,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
   dataset = dataset.rename(columns={'category': 'x'})
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
-  dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
-  dataset.loc[:, 'ds'] = pd.to_datetime(dataset['StartingDate']) + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
-
-  if frcy=='W':
-      dataset['ds'] = date_to_start_week(dataset['ds'])
+  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset.apply(lambda df: custom_offset(frcy, df['ds_x'] + df['ds_y']-2), axis=1)
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
