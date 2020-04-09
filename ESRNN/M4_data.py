@@ -147,7 +147,7 @@ def M4_parser(dataset_name, directory, num_obs=1000000):
 
   return X_train_df, y_train_df, X_test_df, y_test_df
 
-def naive2_predictions(dataset_name, directory, num_obs):
+def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_test_df = None):
     """
     Computes Naive2 predictions.
 
@@ -159,9 +159,14 @@ def naive2_predictions(dataset_name, directory, num_obs):
       Custom directory where data will be saved.
     num_obs: int
       Number of time series to return.
+    y_train_df: DataFrame
+      Y train set returned by M4_parser
+    y_test_df: DataFrame
+      Y test set returned by M4_parser
     """
     # Read train and test data
-    _, y_train_df, _, y_test_df = M4_parser(dataset_name, directory, num_obs)
+    if (y_train_df is None) or (y_test_df is None):
+        _, y_train_df, _, y_test_df = M4_parser(dataset_name, directory, num_obs)
 
     seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
                            'output_size': 48},
@@ -225,6 +230,7 @@ def naive2_predictions(dataset_name, directory, num_obs):
 
     naive2_file = results_dir + '/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
     y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
+
     return y_naive2_df
 
 def prepare_M4_data(dataset_name, directory, num_obs):
@@ -265,7 +271,7 @@ def prepare_M4_data(dataset_name, directory, num_obs):
 
   naive2_file = results_dir + '/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
   if not os.path.exists(naive2_file):
-    y_naive2_df = naive2_predictions(dataset_name, directory, num_obs)
+    y_naive2_df = naive2_predictions(dataset_name, directory, num_obs, y_train_df, y_test_df)
 
   else:
     y_naive2_df = pd.read_csv(naive2_file)
