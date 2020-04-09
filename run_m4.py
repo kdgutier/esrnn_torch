@@ -43,12 +43,12 @@ def main(args):
                 seasonality=config['data_parameters']['seasonality'],
                 input_size=config['data_parameters']['input_size'],
                 output_size=config['data_parameters']['output_size'],
+                frequency=config['data_parameters']['frequency'],
                 cell_type=config['model_parameters']['cell_type'],
                 state_hsize=config['model_parameters']['state_hsize'],
                 dilations=config['model_parameters']['dilations'],
                 add_nl_layer=config['model_parameters']['add_nl_layer'],
                 random_seed=config['model_parameters']['random_seed'],
-                frequency=config['model_parameters']['frequency'],
                 device=config['device'])
 
   # Fit model

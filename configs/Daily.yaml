@@ -19,6 +19,7 @@ data_parameters:
   seasonality: [7]
   input_size: 7
   output_size: 14
+  frequency: 'D'
 model_parameters:
   n_models: 5
   n_top: 4
@@ -27,4 +28,3 @@ model_parameters:
   dilations: [[1, 7, 28]]
   add_nl_layer: True
   random_seed: 1
-  frequency: 'D'

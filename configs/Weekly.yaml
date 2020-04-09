@@ -19,10 +19,10 @@ data_parameters:
   seasonality: []
   input_size: 10
   output_size: 13
+  frequency: 'W'
 model_parameters:
   cell_type: 'ResLSTM'
   state_hsize: 40
   dilations: [[1, 52]]
   add_nl_layer: False
   random_seed: 2
-  frequency: 'W'
