@@ -62,6 +62,8 @@ class TestDates(unittest.TestCase):
         self.assertTrue(equals)
         self.assertTrue(null_preds)
 
+        del freqs, equals, null_preds
+
     def test_hourly(self):
 
         print('\n\nTesting Hourly data')
@@ -70,6 +72,8 @@ class TestDates(unittest.TestCase):
         self.assertEqual(freqs, [np.array('H')])
         self.assertTrue(equals)
         self.assertTrue(null_preds)
+
+        del freqs, equals, null_preds
 
     def test_monthly(self):
 
@@ -80,6 +84,8 @@ class TestDates(unittest.TestCase):
         self.assertTrue(equals)
         self.assertTrue(null_preds)
 
+        del freqs, equals, null_preds
+
     def test_quarterly(self):
 
         print('\n\nTesting Quarterly data')
@@ -88,6 +94,8 @@ class TestDates(unittest.TestCase):
         self.assertEqual(freqs, [np.array('QS-OCT')])
         self.assertTrue(equals)
         self.assertTrue(null_preds)
+
+        del freqs, equals, null_preds
 
     def test_weekly(self):
 
@@ -98,6 +106,8 @@ class TestDates(unittest.TestCase):
         self.assertTrue(equals)
         self.assertTrue(null_preds)
 
+        del freqs, equals, null_preds
+
     def test_yearly(self):
 
         print('\n\nTesting Yearly data')
@@ -106,6 +116,8 @@ class TestDates(unittest.TestCase):
         self.assertEqual(freqs, ['AS-JAN'])
         self.assertTrue(equals)
         self.assertTrue(null_preds)
+
+        del freqs, equals, null_preds
 
 
 
