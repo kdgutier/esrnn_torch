@@ -16,9 +16,12 @@ from ESRNN.utils_configs import get_config
 
 from ESRNN import ESRNN
 
+import torch
+
 def main(args):
   config = get_config(args.dataset)
 
+  #Setting needed parameters
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
 
   if args.num_obs:
@@ -26,10 +29,14 @@ def main(args):
   else:
       num_obs = 100000
 
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
-
   if args.use_cpu == 1:
       config['device'] = 'cpu'
+  else:
+      assert torch.cuda.is_available(), 'No cuda devices detected. You can try using CPU instead.'
+
+  #Reading data
+  print('Reading data')
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
 
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
@@ -63,6 +70,7 @@ def main(args):
   model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 
   # Predict on test set
+  print('\nForecasting')
   y_hat_df = model.predict(X_test_df)
 
   # Evaluate predictions

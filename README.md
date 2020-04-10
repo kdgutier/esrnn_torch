@@ -73,10 +73,10 @@ Replicating the M4 results is as easy as running the following line of code (for
 python -m ESRNN.run_m4 --dataset 'Yearly' --directory '/some/path' --gpu_id 0 --use_cpu 0
 ```
 
-Use help to get parameters description:
+Use `--help` to get the description of each argument:
 
 ```console
-python -m ESRNN.run_m4 --helps
+python -m ESRNN.run_m4 --help
 ```
 
 ## Authors
