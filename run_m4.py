@@ -24,6 +24,9 @@ def main(args):
 
   X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=100000)
 
+  if args.use_cpu == 1:
+      config['device'] = 'cpu'
+
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
                 batch_size=config['train_parameters']['batch_size'],
@@ -60,15 +63,22 @@ def main(args):
 
   # Evaluate predictions
   print(15*'=', ' Final evaluation ', 14*'=')
+  seasonality = config['data_parameters']['seasonality']
+  if not seasonality:
+      seasonality = 1
+  else:
+      seasonality = seasonality[0]
+
   final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df,
                                                                X_test_df, y_test_df,
-                                                               naive2_seasonality=config['data_parameters']['seasonality'][0])
+                                                               naive2_seasonality=seasonality)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Parser')
   parser.add_argument("--dataset", required=True, type=str)
   parser.add_argument("--directory", required=True, type=str)
   parser.add_argument("--gpu_id", required=False, type=int)
+  parser.add_argument("--use_cpu", required=True, type=int)
   args = parser.parse_args()
 
   main(args)

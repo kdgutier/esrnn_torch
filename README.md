@@ -68,7 +68,7 @@ Here we used the model directly to compare to the original implementation. It is
 
 
 ```console
-PYTHONPATH=. python run_m4.py --dataset 'Yearly' --directory './data' --gpu_id 0
+PYTHONPATH=. python run_m4.py --dataset 'Yearly' --directory './data' --gpu_id 0 --use_cpu 0
 ```
 
 ## Authors
