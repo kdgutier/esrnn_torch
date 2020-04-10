@@ -19,7 +19,7 @@ pip install ESRNN
 To install the *development version* use:
 
 ```python
-pip install git+https://github.com/kdgutier/esrnn_torch@name_branch
+pip install git+https://github.com/kdgutier/esrnn_torch@branch_name
 ```
 
 
