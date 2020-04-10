@@ -18,6 +18,8 @@ build/
 ESRNN/hyperpar_tunning_m4.py
 logs/*
 configs/*
+setup.sh
+server_results.sh
 
 # Setuptools distribution folder.
 /dist/
