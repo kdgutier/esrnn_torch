@@ -10,10 +10,16 @@ In this project we coded a pytorch class for the ES-RNN algorithm proposed by Sm
 
 The source code is currently hosted on GitHub at: https://github.com/kdgutier/esrnn_torch
 
-You can install  the released version of `ESRNN` from the [Python package index](https://pypi.org) with:
+You can install the *released version* of `ESRNN` from the [Python package index](https://pypi.org) with:
 
 ```python
 pip install ESRNN
+```
+
+To install the *development version* use:
+
+```python
+pip install git+https://github.com/kdgutier/esrnn_torch@name_branch
 ```
 
 
