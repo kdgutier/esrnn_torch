@@ -1,0 +1,183 @@
+/home/ubuntu/anaconda3/envs/orax_forecast/lib/python3.6/site-packages/pandas/core/arrays/datetimelike.py:1129: PerformanceWarning: Adding/subtracting array of DateOffsets to DatetimeArray not vectorized
+  .format(cls=type(self).__name__), PerformanceWarning)
+
+
+=============== Training ESRNN  ===============
+
+========= Epoch 0 finished =========
+Training time: 2.04313
+Training loss (50 prc): 0.83655
+Testing loss  (50 prc): 0.08401
+OWA: 5.569 
+SMAPE: 23.217 
+MASE: 21.968 
+========= Epoch 1 finished =========
+Training time: 2.29622
+Training loss (50 prc): 0.86809
+========= Epoch 2 finished =========
+Training time: 1.75032
+Training loss (50 prc): 0.78744
+========= Epoch 3 finished =========
+Training time: 2.09418
+Training loss (50 prc): 0.81376
+========= Epoch 4 finished =========
+Training time: 2.32646
+Training loss (50 prc): 0.77651
+========= Epoch 5 finished =========
+Training time: 1.94181
+Training loss (50 prc): 0.77452
+========= Epoch 6 finished =========
+Training time: 1.74936
+Training loss (50 prc): 0.86408
+========= Epoch 7 finished =========
+Training time: 1.7038
+Training loss (50 prc): 0.81399
+========= Epoch 8 finished =========
+Training time: 2.20277
+Training loss (50 prc): 0.73367
+========= Epoch 9 finished =========
+Training time: 2.54829
+Training loss (50 prc): 0.83309
+========= Epoch 10 finished =========
+Training time: 1.90004
+Training loss (50 prc): 0.71877
+Testing loss  (50 prc): 0.04353
+OWA: 1.082 
+SMAPE: 9.197 
+MASE: 2.732 
+========= Epoch 11 finished =========
+Training time: 1.9444
+Training loss (50 prc): 0.75004
+========= Epoch 12 finished =========
+Training time: 2.19799
+Training loss (50 prc): 0.73619
+========= Epoch 13 finished =========
+Training time: 2.19771
+Training loss (50 prc): 0.70241
+========= Epoch 14 finished =========
+Training time: 1.94115
+Training loss (50 prc): 0.74527
+========= Epoch 15 finished =========
+Training time: 1.92422
+Training loss (50 prc): 0.72871
+========= Epoch 16 finished =========
+Training time: 1.86218
+Training loss (50 prc): 0.72180
+========= Epoch 17 finished =========
+Training time: 1.85569
+Training loss (50 prc): 0.70115
+========= Epoch 18 finished =========
+Training time: 1.92339
+Training loss (50 prc): 0.73637
+========= Epoch 19 finished =========
+Training time: 1.90398
+Training loss (50 prc): 0.70928
+========= Epoch 20 finished =========
+Training time: 1.38915
+Training loss (50 prc): 0.69800
+Testing loss  (50 prc): 0.04213
+OWA: 1.08 
+SMAPE: 9.421 
+MASE: 2.649 
+========= Epoch 21 finished =========
+Training time: 2.27426
+Training loss (50 prc): 0.72596
+========= Epoch 22 finished =========
+Training time: 1.75756
+Training loss (50 prc): 0.69730
+========= Epoch 23 finished =========
+Training time: 1.83292
+Training loss (50 prc): 0.67941
+========= Epoch 24 finished =========
+Training time: 1.86705
+Training loss (50 prc): 0.66048
+========= Epoch 25 finished =========
+Training time: 1.68387
+Training loss (50 prc): 0.66618
+========= Epoch 26 finished =========
+Training time: 1.04441
+Training loss (50 prc): 0.69501
+========= Epoch 27 finished =========
+Training time: 1.04819
+Training loss (50 prc): 0.67280
+========= Epoch 28 finished =========
+Training time: 1.14213
+Training loss (50 prc): 0.70789
+========= Epoch 29 finished =========
+Training time: 2.01498
+Training loss (50 prc): 0.66821
+========= Epoch 30 finished =========
+Training time: 1.80367
+Training loss (50 prc): 0.83230
+Testing loss  (50 prc): 0.04293
+OWA: 1.098 
+SMAPE: 9.5 
+MASE: 2.719 
+========= Epoch 31 finished =========
+Training time: 2.64671
+Training loss (50 prc): 0.63884
+========= Epoch 32 finished =========
+Training time: 2.08059
+Training loss (50 prc): 0.67665
+========= Epoch 33 finished =========
+Training time: 1.85519
+Training loss (50 prc): 0.64552
+========= Epoch 34 finished =========
+Training time: 2.27629
+Training loss (50 prc): 0.62299
+========= Epoch 35 finished =========
+Training time: 1.81966
+Training loss (50 prc): 0.62088
+========= Epoch 36 finished =========
+Training time: 1.9026
+Training loss (50 prc): 0.67476
+========= Epoch 37 finished =========
+Training time: 2.18534
+Training loss (50 prc): 0.61775
+========= Epoch 38 finished =========
+Training time: 1.79323
+Training loss (50 prc): 0.63587
+========= Epoch 39 finished =========
+Training time: 1.74812
+Training loss (50 prc): 0.67553
+========= Epoch 40 finished =========
+Training time: 1.76514
+Training loss (50 prc): 0.69670
+Testing loss  (50 prc): 0.04164
+OWA: 1.09 
+SMAPE: 9.566 
+MASE: 2.654 
+========= Epoch 41 finished =========
+Training time: 1.90677
+Training loss (50 prc): 0.67820
+========= Epoch 42 finished =========
+Training time: 1.8191
+Training loss (50 prc): 0.63439
+========= Epoch 43 finished =========
+Training time: 1.78368
+Training loss (50 prc): 0.60910
+========= Epoch 44 finished =========
+Training time: 2.26103
+Training loss (50 prc): 0.59505
+========= Epoch 45 finished =========
+Training time: 1.82642
+Training loss (50 prc): 0.68015
+========= Epoch 46 finished =========
+Training time: 1.83251
+Training loss (50 prc): 0.60730
+========= Epoch 47 finished =========
+Training time: 2.01038
+Training loss (50 prc): 0.61818
+========= Epoch 48 finished =========
+Training time: 1.80132
+Training loss (50 prc): 0.60095
+========= Epoch 49 finished =========
+Training time: 1.69569
+Training loss (50 prc): 0.60776
+Train finished! 
+
+===============  Final evaluation  ==============
+===============  Model evaluation  ==============
+OWA: 1.083 
+SMAPE: 9.532 
+MASE: 2.629 
