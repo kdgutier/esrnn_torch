@@ -48,6 +48,8 @@ def fix_date(col, freq):
     """
     if freq=='W':
       return date_to_start_week(col)
+    if freq=='M':
+      return date_to_start_month(col)
     if freq=='Q':
       return date_to_start_quarter(col)
     if freq=='Y':
@@ -74,6 +76,22 @@ def date_to_start_week(col, week_starts_in=0):
     col = col - col.dt.weekday.apply(lambda x: timedelta(days=(x + week_starts_in + 1) % 7))
     return col
 
+def date_to_start_month(col):
+    """Function that takes data values and returns initial date for months
+    Parameters
+    ----------
+    col: Series or array (datetime)
+        Values to be processed
+    Returns
+    -------
+    Series of dates with the initial date of month
+    Example
+    -------
+    datos['date_week_start'] = date_to_start_week(datos['date'])
+    """
+    col = col.apply(lambda x: x.replace(day=1))
+    return col
+
 def date_to_start_quarter(col):
     """Function that takes data values and returns initial date for quarter
     Parameters
@@ -82,7 +100,7 @@ def date_to_start_quarter(col):
         Values to be processed
     Returns
     -------
-    Series of dates with the closest week start behind
+    Series of dates with the initial date of quarters
     Example
     -------
     datos['date_quarter_start'] = date_to_start_week(datos['date'])
