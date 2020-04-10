@@ -20,6 +20,7 @@ logs/*
 configs/*
 setup.sh
 server_results.sh
+test.py
 
 # Setuptools distribution folder.
 /dist/
