@@ -25,7 +25,7 @@ def main(args):
       num_obs = args.num_obs
   else:
       num_obs = 100000
-      
+
   X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
 
   if args.use_cpu == 1:
@@ -78,12 +78,18 @@ def main(args):
                                                                naive2_seasonality=seasonality)
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser(description='Parser')
-  parser.add_argument("--dataset", required=True, type=str)
-  parser.add_argument("--directory", required=True, type=str)
-  parser.add_argument("--gpu_id", required=False, type=int)
-  parser.add_argument("--use_cpu", required=False, type=int)
-  parser.add_argument("--num_obs", required=False, type=int)
+  parser = argparse.ArgumentParser(description='Replicate M4 results for the ESRNN model')
+  parser.add_argument("--dataset", required=True, type=str,
+                      choices=['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Hourly', 'Daily'],
+                      help="set of M4 time series to be tested")
+  parser.add_argument("--directory", required=True, type=str,
+                      help="directory where M4 data will be downloaded")
+  parser.add_argument("--gpu_id", required=False, type=int,
+                      help="an integer that specify which GPU will be used")
+  parser.add_argument("--use_cpu", required=False, type=int,
+                      help="1 to use CPU instead of GPU (uses GPU by default)")
+  parser.add_argument("--num_obs", required=False, type=int,
+                      help="number of M4 time series to be tested (uses all data by default)")
   args = parser.parse_args()
 
   main(args)

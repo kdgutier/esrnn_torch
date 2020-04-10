@@ -54,21 +54,29 @@ Here we used the model directly to compare to the original implementation. It is
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 <br/>
 
-| DATASET   | OWA   | M4 OWA | CPU MEGA |
-|-----------|-------|--------|----------|
-| Yearly    | 0.785 | 0.778  | 0.786    |
-| Quarterly | 0.879 | 0.847  | 0.886    |
-| Monthly   | 0.872 | 0.836  | 0.877    |
-| Hourly    | 0.615 | 0.920  | 0.633    |
-| Weekly    | 0.952 | 0.920  | 1.083    |
-| Daily     | 0.968 | 0.920  | 0.982    |
+| DATASET   | OWA   | M4 OWA |
+|-----------|-------|--------|
+| Yearly    | 0.785 | 0.778  |
+| Quarterly | 0.879 | 0.847  |
+| Monthly   | 0.872 | 0.836  |
+| Hourly    | 0.615 | 0.920  |
+| Weekly    | 0.952 | 0.920  |
+| Daily     | 0.968 | 0.920  |
 
 
 ## Replicating M4 results
 
 
+Replicating the M4 results is as easy as running the following line of code (for each frequency) after installing the package via pip:
+
 ```console
-PYTHONPATH=. python run_m4.py --dataset 'Yearly' --directory './data' --gpu_id 0 --use_cpu 0
+python -m ESRNN.run_m4 --dataset 'Yearly' --directory '/some/path' --gpu_id 0 --use_cpu 0
+```
+
+Use help to get parameters description:
+
+```console
+python -m ESRNN.run_m4 --helps
 ```
 
 ## Authors
