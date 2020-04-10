@@ -1,16 +1,10 @@
-/home/federicogarza2/anaconda3/lib/python3.7/site-packages/pandas/core/arrays/datetimelike.py:1151: PerformanceWarning: Adding/subtracting array of DateOffsets to DatetimeArray not vectorized
-  PerformanceWarning,
-/home/federicogarza2/anaconda3/lib/python3.7/site-packages/numpy/lib/type_check.py:546: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
-  'a.item() instead', DeprecationWarning, stacklevel=1)
-/home/federicogarza2/anaconda3/lib/python3.7/site-packages/botocore/vendored/requests/packages/urllib3/_collections.py:1: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated, and in 3.8 it will stop working
-  from collections import Mapping, MutableMapping
-/home/federicogarza2/anaconda3/lib/python3.7/site-packages/pandas/core/arrays/datetimelike.py:1151: PerformanceWarning: Adding/subtracting array of DateOffsets to DatetimeArray not vectorized
-  PerformanceWarning,
-/home/federicogarza2/anaconda3/lib/python3.7/site-packages/numpy/lib/type_check.py:546: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
+/home/ubuntu/anaconda3/envs/orax_forecast/lib/python3.6/site-packages/pandas/core/arrays/datetimelike.py:1129: PerformanceWarning: Adding/subtracting array of DateOffsets to DatetimeArray not vectorized
+  .format(cls=type(self).__name__), PerformanceWarning)
+/home/ubuntu/anaconda3/envs/orax_forecast/lib/python3.6/site-packages/numpy/lib/type_check.py:546: DeprecationWarning: np.asscalar(a) is deprecated since NumPy v1.16, use a.item() instead
   'a.item() instead', DeprecationWarning, stacklevel=1)
 ......
 ----------------------------------------------------------------------
-Ran 6 tests in 195.867s
+Ran 6 tests in 4635.456s
 
 OK
 
@@ -36,14 +30,14 @@ Preparing Naive2 Daily dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 1.21598
-Training loss (50 prc): 0.32512
+Training time: 108.2668
+Training loss (50 prc): 0.04976
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.682 
-SMAPE: 4.198 
-MASE: 5.936 
+OWA: 1.011 
+SMAPE: 3.099 
+MASE: 3.333 
 
 
 Testing Hourly data
@@ -54,14 +48,14 @@ Preparing Naive2 Hourly dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 11.94474
-Training loss (50 prc): 0.23810
+Training time: 68.62507
+Training loss (50 prc): 1.62988
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.887 
-SMAPE: 12.707 
-MASE: 2.954 
+OWA: 1.225 
+SMAPE: 18.627 
+MASE: 2.216 
 
 
 Testing Monthly data
@@ -72,14 +66,14 @@ Preparing Naive2 Monthly dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 1.21335
-Training loss (50 prc): 0.87233
+Training time: 541.3285
+Training loss (50 prc): 1.95216
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.109 
-SMAPE: 9.976 
-MASE: 2.839 
+OWA: 0.904 
+SMAPE: 12.938 
+MASE: 2.968 
 
 
 Testing Quarterly data
@@ -90,14 +84,14 @@ Preparing Naive2 Quarterly dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 0.4772
-Training loss (50 prc): 0.10291
+Training time: 237.19487
+Training loss (50 prc): 1.51728
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.172 
-SMAPE: 3.988 
-MASE: 2.852 
+OWA: 0.917 
+SMAPE: 10.376 
+MASE: 2.536 
 
 
 Testing Weekly data
@@ -108,29 +102,32 @@ Preparing Naive2 Weekly dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 2.81105
-Training loss (50 prc): 0.89448
+Training time: 6.92154
+Training loss (50 prc): 0.65053
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.248 
-SMAPE: 12.535 
-MASE: 4.049 
+OWA: 1.13 
+SMAPE: 9.221 
+MASE: 2.978 
 
 
 Testing Yearly data
 
+
+Some yearly time series have more than 200 observations
+Returning only last 200 obs of this time series (81 time series)
 
 Preparing Yearly dataset
 Preparing Naive2 Yearly dataset predictions
 =============== Training ESRNN  ===============
 
 ========= Epoch 0 finished =========
-Training time: 0.17095
-Training loss (50 prc): 0.45331
+Training time: 48.75128
+Training loss (50 prc): 1.10725
 Train finished! 
 
 ===============  Model evaluation  ==============
-OWA: 1.015 
-SMAPE: 12.703 
-MASE: 4.758 
+OWA: 0.784 
+SMAPE: 13.351 
+MASE: 2.983 
