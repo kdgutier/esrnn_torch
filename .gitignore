@@ -16,6 +16,7 @@ theory/
 *.c
 build/
 ESRNN/hyperpar_tunning_m4.py
+logs/*
 
 # Setuptools distribution folder.
 /dist/
