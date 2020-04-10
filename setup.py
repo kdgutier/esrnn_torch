@@ -22,7 +22,6 @@ setuptools.setup(
     install_requires =[
         "numpy==1.16.1",
         "pandas==0.25.2",
-        "torch==1.3.1",
-        "pyyaml"
+        "torch==1.3.1"
     ]
 )

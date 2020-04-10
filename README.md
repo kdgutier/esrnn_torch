@@ -5,7 +5,6 @@ In this project we coded a pytorch class for the ES-RNN algorithm proposed by Sm
 * numpy==1.16.1
 * pandas==0.25.2
 * pytorch==1.3.1
-* pyyaml
 
 ## Installation
 
