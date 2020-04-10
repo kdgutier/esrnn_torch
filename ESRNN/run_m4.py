@@ -12,17 +12,21 @@ import pandas as pd
 
 from ESRNN.M4_data import prepare_M4_data
 from ESRNN.utils_evaluation import evaluate_prediction_owa
+from ESRNN.utils_configs import get_config
 
 from ESRNN import ESRNN
 
 def main(args):
-  config_file = './configs/{}.yaml'.format(args.dataset)
-  with open(config_file, 'r') as stream:
-    config = yaml.safe_load(stream)
+  config = get_config(args.dataset)
 
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
 
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=100000)
+  if args.num_obs:
+      num_obs = args.num_obs
+  else:
+      num_obs = 100000
+      
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
 
   if args.use_cpu == 1:
       config['device'] = 'cpu'
@@ -78,7 +82,8 @@ if __name__ == '__main__':
   parser.add_argument("--dataset", required=True, type=str)
   parser.add_argument("--directory", required=True, type=str)
   parser.add_argument("--gpu_id", required=False, type=int)
-  parser.add_argument("--use_cpu", required=True, type=int)
+  parser.add_argument("--use_cpu", required=False, type=int)
+  parser.add_argument("--num_obs", required=False, type=int)
   args = parser.parse_args()
 
   main(args)
