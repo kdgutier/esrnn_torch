@@ -18,12 +18,12 @@ pip install ESRNN
 
 ## Usage Example
 ```python
-from ESRNN.M4_data import prepare_M4_data
+from ESRNN.m4_data import prepare_m4_data
 from ESRNN.utils_evaluation import evaluate_prediction_owa
 
 from ESRNN import ESRNN
 
-X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name='Yearly', directory = './data', num_obs=1000)
+X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name='Yearly', directory = './data', num_obs=1000)
 
 # Instantiate model
 model = ESRNN(max_epochs=25, freq_of_test=5, batch_size=4, learning_rate=1e-4, per_series_lr_multip=0.8,
@@ -69,13 +69,13 @@ Here we used the model directly to compare to the original implementation. It is
 Replicating the M4 results is as easy as running the following line of code (for each frequency) after installing the package via pip:
 
 ```console
-python -m ESRNN.run_m4 --dataset 'Yearly' --directory '/some/path' --gpu_id 0 --use_cpu 0
+python -m ESRNN.m4_run --dataset 'Yearly' --directory '/some/path' --gpu_id 0 --use_cpu 0
 ```
 
 Use `--help` to get the description of each argument:
 
 ```console
-python -m ESRNN.run_m4 --help
+python -m ESRNN.m4_run --help
 ```
 
 ## Authors
