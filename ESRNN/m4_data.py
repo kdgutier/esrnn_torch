@@ -69,7 +69,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   data_directory = directory + "/m4"
   train_directory = data_directory + "/Train/"
   test_directory = data_directory + "/Test/"
-  frcy = seas_dict[dataset_name]['freq']
+  freq = seas_dict[dataset_name]['freq']
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
@@ -79,7 +79,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   repair_dates = m4_info['StartingDate'].dt.strftime('%y').apply(lambda x: (int(x)<70) & (int(x)>17))
   m4_info.loc[repair_dates, 'StartingDate'] = m4_info.loc[repair_dates, 'StartingDate'].apply(lambda x: '19'+x.strftime('%y')+'-'+ x.strftime('%m-%d %H:%M:%S'))
   m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'])
-  m4_info['StartingDate'] = fix_date(m4_info['StartingDate'], frcy)
+  m4_info['StartingDate'] = fix_date(m4_info['StartingDate'], freq)
 
   # train data
   train_path='{}{}-train.csv'.format(train_directory, dataset_name)
@@ -93,7 +93,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   # Some yearly time series has more than 200 observations
   # Example: Y13190 has 835 obs
   # In this cases we only use the last 200 obs
-  if frcy == 'Y':
+  if freq == 'Y':
       fix_ids = dataset.loc[dataset['ds'] >= 200, 'unique_id'].unique()
       if  not (fix_ids.size == 0):
           print('Some yearly time series have more than 200 observations')
@@ -116,7 +116,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
 
           del non_problematic_ts, problematic_ts
 
-  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
+  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(freq, x-2))
 
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
@@ -142,7 +142,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
   dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
-  dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].apply(lambda x: custom_offset(frcy, x-2))
+  dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].apply(lambda x: custom_offset(freq, x-2))
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
@@ -173,7 +173,7 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
     seasonality = seas_dict[dataset_name]['seasonality']
     input_size = seas_dict[dataset_name]['input_size']
     output_size = seas_dict[dataset_name]['output_size']
-    frcy = seas_dict[dataset_name]['freq']
+    freq = seas_dict[dataset_name]['freq']
 
 
     print('Preparing {} dataset'.format(dataset_name))
@@ -202,7 +202,7 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
         y_naive2['ds'] = ds_preds
 
         y_naive2['StartingDate'] = y_id.ds.max()
-        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: custom_offset(frcy, x))
+        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: custom_offset(freq, x))
         y_naive2.drop(columns='StartingDate', inplace=True)
 
         y_naive2['unique_id'] = unique_id
