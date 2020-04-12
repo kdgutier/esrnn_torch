@@ -1,4 +1,4 @@
-import os
+m4_parserimport os
 from six.moves import urllib
 
 import numpy as np
@@ -47,7 +47,7 @@ def maybe_download(filename, directory):
     print('Successfully downloaded', filename, size, 'bytes.')
   return filepath
 
-def M4_parser(dataset_name, directory, num_obs=1000000):
+def m4_parser(dataset_name, directory, num_obs=1000000):
   """
   Transform M4 data into a panel.
 
@@ -156,13 +156,13 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
     num_obs: int
       Number of time series to return.
     y_train_df: DataFrame
-      Y train set returned by M4_parser
+      Y train set returned by m4_parser
     y_test_df: DataFrame
-      Y test set returned by M4_parser
+      Y test set returned by m4_parser
     """
     # Read train and test data
     if (y_train_df is None) or (y_test_df is None):
-        _, y_train_df, _, y_test_df = M4_parser(dataset_name, directory, num_obs)
+        _, y_train_df, _, y_test_df = m4_parser(dataset_name, directory, num_obs)
 
     seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
                            'output_size': 48},
@@ -228,7 +228,7 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
 
     return y_naive2_df
 
-def prepare_M4_data(dataset_name, directory, num_obs):
+def prepare_m4_data(dataset_name, directory, num_obs):
   """
   Pipeline that obtains M4 times series, tranforms it and gets naive2 predictions.
 
@@ -258,7 +258,7 @@ def prepare_M4_data(dataset_name, directory, num_obs):
   yearlytest_filename = maybe_download('Test/Yearly-test.csv', directory)
   print('\n')
 
-  X_train_df, y_train_df, X_test_df, y_test_df = M4_parser(dataset_name, directory, num_obs)
+  X_train_df, y_train_df, X_test_df, y_test_df = m4_parser(dataset_name, directory, num_obs)
 
   results_dir = directory + '/results'
   if not os.path.exists(results_dir):

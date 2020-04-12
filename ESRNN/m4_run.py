@@ -10,7 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from ESRNN.M4_data import prepare_M4_data
+from ESRNN.m4_data import prepare_m4_data
 from ESRNN.utils_evaluation import evaluate_prediction_owa
 from ESRNN.utils_configs import get_config
 
@@ -36,7 +36,7 @@ def main(args):
 
   #Reading data
   print('Reading data')
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
 
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],

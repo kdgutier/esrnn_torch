@@ -26,6 +26,6 @@ setuptools.setup(
     ],
     entry_points='''
         [console_scripts]
-        run_m4=ESRNN.run_m4:cli
+        m4_run=ESRNN.m4_run:cli
     '''
 )
