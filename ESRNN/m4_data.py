@@ -1,4 +1,4 @@
-m4_parserimport os
+import os
 from six.moves import urllib
 
 import numpy as np
