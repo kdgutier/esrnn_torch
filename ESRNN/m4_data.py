@@ -8,12 +8,18 @@ import pandas as pd
 from ESRNN.utils_evaluation import Naive2
 from ESRNN.utils_datetime import custom_offset, fix_date
 
-FREQ_DICT = {'Hourly': 'H',
-             'Daily': 'D',
-             'Weekly': 'W',
-             'Monthly': 'M',
-             'Quarterly': 'Q',
-             'Yearly': 'Y'}
+seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
+                       'output_size': 48, 'freq': 'H'},
+             'Daily': {'seasonality': 7, 'input_size': 7,
+                       'output_size': 14, 'freq': 'D'},
+             'Weekly': {'seasonality': 52, 'input_size': 52,
+                        'output_size': 13, 'freq': 'W'},
+             'Monthly': {'seasonality': 12, 'input_size': 12,
+                         'output_size':24, 'freq': 'M'},
+             'Quarterly': {'seasonality': 4, 'input_size': 4,
+                           'output_size': 8, 'freq': 'Q'},
+             'Yearly': {'seasonality': 1, 'input_size': 4,
+                        'output_size': 6, 'freq': 'Y'}}
 
 SOURCE_URL = 'https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/'
 
@@ -63,7 +69,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   data_directory = directory + "/m4"
   train_directory = data_directory + "/Train/"
   test_directory = data_directory + "/Test/"
-  frcy = FREQ_DICT[dataset_name]
+  frcy = seas_dict[dataset_name]['freq']
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
@@ -164,23 +170,10 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
     if (y_train_df is None) or (y_test_df is None):
         _, y_train_df, _, y_test_df = m4_parser(dataset_name, directory, num_obs)
 
-    seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
-                           'output_size': 48},
-                 'Daily': {'seasonality': 7, 'input_size': 7,
-                           'output_size': 14},
-                 'Weekly': {'seasonality': 52, 'input_size': 52,
-                            'output_size': 13},
-                 'Monthly': {'seasonality': 12, 'input_size': 12,
-                             'output_size':24},
-                 'Quarterly': {'seasonality': 4, 'input_size': 4,
-                               'output_size': 8},
-                 'Yearly': {'seasonality': 1, 'input_size': 4,
-                            'output_size': 6}}
-
     seasonality = seas_dict[dataset_name]['seasonality']
     input_size = seas_dict[dataset_name]['input_size']
     output_size = seas_dict[dataset_name]['output_size']
-    frcy = FREQ_DICT[dataset_name]
+    frcy = seas_dict[dataset_name]['freq']
 
 
     print('Preparing {} dataset'.format(dataset_name))
