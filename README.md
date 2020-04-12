@@ -69,7 +69,7 @@ Here we used the model directly to compare to the original implementation. It is
 Replicating the M4 results is as easy as running the following line of code (for each frequency) after installing the package via pip:
 
 ```console
-python -m ESRNN.m4_run --dataset 'Yearly' --directory '/some/path' --gpu_id 0 --use_cpu 0
+python -m ESRNN.m4_run --dataset 'Yearly' --results_directory '/some/path' --gpu_id 0 --use_cpu 0
 ```
 
 Use `--help` to get the description of each argument:

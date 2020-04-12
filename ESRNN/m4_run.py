@@ -36,7 +36,7 @@ def main(args):
 
   #Reading data
   print('Reading data')
-  X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name=args.dataset, directory=args.directory, num_obs=num_obs)
+  X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name=args.dataset, directory=args.results_directory, num_obs=num_obs)
 
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
@@ -90,7 +90,7 @@ if __name__ == '__main__':
   parser.add_argument("--dataset", required=True, type=str,
                       choices=['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Hourly', 'Daily'],
                       help="set of M4 time series to be tested")
-  parser.add_argument("--directory", required=True, type=str,
+  parser.add_argument("--results_directory", required=True, type=str,
                       help="directory where M4 data will be downloaded")
   parser.add_argument("--gpu_id", required=False, type=int,
                       help="an integer that specify which GPU will be used")
