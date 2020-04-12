@@ -16,13 +16,6 @@ You can install the *released version* of `ESRNN` from the [Python package index
 pip install ESRNN
 ```
 
-To install the *development version* use:
-
-```python
-pip install git+https://github.com/kdgutier/esrnn_torch@branch_name
-```
-
-
 ## Usage Example
 ```python
 from ESRNN.M4_data import prepare_M4_data
