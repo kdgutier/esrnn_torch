@@ -4,9 +4,11 @@ from six.moves import urllib
 import numpy as np
 import pandas as pd
 
+from pandas.tseries.offsets import DateOffset
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 from ESRNN.utils_evaluation import Naive2
-from ESRNN.utils_datetime import custom_offset, fix_date
 
 seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
                        'output_size': 48, 'freq': 'H'},
@@ -266,3 +268,54 @@ def prepare_m4_data(dataset_name, directory, num_obs):
     y_naive2_df['ds'] = pd.to_datetime(y_naive2_df['ds'])
 
   return X_train_df, y_train_df, X_test_df, y_naive2_df
+
+###############################################################################
+##### UTILS DATETIME ##########################################################
+###############################################################################
+
+def custom_offset(freq, x):
+    allowed_freqs= ('Y', 'M', 'W', 'H', 'Q', 'D')
+    if freq not in allowed_freqs:
+        raise ValueError(f'kind must be one of {allowed_kinds}')
+
+    if freq == 'Y':
+        return DateOffset(years = x)
+    elif freq == 'M':
+        return DateOffset(months = x)
+    elif freq == 'W':
+        return DateOffset(weeks = x)
+    elif freq == 'H':
+        return DateOffset(hours = x)
+    elif freq == 'Q':
+        return DateOffset(months = 3*x)
+    elif freq == 'D':
+        return DateOffset(days = x)
+
+def fix_date(col, freq):
+    if freq=='W':
+      return date_to_start_week(col)
+    if freq=='M':
+      return date_to_start_month(col)
+    if freq=='Q':
+      return date_to_start_quarter(col)
+    if freq=='Y':
+      return date_to_start_year(col)
+    else:
+      return col
+
+def date_to_start_week(col, week_starts_in=0):
+    col = col - col.dt.weekday.apply(lambda x: timedelta(days=(x + week_starts_in + 1) % 7))
+    return col
+
+def date_to_start_month(col):
+    col = col.apply(lambda x: x.replace(day=1))
+    return col
+
+def date_to_start_quarter(col):
+    col = col - col.dt.month.apply(lambda x: custom_offset('M', (x-1) % 3))
+    col = col.apply(lambda x: x.replace(day=1))
+    return col
+
+def date_to_start_year(col):
+    col = col.apply(lambda x: x.replace(month=1).replace(day=1))
+    return col
