@@ -18,7 +18,7 @@ from ESRNN.utils.losses import SmylLoss, PinballLoss
 from ESRNN.utils.data import Iterator
 
 from ESRNN.utils_evaluation import owa
-from ESRNN.utils_datetime import custom_offset
+from ESRNN.m4_data import custom_offset
 
 
 class ESRNN(object):
