@@ -72,6 +72,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   train_directory = data_directory + "/Train/"
   test_directory = data_directory + "/Test/"
   freq = seas_dict[dataset_name]['freq']
+  int_ds = freq=='Y'
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
   m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
@@ -92,33 +93,8 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   dataset = dataset.rename(columns={'V':'y'})
   dataset = dataset.dropna()
   dataset = dataset.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-  # Some yearly time series has more than 200 observations
-  # Example: Y13190 has 835 obs
-  # In this cases we only use the last 200 obs
-  if freq == 'Y':
-      fix_ids = dataset.loc[dataset['ds'] >= 200, 'unique_id'].unique()
-      if  not (fix_ids.size == 0):
-          print('Some yearly time series have more than 200 observations')
-          print('Returning only last 200 obs of this time series ({} time series)\n'.format(len(fix_ids)))
-          #
-          # fixing ds for problematic ts
-          problematic_ts = dataset[dataset['unique_id'].isin(fix_ids)]
-          problematic_ts = problematic_ts.groupby('unique_id').tail(200)
-          min_ds = problematic_ts.groupby('unique_id').min().reset_index()[['unique_id', 'ds']]
-          min_ds.rename(columns={'ds': 'min_ds'}, inplace=True)
 
-          problematic_ts = problematic_ts.merge(min_ds, how='left', on=['unique_id'])
-          problematic_ts['ds'] -= (problematic_ts['min_ds'] - 2)
-          problematic_ts.drop(columns='min_ds', inplace=True)
-
-          non_problematic_ts = dataset[~dataset['unique_id'].isin(fix_ids)]
-
-          dataset = pd.concat([non_problematic_ts, problematic_ts])
-          dataset = dataset.sort_values(['unique_id', 'ds'])
-
-          del non_problematic_ts, problematic_ts
-
-  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(freq, x-2))
+  dataset.loc[:, 'ds'] = dataset['StartingDate'] + dataset['ds'].apply(lambda x: custom_offset(freq, x-2, int_ds))
 
   dataset.drop(columns=['M4id'], inplace=True)
   dataset = dataset.rename(columns={'category': 'x'})
@@ -144,7 +120,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
 
   dataset = dataset.merge(max_dates, on='unique_id', how='left')
   dataset['ds'] = dataset['ds_x'] + dataset['ds_y']
-  dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].apply(lambda x: custom_offset(freq, x-2))
+  dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].apply(lambda x: custom_offset(freq, x-2, int_ds))
 
   X_test_df = dataset.filter(items=['unique_id', 'x', 'ds'])
   y_test_df = dataset.filter(items=['unique_id', 'y', 'ds'])
@@ -203,8 +179,15 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
         y_naive2['ds'] = ds_preds
 
-        y_naive2['StartingDate'] = y_id.ds.max()
-        y_naive2['ds'] = pd.to_datetime(y_naive2['StartingDate']) + y_naive2['ds'].apply(lambda x: custom_offset(freq, x))
+        max_date = y_id.ds.max()
+        int_ds = isinstance(max_date, (int, np.int, np.int64))
+        
+        if int_ds:
+            y_naive2['StartingDate'] = max_date
+        else:
+            y_naive2['StartingDate'] = pd.to_datetime(max_date)
+
+        y_naive2['ds'] = y_naive2['StartingDate'] + y_naive2['ds'].apply(lambda x: custom_offset(freq, x, int_ds))
         y_naive2.drop(columns='StartingDate', inplace=True)
 
         y_naive2['unique_id'] = unique_id
@@ -273,10 +256,13 @@ def prepare_m4_data(dataset_name, directory, num_obs):
 ##### UTILS DATETIME ##########################################################
 ###############################################################################
 
-def custom_offset(freq, x):
+def custom_offset(freq, x, int_ds=False):
     allowed_freqs= ('Y', 'M', 'W', 'H', 'Q', 'D')
     if freq not in allowed_freqs:
         raise ValueError(f'kind must be one of {allowed_kinds}')
+
+    if int_ds:
+        return x
 
     if freq == 'Y':
         return DateOffset(years = x)
@@ -317,5 +303,4 @@ def date_to_start_quarter(col):
     return col
 
 def date_to_start_year(col):
-    col = col.apply(lambda x: x.replace(month=1).replace(day=1))
-    return col
+    return col.dt.year

@@ -330,6 +330,8 @@ class ESRNN(object):
     self.min_owa = 4.0
     self.min_epoch = 0
 
+    self.int_ds = isinstance(self.y_train_df['ds'][0], (int, np.int, np.int64))
+
     X, y = self.long_to_wide(X_df, y_df)
     assert len(X)==len(y)
     assert X.shape[1]>=3
@@ -390,7 +392,7 @@ class ESRNN(object):
     panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
     # TODO: Improve wasted computation
     panel_delta = list(range(1, output_size+1)) * n_unique_id
-    panel_delta = pd.Series(panel_delta).apply(lambda x: custom_offset(self.mc.frequency, x))
+    panel_delta = pd.Series(panel_delta).apply(lambda x: custom_offset(self.mc.frequency, x, self.int_ds))
     panel_delta.index = panel_last_ds.index
 
     panel_ds = panel_last_ds + panel_delta
