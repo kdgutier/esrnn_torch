@@ -225,7 +225,7 @@ class ESRNN(object):
           print("Testing loss  ({} prc): {:.5f}".format(self.mc.testing_percentile,
                                                         self.test_loss))
           self.evaluate_model_prediction(self.y_train_df, self.X_test_df,
-                                        self.y_test_df, epoch=epoch)
+                                        self.y_test_df, self.y_hat_benchmark, epoch=epoch)
           self.esrnn.train()
 
     if verbose: print('Train finished! \n')
@@ -281,7 +281,7 @@ class ESRNN(object):
       dataloader.update_batch_size(self.mc.batch_size)
     return model_loss
 
-  def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
+  def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, y_hat_benchmark='y_hat_naive2', epoch=None):
     """
     Evaluate the model against baseline Naive2 model in y_test_df
     Args:
@@ -290,18 +290,20 @@ class ESRNN(object):
       X_test_df: pandas df
         panel with columns unique_id, ds, x
       y_test_df: pandas df
-        panel with columns unique_id, ds, y, y_hat_naive2
+        panel with columns unique_id, ds, y and a column identifying benchmark predictions
+      y_hat_benchmark: str
+        columns name of benchmark predictions, default y_hat_naive2
     """
     assert self._fitted, "Model not fitted yet"
 
     y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
-    y_naive2_panel = y_test_df.filter(['unique_id', 'ds', 'y_hat_naive2'])
-    y_naive2_panel.rename(columns={'y_hat_naive2': 'y_hat'}, inplace=True)
+    y_benchmark_panel = y_test_df.filter(['unique_id', 'ds', y_hat_benchmark])
+    y_benchmark_panel.rename(columns={y_hat_benchmark: 'y_hat'}, inplace=True)
     y_hat_panel = self.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
     model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel,
-                                             y_naive2_panel, y_insample,
+                                             y_benchmark_panel, y_insample,
                                              seasonality=self.mc.naive_seasonality)
 
     if self.min_owa > model_owa:
@@ -315,13 +317,15 @@ class ESRNN(object):
 
     return model_owa, model_mase, model_smape
 
-  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None,
+  def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, y_hat_benchmark='y_hat_naive2',
           warm_start=False, shuffle=True, verbose=True):
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
     assert all([(col in X_df) for col in ['unique_id', 'ds', 'x']])
     assert all([(col in y_df) for col in ['unique_id', 'ds', 'y']])
+    if y_test_df is not None:
+        assert y_hat_benchmark in y_test_df.columns, 'benchmark is not present in y_test_df, use y_hat_benchmark to define it'
 
     # Storing dfs for OWA evaluation, initializing min_owa
     self.y_train_df = y_df
@@ -331,6 +335,8 @@ class ESRNN(object):
     self.min_epoch = 0
 
     self.int_ds = isinstance(self.y_train_df['ds'][0], (int, np.int, np.int64))
+
+    self.y_hat_benchmark = y_hat_benchmark
 
     X, y = self.long_to_wide(X_df, y_df)
     assert len(X)==len(y)
