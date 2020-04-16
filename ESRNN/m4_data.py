@@ -1,5 +1,6 @@
 import os
 from six.moves import urllib
+import subprocess
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from ESRNN.utils_evaluation import Naive2
+
 
 seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
                        'output_size': 48, 'freq': 'H'},
@@ -181,7 +183,6 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
 
         max_date = y_id.ds.max()
         int_ds = isinstance(max_date, (int, np.int, np.int64))
-        
         if int_ds:
             y_naive2['StartingDate'] = max_date
         else:
@@ -206,7 +207,56 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
 
     return y_naive2_df
 
-def prepare_m4_data(dataset_name, directory, num_obs):
+def naive2_predictions_r(dataset_name, directory, num_obs, y_train_df = None, y_test_df = None):
+    """
+    Computes Naive2 predictions.
+
+    Parameters
+    ----------
+    dataset_name: str
+      Frequency of the data. Example: 'Yearly'.
+    directory: str
+      Custom directory where data will be saved.
+    num_obs: int
+      Number of time series to return.
+    y_train_df: DataFrame
+      Y train set returned by m4_parser
+    y_test_df: DataFrame
+      Y test set returned by m4_parser
+    """
+    # Read train and test data
+    if (y_train_df is None) or (y_test_df is None):
+        _, y_train_df, _, y_test_df = m4_parser(dataset_name, directory, num_obs)
+
+    freq = seas_dict[dataset_name]['freq']
+    int_ds = freq=='Y'
+
+    str_call = 'Rscript ESRNN/r/Naive2.R --dataset_name {} --directory {} --num_obs {}'.format(dataset_name, directory, num_obs)
+    subprocess.call(str_call, shell=True)
+
+    results_dir = directory + '/results'
+    naive2_file = results_dir + '/{}-naive2predictions_{}{}.csv'
+    naive2_file_raw = naive2_file.format(dataset_name, num_obs, '_r_raw')
+
+    y_naive2_df = pd.read_csv(naive2_file_raw)
+    y_naive2_df = y_naive2_df.rename(columns={'V1':'unique_id'})
+    y_naive2_df = pd.wide_to_long(y_naive2_df, stubnames=["V"], i="unique_id", j="ds").reset_index()
+    y_naive2_df = y_naive2_df.rename(columns={'V':'y'})
+    y_naive2_df = y_naive2_df.dropna()
+
+    max_dates_train = y_train_df.groupby('unique_id').max()['ds'].reset_index()
+    max_dates_train = max_dates_train.rename(columns={'ds': 'ds_max_train'})
+    y_naive2_df = y_naive2_df.merge(max_dates_train, how='left', on='unique_id')
+    y_naive2_df.loc[:, 'ds'] = y_naive2_df['ds_max_train'] + y_naive2_df['ds'].apply(lambda x: custom_offset(freq, x-1, int_ds))
+    y_naive2_df = y_naive2_df.drop(columns='ds_max_train').rename(columns={'y': 'y_hat_naive2'})
+
+    y_naive2_df = y_test_df.merge(y_naive2_df, on=['unique_id', 'ds'], how='left')
+
+    y_naive2_df.to_csv(naive2_file.format(dataset_name, num_obs, '_r')) 
+
+    return y_naive2_df
+
+def prepare_m4_data(dataset_name, directory, num_obs, py_predictions=True):
   """
   Pipeline that obtains M4 times series, tranforms it and gets naive2 predictions.
 
@@ -218,6 +268,8 @@ def prepare_m4_data(dataset_name, directory, num_obs):
     Custom directory where data will be saved.
   num_obs: int
     Number of time series to return.
+  py_predictions: bool
+    whether use python or r predictions
   """
   m4info_filename = maybe_download('M4-info.csv', directory)
 
@@ -242,10 +294,17 @@ def prepare_m4_data(dataset_name, directory, num_obs):
   if not os.path.exists(results_dir):
       os.mkdir(results_dir)
 
-  naive2_file = results_dir + '/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
-  if not os.path.exists(naive2_file):
-    y_naive2_df = naive2_predictions(dataset_name, directory, num_obs, y_train_df, y_test_df)
+  naive2_file = results_dir + '/{}-naive2predictions_{}{}.csv'
 
+  if py_predictions:
+    naive2_file = naive2_file.format(dataset_name, num_obs, '')
+    naive2_fun = naive2_predictions
+  else:
+    naive2_file = naive2_file.format(dataset_name, num_obs, '_r')
+    naive2_fun = naive2_predictions_r
+
+  if not os.path.exists(naive2_file):
+    y_naive2_df = naive2_fun(dataset_name, directory, num_obs, y_train_df, y_test_df)
   else:
     y_naive2_df = pd.read_csv(naive2_file)
     y_naive2_df['ds'] = pd.to_datetime(y_naive2_df['ds'])
