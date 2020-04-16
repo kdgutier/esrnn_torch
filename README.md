@@ -54,7 +54,7 @@ Here we used the model directly to compare to the original implementation. It is
 <br/>
 
 | DATASET   | OUR OWA | M4 OWA (Smyl) |
-|-----------|---------|--------|
+|-----------|:---------:|:--------:|
 | Yearly    | 0.785   | 0.778  |
 | Quarterly | 0.879   | 0.847  |
 | Monthly   | 0.872   | 0.836  |
