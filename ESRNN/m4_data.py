@@ -152,10 +152,10 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
     y_train_df = y_train_df.sort_values(by=['unique_id', 'ds'])
 
     if py_predictions:
-        y_naive2_df = wrapper_naive2_python(y_train_df, y_test_df, seasonality, input_size, output_size, freq)
+        y_naive2_df = wrapper_naive2_python(y_train_df, seasonality, output_size, freq)
         identifier = ''
     else:
-        y_naive2_df = wrapper_naive2_r(y_train_df, y_test_df, dataset_name, directory, num_obs, freq)
+        y_naive2_df = wrapper_naive2_r(dataset_name, directory, num_obs, freq)
         identifier = '_r'
 
     y_naive2_df = add_date(y_naive2_df, freq, y_train_df=y_train_df)
@@ -229,7 +229,7 @@ def prepare_m4_data(dataset_name, directory, num_obs, py_predictions=True):
 #### Naive2, python, R ######################################################
 #############################################################################
 
-def wrapper_naive2_python(y_train_df, y_test_df, seasonality, input_size, output_size, freq):
+def wrapper_naive2_python(y_train_df, seasonality, output_size, freq):
     # Naive2
     y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
 
@@ -249,16 +249,13 @@ def wrapper_naive2_python(y_train_df, y_test_df, seasonality, input_size, output
         y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
         y_naive2['ds'] = ds_preds
 
-        #y_naive2['ds'] = y_naive2['StartingDate'] + y_naive2['ds'].apply(lambda x: custom_offset(freq, x, int_ds))
-        #y_naive2.drop(columns='StartingDate', inplace=True)
-
         y_naive2['unique_id'] = unique_id
         y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
         y_naive2_df = y_naive2_df.append(y_naive2)
 
     return y_naive2_df
 
-def wrapper_naive2_r(y_train_df, y_test_df, dataset_name, directory, num_obs, freq):
+def wrapper_naive2_r(dataset_name, directory, num_obs, freq):
 
     str_call = 'Rscript ESRNN/r/Naive2.R --dataset_name {} --directory {} --num_obs {}'
     str_call = str_call.format(dataset_name, directory, num_obs)
