@@ -119,7 +119,7 @@ class ESRNN(object):
                cell_type='LSTM',
                state_hsize=40, dilations=[[1, 2], [4, 8]],
                add_nl_layer=False, seasonality=[4], input_size=4, output_size=8,
-               frequency='D', max_periods=20, random_seed=1,
+               frequency=None, max_periods=20, random_seed=1,
                device='cpu', root_dir='./'):
     super(ESRNN, self).__init__()
     self.mc = ModelConfig(max_epochs=max_epochs, batch_size=batch_size, batch_size_test=batch_size_test, 
@@ -349,11 +349,15 @@ class ESRNN(object):
     n_series = self.train_dataloader.n_series
     self.instantiate_esrnn(exogenous_size, n_series)
 
+    # Infer freq of model
+    if self.mc.frequency is None:
+      self.mc.frequency = pd.infer_freq(X_df.head()['ds'])
+      print("Infered frequency: {}".format(self.mc.frequency))
+
     # Train model
     self._fitted = True
     self.train(dataloader=self.train_dataloader, max_epochs=self.mc.max_epochs,
                warm_start=warm_start, shuffle=shuffle, verbose=verbose)
-
 
   def instantiate_esrnn(self, exogenous_size, n_series):
     self.mc.exogenous_size = exogenous_size
@@ -386,14 +390,14 @@ class ESRNN(object):
     output_size = self.mc.output_size
     n_unique_id = len(dataloader.sort_key['unique_id'])
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
-    panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
-    
-    # TODO: Improve wasted computation
-    panel_delta = list(range(1, output_size+1)) * n_unique_id
-    panel_delta = pd.to_timedelta(panel_delta, unit=self.mc.frequency)
-    
-    panel_ds = panel_last_ds + panel_delta
-    
+
+    #access column with last train date
+    panel_last_ds = pd.Series(dataloader.X[:, 2])
+    panel_ds = []
+    for i in range(len(panel_last_ds)):
+      ranges = pd.date_range(start=panel_last_ds[i], periods=output_size+1, freq=self.mc.frequency)
+      panel_ds += list(ranges[1:])
+
     panel_y_hat= np.zeros((output_size * n_unique_id))
     
     # Predict
