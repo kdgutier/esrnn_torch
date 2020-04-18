@@ -67,6 +67,15 @@ def main(args):
                 random_seed=config['model_parameters']['random_seed'],
                 device=config['device'])
 
+  if args.test == 1:
+       model = ESRNN(max_epochs=1,
+                     batch_size=20,
+                     seasonality=config['data_parameters']['seasonality'],
+                     input_size=config['data_parameters']['input_size'],
+                     output_size=config['data_parameters']['output_size'],
+                     frequency=config['data_parameters']['frequency'],
+                     device=config['device'])
+
   # Fit model
   # If y_test_df is provided the model will evaluate predictions on this set every freq_test epochs
   model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
@@ -100,6 +109,8 @@ if __name__ == '__main__':
                       help="1 to use CPU instead of GPU (uses GPU by default)")
   parser.add_argument("--num_obs", required=False, type=int,
                       help="number of M4 time series to be tested (uses all data by default)")
+  parser.add_argument("--test", required=False, type=int,
+                      help="run fast for tests (no test by default)")
   args = parser.parse_args()
 
   main(args)
