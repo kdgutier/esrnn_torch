@@ -22,7 +22,7 @@ setuptools.setup(
     install_requires =[
         "numpy==1.16.1",
         "pandas==0.25.2",
-        "torch==1.3.1"
+        "torch>=1.3.1"
     ],
     entry_points='''
         [console_scripts]
