@@ -1,3 +1,8 @@
+[![Build](https://github.com/kdgutier/esrnn_torch/workflows/Python%20package/badge.svg?branch=pip)](https://github.com/kdgutier/esrnn_torch/tree/pip)
+[![PyPI version fury.io](https://badge.fury.io/py/ESRNN.svg)](https://pypi.python.org/pypi/ESRNN/)
+[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360+/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE)
+
 # Pytorch Implementation of the ES-RNN
 In this project we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
 
