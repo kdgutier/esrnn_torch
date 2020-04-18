@@ -34,14 +34,11 @@ def main(args):
   else:
       assert torch.cuda.is_available(), 'No cuda devices detected. You can try using CPU instead.'
 
-  py_predictions = args.py_predictions == 1
-
   #Reading data
   print('Reading data')
   X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name=args.dataset,
                                                                  directory=args.results_directory,
-                                                                 num_obs=num_obs,
-                                                                 py_predictions=py_predictions)
+                                                                 num_obs=num_obs)
 
   # Instantiate model
   model = ESRNN(max_epochs=config['train_parameters']['max_epochs'],
@@ -103,8 +100,6 @@ if __name__ == '__main__':
                       help="1 to use CPU instead of GPU (uses GPU by default)")
   parser.add_argument("--num_obs", required=False, type=int,
                       help="number of M4 time series to be tested (uses all data by default)")
-  parser.add_argument("--py_predictions", required=False, type=int, default=1,
-                      help="whether use python or r predictions (default python)")
   args = parser.parse_args()
 
   main(args)

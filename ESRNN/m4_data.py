@@ -5,10 +5,6 @@ import subprocess
 import numpy as np
 import pandas as pd
 
-from pandas.tseries.offsets import DateOffset
-from datetime import timedelta
-from dateutil.relativedelta import relativedelta
-
 from ESRNN.utils_evaluation import Naive2
 
 
@@ -75,51 +71,67 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   test_directory = data_directory + "/Test/"
   freq = seas_dict[dataset_name]['freq']
 
-  # train data
+  m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category'])
+  m4_info = m4_info[m4_info['M4id'].str.startswith(freq)].reset_index(drop=True)
+
+  # Train data
   train_path='{}{}-train.csv'.format(train_directory, dataset_name)
 
-  dataset = pd.read_csv(train_path).head(num_obs)
-  dataset = dataset.rename(columns={'V1':'unique_id'})
-  dataset = pd.wide_to_long(dataset, stubnames=["V"], i="unique_id", j="ds").reset_index()
-  dataset = dataset.rename(columns={'V':'y'})
-  dataset = dataset.dropna()
-  dataset['train'] = True
+  train_df = pd.read_csv(train_path, nrows=num_obs)
+  train_df = train_df.rename(columns={'V1':'unique_id'})
 
-  max_dates = dataset.groupby('unique_id').agg({'ds': 'count'}).reset_index()
+  train_df = pd.wide_to_long(train_df, stubnames=["V"], i="unique_id", j="ds").reset_index()
+  train_df = train_df.rename(columns={'V':'y'})
+  train_df = train_df.dropna()
+  train_df['split'] = 'train'
+  train_df['ds'] = train_df['ds']-1
+  # Get len of series per unique_id
+  len_series = train_df.groupby('unique_id').agg({'ds': 'max'}).reset_index()
+  len_series.columns = ['unique_id', 'len_serie']
 
-  # test data
+  # Test data
   test_path='{}{}-test.csv'.format(test_directory, dataset_name)
 
-  dataset_test = pd.read_csv(test_path).head(num_obs)
-  dataset_test = dataset_test.rename(columns={'V1':'unique_id'})
-  dataset_test = pd.wide_to_long(dataset_test, stubnames=["V"], i="unique_id", j="ds").reset_index()
-  dataset_test = dataset_test.rename(columns={'V':'y'})
-  dataset_test = dataset_test.dropna()
+  test_df = pd.read_csv(test_path, nrows=num_obs)
+  test_df = test_df.rename(columns={'V1':'unique_id'})
 
-  # Uniforming ds
-  dataset_test = dataset_test.merge(max_dates, on='unique_id', how='left')
-  dataset_test['ds'] = dataset_test['ds_x'] + dataset_test['ds_y']
-  dataset_test = dataset_test.drop(columns=['ds_x', 'ds_y'])
-  dataset_test['train'] = False
+  test_df = pd.wide_to_long(test_df, stubnames=["V"], i="unique_id", j="ds").reset_index()
+  test_df = test_df.rename(columns={'V':'y'})
+  test_df = test_df.dropna()
+  test_df['split'] = 'test'
+  test_df = test_df.merge(len_series, on='unique_id')
+  test_df['ds'] = test_df['ds'] + test_df['len_serie'] - 1
+  test_df = test_df[['unique_id','ds','y','split']]
 
-  # All data
-  dataset = pd.concat([dataset, dataset_test], sort=True)
-  del dataset_test
+  df = pd.concat((train_df,test_df))
+  df = df.sort_values(by=['unique_id', 'ds']).reset_index(drop=True)
 
-  dataset['ds'] -= 2
-  dataset.sort_values(by=['unique_id', 'ds'], inplace=True)
+  # Create column with dates with freq of dataset
+  len_series = df.groupby('unique_id').agg({'ds': 'max'}).reset_index()
+  dates = []
+  for i in range(len(len_series)):
+      len_serie = len_series.iloc[i,1]
+      ranges = pd.date_range(start='1970/01/01', periods=len_serie, freq=freq)
+      dates += list(ranges)
+  df.loc[:,'ds'] = dates
 
-  dataset = add_date(dataset, freq, data_directory=data_directory)
+  df = df.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
+  df.drop(columns=['M4id'], inplace=True)
+  df = df.rename(columns={'category': 'x'})
 
-  X_train_df = dataset[dataset['train']].filter(items=['unique_id', 'ds', 'x'])
-  y_train_df = dataset[dataset['train']].filter(items=['unique_id', 'ds', 'y'])
+  X_train_df = df[df['split']=='train'].filter(items=['unique_id', 'ds', 'x'])
+  y_train_df = df[df['split']=='train'].filter(items=['unique_id', 'ds', 'y'])
+  X_test_df = df[df['split']=='test'].filter(items=['unique_id', 'ds', 'x'])
+  y_test_df = df[df['split']=='test'].filter(items=['unique_id', 'ds', 'y'])
 
-  X_test_df = dataset[~dataset['train']].filter(items=['unique_id', 'ds', 'x'])
-  y_test_df = dataset[~dataset['train']].filter(items=['unique_id', 'ds', 'y'])
+  X_train_df = X_train_df.reset_index(drop=True)
+  y_train_df = y_train_df.reset_index(drop=True)
+  X_test_df = X_test_df.reset_index(drop=True)
+  y_test_df = y_test_df.reset_index(drop=True)
 
   return X_train_df, y_train_df, X_test_df, y_test_df
 
-def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_test_df = None, py_predictions=True):
+def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_test_df = None):
     """
     Computes Naive2 predictions.
 
@@ -148,30 +160,35 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
     print('Preparing {} dataset'.format(dataset_name))
     print('Preparing Naive2 {} dataset predictions'.format(dataset_name))
 
+    # Naive2
+    y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
+
     # Sort X by unique_id for faster loop
     y_train_df = y_train_df.sort_values(by=['unique_id', 'ds'])
+    # List of uniques ids
+    unique_ids = y_train_df['unique_id'].unique()
+    # Panel of fitted models
+    for unique_id in unique_ids:
+        # Fast filter X and y by id.
+        top_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'left'))
+        bottom_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'right'))
+        y_id = y_train_df[top_row:bottom_row]
 
-    if py_predictions:
-        y_naive2_df = wrapper_naive2_python(y_train_df, seasonality, output_size, freq)
-        identifier = ''
-    else:
-        y_naive2_df = wrapper_naive2_r(dataset_name, directory, num_obs, freq)
-        identifier = '_r'
+        y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
+        y_naive2['ds'] = pd.date_range(start=y_id.ds.max(),
+                                       periods=output_size+1, freq=freq)[1:]
+        y_naive2['unique_id'] = unique_id
+        y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
+        y_naive2_df = y_naive2_df.append(y_naive2)
 
-    y_naive2_df = add_date(y_naive2_df, freq, y_train_df=y_train_df)
-    y_naive2_df = y_naive2_df.drop(columns='StartingDate').rename(columns={'y_hat': 'y_hat_naive2'})
     y_naive2_df = y_test_df.merge(y_naive2_df, on=['unique_id', 'ds'], how='left')
-
-    results_dir = directory + '/results'
-    if not os.path.exists(results_dir):
-        os.mkdir(results_dir)
-
-    naive2_file = results_dir + '/{}-naive2predictions_{}{}.csv'.format(dataset_name, num_obs, identifier)
+    y_naive2_df.rename(columns={'y_hat': 'y_hat_naive2'}, inplace=True)
+    naive2_file = './results/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
     y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
 
     return y_naive2_df
 
-def prepare_m4_data(dataset_name, directory, num_obs, py_predictions=True):
+def prepare_m4_data(dataset_name, directory, num_obs):
   """
   Pipeline that obtains M4 times series, tranforms it and gets naive2 predictions.
 
@@ -209,149 +226,13 @@ def prepare_m4_data(dataset_name, directory, num_obs, py_predictions=True):
   if not os.path.exists(results_dir):
       os.mkdir(results_dir)
 
-  naive2_file = results_dir + '/{}-naive2predictions_{}{}.csv'
-
-  if py_predictions:
-    naive2_file = naive2_file.format(dataset_name, num_obs, '')
-  else:
-    naive2_file = naive2_file.format(dataset_name, num_obs, '_r')
+  naive2_file = results_dir + '/{}-naive2predictions_{}.csv'
+  naive2_file = naive2_file.format(dataset_name, num_obs)
 
   if not os.path.exists(naive2_file):
-    y_naive2_df = naive2_predictions(dataset_name, directory, num_obs, y_train_df, y_test_df, py_predictions)
+    y_naive2_df = naive2_predictions(dataset_name, directory, num_obs, y_train_df, y_test_df)
   else:
     y_naive2_df = pd.read_csv(naive2_file)
     y_naive2_df['ds'] = pd.to_datetime(y_naive2_df['ds'])
 
   return X_train_df, y_train_df, X_test_df, y_naive2_df
-
-
-#############################################################################
-#### Naive2, python, R ######################################################
-#############################################################################
-
-def wrapper_naive2_python(y_train_df, seasonality, output_size, freq):
-    # Naive2
-    y_naive2_df = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-
-    # List of uniques ids
-    unique_ids = y_train_df['unique_id'].unique()
-
-    #ds preds for all series
-    ds_preds =  np.arange(1, output_size+1)
-
-    # Panel of fitted models
-    for unique_id in unique_ids:
-        # Fast filter X and y by id.
-        top_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'left'))
-        bottom_row = np.asscalar(y_train_df['unique_id'].searchsorted(unique_id, 'right'))
-        y_id = y_train_df[top_row:bottom_row]
-
-        y_naive2 = pd.DataFrame(columns=['unique_id', 'ds', 'y_hat'])
-        y_naive2['ds'] = ds_preds
-
-        y_naive2['unique_id'] = unique_id
-        y_naive2['y_hat'] = Naive2(seasonality).fit(y_id.y.to_numpy()).predict(output_size)
-        y_naive2_df = y_naive2_df.append(y_naive2)
-
-    return y_naive2_df
-
-def wrapper_naive2_r(dataset_name, directory, num_obs, freq):
-
-    str_call = 'Rscript ESRNN/r/Naive2.R --dataset_name {} --directory {} --num_obs {}'
-    str_call = str_call.format(dataset_name, directory, num_obs)
-    subprocess.call(str_call, shell=True)
-
-    results_dir = directory + '/results'
-    naive2_file = results_dir + '/{}-naive2predictions_{}{}.csv'
-    naive2_file_raw = naive2_file.format(dataset_name, num_obs, '_r_raw')
-
-    y_naive2_df = pd.read_csv(naive2_file_raw)
-    y_naive2_df = y_naive2_df.rename(columns={'V1':'unique_id'})
-    y_naive2_df = pd.wide_to_long(y_naive2_df, stubnames=["V"], i="unique_id", j="ds").reset_index()
-    y_naive2_df = y_naive2_df.rename(columns={'V':'y_hat'})
-    y_naive2_df = y_naive2_df.dropna()
-    y_naive2_df['ds'] -= 1
-
-    return y_naive2_df
-
-###############################################################################
-##### UTILS DATETIME ##########################################################
-###############################################################################
-
-def custom_offset(freq, x, int_ds=False):
-    allowed_freqs= ('Y', 'M', 'W', 'H', 'Q', 'D')
-    if freq not in allowed_freqs:
-        raise ValueError(f'kind must be one of {allowed_kinds}')
-
-    if int_ds:
-        return x
-
-    if freq == 'Y':
-        return DateOffset(years = x)
-    elif freq == 'M':
-        return DateOffset(months = x)
-    elif freq == 'W':
-        return DateOffset(weeks = x)
-    elif freq == 'H':
-        return DateOffset(hours = x)
-    elif freq == 'Q':
-        return DateOffset(months = 3*x)
-    elif freq == 'D':
-        return DateOffset(days = x)
-
-def fix_date(col, freq):
-    if freq=='W':
-      return date_to_start_week(col)
-    if freq=='M':
-      return date_to_start_month(col)
-    if freq=='Q':
-      return date_to_start_quarter(col)
-    if freq=='Y':
-      return date_to_start_year(col)
-    else:
-      return col
-
-def date_to_start_week(col, week_starts_in=0):
-    col = col - col.dt.weekday.apply(lambda x: timedelta(days=(x + week_starts_in + 1) % 7))
-    return col
-
-def date_to_start_month(col):
-    col = col.apply(lambda x: x.replace(day=1))
-    return col
-
-def date_to_start_quarter(col):
-    col = col - col.dt.month.apply(lambda x: custom_offset('M', (x-1) % 3))
-    col = col.apply(lambda x: x.replace(day=1))
-    return col
-
-def date_to_start_year(col):
-    return col.dt.year
-
-def add_date(df, freq, data_directory=None, y_train_df=None):
-
-    assert (data_directory is not None) or (y_train_df is not None)
-
-    int_ds = freq=='Y'
-
-    if y_train_df is None:
-        m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category', 'StartingDate'])
-        m4_info = m4_info[m4_info['M4id'].str.startswith(freq)].reset_index(drop=True)
-        m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'], dayfirst = True)
-
-        # Some starting dates are parsed wrongly: ex 01-01-67 12:00	is parsed to 2067-01-01 12:00:00
-        repair_dates = m4_info['StartingDate'].dt.strftime('%y').apply(lambda x: (int(x)<70) & (int(x)>17))
-        m4_info.loc[repair_dates, 'StartingDate'] = m4_info.loc[repair_dates, 'StartingDate'].apply(lambda x: '19'+x.strftime('%y')+'-'+ x.strftime('%m-%d %H:%M:%S'))
-        m4_info['StartingDate'] = pd.to_datetime(m4_info['StartingDate'])
-        m4_info['StartingDate'] = fix_date(m4_info['StartingDate'], freq)
-        m4_info = m4_info.rename(columns={'category': 'x'})
-
-        dataset = df.merge(m4_info, left_on=['unique_id'], right_on=['M4id'])
-    else:
-        max_dates_train = y_train_df.groupby('unique_id').max()['ds'].reset_index()
-        max_dates_train = max_dates_train.rename(columns={'ds': 'StartingDate'})
-        dataset = df.merge(max_dates_train, how='left', on='unique_id')
-
-    dataset.loc[:, 'ds'] = dataset['StartingDate']  + dataset['ds'].apply(lambda x: custom_offset(freq, x, int_ds))
-
-
-    return dataset
