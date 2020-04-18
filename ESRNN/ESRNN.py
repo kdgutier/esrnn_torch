@@ -367,7 +367,6 @@ class ESRNN(object):
     self.train(dataloader=self.train_dataloader, max_epochs=self.mc.max_epochs,
                warm_start=warm_start, shuffle=shuffle, verbose=verbose)
 
-
   def instantiate_esrnn(self, exogenous_size, n_series):
     self.mc.exogenous_size = exogenous_size
     self.mc.n_series = n_series
@@ -399,6 +398,7 @@ class ESRNN(object):
     output_size = self.mc.output_size
     n_unique_id = len(dataloader.sort_key['unique_id'])
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
+
     #access column with last train date
     panel_last_ds = pd.Series(dataloader.X[:, 2])
     panel_ds = []
