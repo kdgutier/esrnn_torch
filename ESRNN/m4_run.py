@@ -1,5 +1,4 @@
 import os
-import yaml
 import argparse
 import itertools
 import ast
