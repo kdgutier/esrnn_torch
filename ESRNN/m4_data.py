@@ -183,7 +183,9 @@ def naive2_predictions(dataset_name, directory, num_obs, y_train_df = None, y_te
 
     y_naive2_df = y_test_df.merge(y_naive2_df, on=['unique_id', 'ds'], how='left')
     y_naive2_df.rename(columns={'y_hat': 'y_hat_naive2'}, inplace=True)
-    naive2_file = './results/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
+
+    results_dir = directory + '/results'
+    naive2_file = results_dir + '/{}-naive2predictions_{}.csv'.format(dataset_name, num_obs)
     y_naive2_df.to_csv(naive2_file, encoding='utf-8', index=None)
 
     return y_naive2_df
