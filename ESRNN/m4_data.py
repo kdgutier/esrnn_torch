@@ -72,7 +72,7 @@ def m4_parser(dataset_name, directory, num_obs=1000000):
   freq = seas_dict[dataset_name]['freq']
 
   m4_info = pd.read_csv(data_directory+'/M4-info.csv', usecols=['M4id','category'])
-  m4_info = m4_info[m4_info['M4id'].str.startswith(freq)].reset_index(drop=True)
+  m4_info = m4_info[m4_info['M4id'].str.startswith(dataset_name[0])].reset_index(drop=True)
 
   # Train data
   train_path='{}{}-train.csv'.format(train_directory, dataset_name)
