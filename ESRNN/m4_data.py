@@ -19,7 +19,7 @@ seas_dict = {'Hourly': {'seasonality': 24, 'input_size': 24,
              'Quarterly': {'seasonality': 4, 'input_size': 4,
                            'output_size': 8, 'freq': 'Q'},
              'Yearly': {'seasonality': 1, 'input_size': 4,
-                        'output_size': 6, 'freq': 'Y'}}
+                        'output_size': 6, 'freq': 'D'}}
 
 SOURCE_URL = 'https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/'
 
