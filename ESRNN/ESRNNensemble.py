@@ -9,13 +9,13 @@ import torch
 
 from pathlib import Path
 
-from src.utils.config import ModelConfig
-from src.utils.losses import DisaggregatedPinballLoss
-from src.utils.data import Iterator
+from ESRNN.utils.config import ModelConfig
+from ESRNN.utils.losses import DisaggregatedPinballLoss
+from ESRNN.utils.data import Iterator
 
-from src.ESRNN import ESRNN
+from ESRNN.ESRNN import ESRNN
 
-from src.utils_evaluation import owa
+from ESRNN.utils_evaluation import owa
 
 class ESRNNensemble(object):
   """ Exponential Smoothing Recursive Neural Network Ensemble.
@@ -88,7 +88,7 @@ class ESRNNensemble(object):
 
     self.esrnn_ensemble = []
     for _ in range(self.n_models):
-      esrnn = ESRNN(max_epochs=self.mc.max_epochs, batch_size=self.mc.batch_size, batch_size_test=self.mc.batch_size_test, 
+      esrnn = ESRNN(max_epochs=self.mc.max_epochs, batch_size=self.mc.batch_size, batch_size_test=self.mc.batch_size_test,
                     freq_of_test=-1, learning_rate=self.mc.learning_rate,
                     lr_scheduler_step_size=self.mc.lr_scheduler_step_size, lr_decay=self.mc.lr_decay,
                     per_series_lr_multip=self.mc.per_series_lr_multip,
@@ -103,7 +103,7 @@ class ESRNNensemble(object):
                     frequency=self.mc.frequency, max_periods=self.mc.max_periods, random_seed=self.mc.random_seed,
                     device=self.mc.device, root_dir=self.mc.root_dir)
 
-      # To instantiate _ESRNN object within ESRNN class we need n_series      
+      # To instantiate _ESRNN object within ESRNN class we need n_series
       esrnn.instantiate_esrnn(self.mc.exogenous_size, self.mc.n_series)
       esrnn._fitted = True
       self.esrnn_ensemble.append(esrnn)
@@ -165,7 +165,7 @@ class ESRNNensemble(object):
 
       if (epoch % self.mc.freq_of_test == 0) and (self.mc.freq_of_test > 0):
         if self.y_test_df is not None:
-          self.evaluate_model_prediction(self.y_train_df, self.X_test_df, 
+          self.evaluate_model_prediction(self.y_train_df, self.X_test_df,
                                         self.y_test_df, epoch=epoch)
     print('Train finished! \n')
 
@@ -186,18 +186,18 @@ class ESRNNensemble(object):
 
     output_size = self.mc.output_size
     n_unique_id = len(dataloader.sort_key['unique_id'])
-    
+
     ensemble_y_hat = np.zeros((self.n_models, n_unique_id, output_size))
-    
+
     for model_id, esrnn in enumerate(self.esrnn_ensemble):
       esrnn.esrnn.eval()
-      
+
       # Predict ALL series
       count = 0
       for j in range(dataloader.n_batches):
         batch = dataloader.get_batch()
         batch_size = batch.y.shape[0]
-        
+
         y_hat = esrnn.esrnn.predict(batch)
 
         y_hat = y_hat.data.cpu().numpy()
@@ -208,7 +208,7 @@ class ESRNNensemble(object):
     # Weighted average of prediction for n_top best models per series
     # (n_models x n_unique_id x output_size) (n_unique_id x n_models)
     y_hat = np.einsum('ijk,ji->jk', ensemble_y_hat, self.series_models_map) / self.n_top
-    y_hat = y_hat.flatten() 
+    y_hat = y_hat.flatten()
 
     panel_unique_id = pd.Series(dataloader.sort_key['unique_id']).repeat(output_size)
     panel_last_ds = pd.Series(dataloader.X[:, 2]).repeat(output_size)
@@ -219,12 +219,12 @@ class ESRNNensemble(object):
 
     assert len(panel_ds) == len(y_hat) == len(panel_unique_id)
 
-    Y_hat_panel_dict = {'unique_id': panel_unique_id, 
+    Y_hat_panel_dict = {'unique_id': panel_unique_id,
                         'ds': panel_ds,
                         'y_hat': y_hat}
 
     Y_hat_panel = pd.DataFrame.from_dict(Y_hat_panel_dict)
-    
+
     if 'ds' in X_df:
       Y_hat_panel = X_df.merge(Y_hat_panel, on=['unique_id', 'ds'], how='left')
     else:
@@ -251,7 +251,7 @@ class ESRNNensemble(object):
     y_hat_panel = self.predict(X_test_df)
     y_insample = y_train_df.filter(['unique_id', 'ds', 'y'])
 
-    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel, 
+    model_owa, model_mase, model_smape = owa(y_panel, y_hat_panel,
                                              y_naive2_panel, y_insample,
                                              seasonality=self.mc.naive_seasonality)
 
@@ -263,6 +263,5 @@ class ESRNNensemble(object):
     print('OWA: {} '.format(np.round(model_owa, 3)))
     print('SMAPE: {} '.format(np.round(model_smape, 3)))
     print('MASE: {} '.format(np.round(model_mase, 3)))
-    
+
     return model_owa, model_mase, model_smape
-  

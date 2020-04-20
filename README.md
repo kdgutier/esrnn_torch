@@ -1,25 +1,39 @@
+[![Build](https://github.com/kdgutier/esrnn_torch/workflows/Python%20package/badge.svg?branch=pip)](https://github.com/kdgutier/esrnn_torch/tree/pip)
+[![PyPI version fury.io](https://badge.fury.io/py/ESRNN.svg)](https://pypi.python.org/pypi/ESRNN/)
+[![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360+/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE)
+
 # Pytorch Implementation of the ES-RNN
-In this repository we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
+In this project we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
 
 ## Installation Prerequisites
 * numpy==1.16.1
 * pandas==0.25.2
-* pytorch==1.3.1
-* pyyaml
+* pytorch>=1.3.1
+
+## Installation
+
+The source code is currently hosted on GitHub at: https://github.com/kdgutier/esrnn_torch
+
+You can install the *released version* of `ESRNN` from the [Python package index](https://pypi.org) with:
+
+```python
+pip install ESRNN
+```
 
 ## Usage Example
 ```python
-from src.M4_data import prepare_M4_data
-from src.utils_evaluation import evaluate_prediction_owa
+from ESRNN.m4_data import prepare_m4_data
+from ESRNN.utils_evaluation import evaluate_prediction_owa
 
-from src.ESRNN import ESRNN
+from ESRNN import ESRNN
 
-X_train_df, y_train_df, X_test_df, y_test_df = prepare_M4_data(dataset_name='Yearly', num_obs=23000)
+X_train_df, y_train_df, X_test_df, y_test_df = prepare_m4_data(dataset_name='Yearly', directory = './data', num_obs=1000)
 
 # Instantiate model
 model = ESRNN(max_epochs=25, freq_of_test=5, batch_size=4, learning_rate=1e-4, per_series_lr_multip=0.8,
-              lr_scheduler_step_size=10, lr_decay=0.1, gradient_clipping_threshold=50, 
-              rnn_weight_decay=0.0, level_variability_penalty=100, 
+              lr_scheduler_step_size=10, lr_decay=0.1, gradient_clipping_threshold=50,
+              rnn_weight_decay=0.0, level_variability_penalty=100,
               testing_percentile=50, training_percentile=50,
               ensemble=False, max_periods=25, seasonality=[], input_size=4, output_size=6,
               cell_type='LSTM', state_hsize=40, dilations=[[1], [6]], add_nl_layer=False,
@@ -33,7 +47,7 @@ model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 y_hat_df = model.predict(X_test_df)
 
 # Evaluate predictions
-final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df, 
+final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_df,
                                                              X_test_df, y_test_df,
                                                              naive2_seasonality=1)
 ```
@@ -42,19 +56,30 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
 [Results of the M4 competition](https://www.researchgate.net/publication/325901666_The_M4_Competition_Results_findings_conclusion_and_way_forward).
 <br/>
-| DATASET   | OWA   | M4 OWA |
-|-----------|-------|--------|
-| Yearly    | 0.785 | 0.778  |
-| Quarterly | 0.879 | 0.847  |
-| Monthly   | 0.872 | 0.836  |
-| Hourly    | 0.615 | 0.920  |
-| Weekly    | 0.952 | 0.920  |
-| Daily     | 0.968 | 0.920  |
+
+| DATASET   | OUR OWA | M4 OWA (Smyl) |
+|-----------|:---------:|:--------:|
+| Yearly    | 0.785   | 0.778  |
+| Quarterly | 0.879   | 0.847  |
+| Monthly   | 0.872   | 0.836  |
+| Hourly    | 0.615   | 0.920  |
+| Weekly    | 0.952   | 0.920  |
+| Daily     | 0.968   | 0.920  |
 
 
 ## Replicating M4 results
+
+
+Replicating the M4 results is as easy as running the following line of code (for each frequency) after installing the package via pip:
+
 ```console
-PYTHONPATH=. python run_m4.py --dataset 'Yearly' --gpu_id 0
+python -m ESRNN.m4_run --dataset 'Yearly' --results_directory '/some/path' --gpu_id 0 --use_cpu 0
+```
+
+Use `--help` to get the description of each argument:
+
+```console
+python -m ESRNN.m4_run --help
 ```
 
 ## Authors
