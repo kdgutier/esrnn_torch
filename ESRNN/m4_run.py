@@ -19,6 +19,8 @@ import torch
 
 def main(args):
   config = get_config(args.dataset)
+  if config['data_parameters']['frequency'] == 'Y':
+      config['data_parameters']['frequency'] = None
 
   #Setting needed parameters
   os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_id)
