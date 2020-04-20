@@ -45,7 +45,9 @@ model = ESRNN(max_epochs=25, freq_of_test=5, batch_size=4, learning_rate=1e-4,
               random_seed=1, device='cpu')
 
 # Fit model
-# If y_test_df is provided the model will evaluate predictions on this set every freq_test epochs
+# If y_test_df is provided the model
+# will evaluate predictions on
+# this set every freq_test epochs
 model.fit(X_train_df, y_train_df, X_test_df, y_test_df)
 
 # Predict on test set
