@@ -36,7 +36,6 @@ model = ESRNN(max_epochs=25, freq_of_test=5, batch_size=4, learning_rate=1e-4, p
               rnn_weight_decay=0.0, level_variability_penalty=100,
               testing_percentile=50, training_percentile=50,
               ensemble=False, max_periods=25, seasonality=[], input_size=4, output_size=6,
-              frequency='Y',
               cell_type='LSTM', state_hsize=40, dilations=[[1], [6]], add_nl_layer=False,
               random_seed=1, device='cpu')
 
