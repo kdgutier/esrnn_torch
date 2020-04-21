@@ -3,6 +3,7 @@
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360+/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE)
 
+
 # Pytorch Implementation of the ES-RNN
 In this project we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
 
@@ -58,6 +59,13 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
                                                              X_test_df, y_test_df,
                                                              naive2_seasonality=1)
 ```
+## Overall Wighted Average
+
+A metric that is useful for quantifying the aggregate error of a specific model for various time series is the Overall Weighted Average (OWA) proposed for the M4 competition. This metric is calculated by obtaining the average of the symmetric mean absolute percentage error (sMAPE) and the mean absolute scaled error (MASE) for all the time series of the model and also calculating it for the Naive2 predictions. Both sMAPE and MASE are scale independent. These measurements are calculated as follows:
+
+![OWA](https://ibb.co/dc4GJDZ)
+
+Where $y_{T+i}$ is the value of the time series at point $T+i$, $\hat{y}_{T+i}$ the estimated forecast, $H$ the forecast horizon, $T$ the number of the training points, and $m$ the time interval between successive observations for each frequency (for daily data $m=7$, for example). As we can see in the above formula, the relative sMAPE and MASE with respect to Naive2 can be calculated and finally the arithmetic mean of these two quantities is computed in order to get the OWA. Therefore, the OWA indicates how successful the model is compared to the base model, in this case the Naive2; for example, an OWA of 0.9 indicates that on average the examined model is 10\% more accurate than the Naive2.
 
 ## Current Results
 Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
