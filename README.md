@@ -63,9 +63,9 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
 
 A metric that is useful for quantifying the aggregate error of a specific model for various time series is the Overall Weighted Average (OWA) proposed for the M4 competition. This metric is calculated by obtaining the average of the symmetric mean absolute percentage error (sMAPE) and the mean absolute scaled error (MASE) for all the time series of the model and also calculating it for the Naive2 predictions. Both sMAPE and MASE are scale independent. These measurements are calculated as follows:
 
-![OWA](https://ibb.co/dc4GJDZ)
+![OWA](.github/images/metrics.png)
 
-Where $y_{T+i}$ is the value of the time series at point $T+i$, $\hat{y}_{T+i}$ the estimated forecast, $H$ the forecast horizon, $T$ the number of the training points, and $m$ the time interval between successive observations for each frequency (for daily data $m=7$, for example). As we can see in the above formula, the relative sMAPE and MASE with respect to Naive2 can be calculated and finally the arithmetic mean of these two quantities is computed in order to get the OWA. Therefore, the OWA indicates how successful the model is compared to the base model, in this case the Naive2; for example, an OWA of 0.9 indicates that on average the examined model is 10\% more accurate than the Naive2.
+
 
 ## Current Results
 Here we used the model directly to compare to the original implementation. It is worth noticing that these results do not include the ensemble methods mentioned in the [ESRNN paper](https://www.sciencedirect.com/science/article/pii/S0169207019301153).<br/>
