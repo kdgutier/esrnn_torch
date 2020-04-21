@@ -59,7 +59,7 @@ final_owa, final_mase, final_smape = evaluate_prediction_owa(y_hat_df, y_train_d
                                                              X_test_df, y_test_df,
                                                              naive2_seasonality=1)
 ```
-## Overall Wighted Average
+## Overall Weighted Average
 
 A metric that is useful for quantifying the aggregate error of a specific model for various time series is the Overall Weighted Average (OWA) proposed for the M4 competition. This metric is calculated by obtaining the average of the symmetric mean absolute percentage error (sMAPE) and the mean absolute scaled error (MASE) for all the time series of the model and also calculating it for the Naive2 predictions. Both sMAPE and MASE are scale independent. These measurements are calculated as follows:
 
