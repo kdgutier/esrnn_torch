@@ -1,5 +1,6 @@
 [![Build](https://github.com/kdgutier/esrnn_torch/workflows/Python%20package/badge.svg?branch=pip)](https://github.com/kdgutier/esrnn_torch/tree/pip)
 [![PyPI version fury.io](https://badge.fury.io/py/ESRNN.svg)](https://pypi.python.org/pypi/ESRNN/)
+[![Downloads](https://pepy.tech/badge/esrnn)](https://pepy.tech/project/esrnn)
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360+/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE)
 
@@ -24,7 +25,7 @@ pip install ESRNN
 ```
 
 ## Usage Example
-Make sure on use of the model that the dataframes to fit satisfy being **balanced**, 
+Make sure on use of the model that the dataframes to fit satisfy being **balanced**,
 and there are **no zeros** at the beginning of the series, there are  **no negative values**, since that
 has bad interactions with the multiplicative model.
 
