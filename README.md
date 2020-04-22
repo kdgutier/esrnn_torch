@@ -24,7 +24,7 @@ pip install ESRNN
 ```
 
 ## Usage Example
-Make sure on use of the model that the dataframes to fit satisfy being **balannced**, 
+Make sure on use of the model that the dataframes to fit satisfy being **balanced**, 
 and there are **no zeros** at the beginning of the series, there are  **no negative values**, since that
 has bad interactions with the multiplicative model.
 
