@@ -14,7 +14,8 @@ In this project we coded a pytorch class for the ES-RNN algorithm proposed by Sm
 
 ## Installation
 
-The source code is currently hosted on GitHub at: https://github.com/kdgutier/esrnn_torch
+This code is a work in progress, any contributions or issues are welcome on
+GitHub at: https://github.com/kdgutier/esrnn_torch
 
 You can install the *released version* of `ESRNN` from the [Python package index](https://pypi.org) with:
 
@@ -23,6 +24,10 @@ pip install ESRNN
 ```
 
 ## Usage Example
+Make sure on use of the model that the dataframes to fit satisfy being **balannced**, 
+and there are **no zeros** at the beginning of the series, there are  **no negative values**, since that
+has bad interactions with the multiplicative model.
+
 ```python
 from ESRNN.m4_data import prepare_m4_data
 from ESRNN.utils_evaluation import evaluate_prediction_owa
