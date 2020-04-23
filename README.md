@@ -34,12 +34,15 @@ The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, 
 - The outcome variable `y` does not allow negative values and the first outcome for all series must be grater than 0.
 - `X_test` and `y_test` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y', 'y_hat_naive2']` respectively. The column `y_hat_naive2` contains predictions of a benchmark model (OWA will be calculated based on this predictions). You can use a custom benchmark using `y_hat_benchmark="benchmark_column"` argument of the fit method.
 
-#### Train data example
-![train-example](.github/images/train-data-example.png)
+#### Input data example
 
-#### Test data example
-![test-example](.github/images/test-data-example.png)
+`X_train_df`| `y_train_df`
+:-----------:|:-----------:
+![train-example](.github/images/x_train.png) | ![train-example](.github/images/y_train.png)
 
+`X_test_df`| `y_test_df`
+:-----------:|:-----------:
+![train-example](.github/images/x_test.png) | ![train-example](.github/images/y_test.png)
 
 
 ### M4 example
