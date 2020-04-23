@@ -38,11 +38,12 @@ The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, 
 
 `X_train_df`| `y_train_df`
 :-----------:|:-----------:
-![train-example](.github/images/x_train.png) | ![train-example](.github/images/y_train.png)
+<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="200"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="200">
 
 `X_test_df`| `y_test_df`
 :-----------:|:-----------:
-![train-example](.github/images/x_test.png) | ![train-example](.github/images/y_test.png)
+<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="200"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="295">
+
 
 
 ### M4 example
