@@ -21,7 +21,7 @@ from ESRNN.utils_evaluation import owa
 
 
 class ESRNN(object):
-  """ Exponential Smoothing Recurrent Neural Network.
+  """ Exponential Smoothing Recurrent Neural Network
 
   Pytorch Implementation of the M4 time series forecasting competition winner.
   Proposed by Smyl. The model uses a hybrid approach of Machine Learning and
@@ -255,7 +255,7 @@ class ESRNN(object):
     dataloader: pytorch dataloader
     criterion: pytorch test criterion
     """
-    
+
     with torch.no_grad():
       # Create fast dataloader
       if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
@@ -287,6 +287,7 @@ class ESRNN(object):
     model_loss: float
       loss for train supervision purpose.
     """
+
     with torch.no_grad():
       # Create fast dataloader
       if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
@@ -332,6 +333,7 @@ class ESRNN(object):
       relative improvement of model with respect to benchmark, measured with 
       the M4 mean absolute scaled error.
     """
+
     assert self._fitted, "Model not fitted yet"
 
     y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
@@ -442,6 +444,7 @@ class ESRNN(object):
 
   def instantiate_esrnn(self, exogenous_size, n_series):
     """Auxiliary function used at beginning of train to instantiate ESRNN"""
+    
     self.mc.exogenous_size = exogenous_size
     self.mc.n_series = n_series
     self.esrnn = _ESRNN(self.mc).to(self.mc.device)
