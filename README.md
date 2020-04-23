@@ -25,9 +25,23 @@ pip install ESRNN
 ```
 
 ## Usage Example
-Make sure on use of the model that the dataframes to fit satisfy being **balanced**,
-and there are **no zeros** at the beginning of the series, there are  **no negative values**, since that
-has bad interactions with the multiplicative model.
+
+### Input data
+
+The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, `y_test`. `X_train` and `y_train` are used for the training and `X_test` and `y_test` (if provided) for computing out of sample loss.
+- `X_train` and `y_train` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y']` respectively. The column `unique_id` is the unique identifier for each time series, `ds` are the date stamps and `x` exogenous **categorical** variables. Note: if the data does not have exogenous categorical, add `x` column of ones.
+- `X_train` and `y_train` must contain the same `unique_ids` and `ds` and be **balanced**, ie.no *gaps* between dates for the frequency.
+- The outcome variable `y` does not allow negative values and the first outcome for all series must be grater than 0.
+- `X_test` and `y_test` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y', 'y_hat_naive2']` respectively. The column `y_hat_naive2` contains predictions of a benchmark model (OWA will be calculated based on this predictions). You can use a custom benchmark using `y_hat_benchmark="benchmark_column"` argument of the fit method.
+
+#### Train data example
+![train-example](.github/images/train-data-example.png)
+
+#### Test data example
+![test-example](.github/images/test-data-example.png)
+
+
+
 
 ```python
 from ESRNN.m4_data import prepare_m4_data
