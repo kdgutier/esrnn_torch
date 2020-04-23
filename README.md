@@ -1,4 +1,4 @@
-[![Build](https://github.com/kdgutier/esrnn_torch/workflows/Python%20package/badge.svg?branch=pip)](https://github.com/kdgutier/esrnn_torch/tree/pip)
+[![Build](https://github.com/kdgutier/esrnn_torch/workflows/Python%20package/badge.svg?branch=master)](https://github.com/kdgutier/esrnn_torch/tree/master)
 [![PyPI version fury.io](https://badge.fury.io/py/ESRNN.svg)](https://pypi.python.org/pypi/ESRNN/)
 [![Downloads](https://pepy.tech/badge/esrnn)](https://pepy.tech/project/esrnn)
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/release/python-360+/)
