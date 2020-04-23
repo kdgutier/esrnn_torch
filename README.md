@@ -24,15 +24,19 @@ You can install the *released version* of `ESRNN` from the [Python package index
 pip install ESRNN
 ```
 
-## Usage Example
+## Usage
 
 ### Input data
 
-The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, `y_test`. `X_train` and `y_train` are used for the training and `X_test` and `y_test` (if provided) for computing out of sample loss.
-- `X_train` and `y_train` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y']` respectively. The column `unique_id` is the unique identifier for each time series, `ds` are the date stamps and `x` exogenous **categorical** variables. Note: if the data does not have exogenous categorical, add `x` column of ones.
-- `X_train` and `y_train` must contain the same `unique_ids` and `ds` and be **balanced**, ie.no *gaps* between dates for the frequency.
-- The outcome variable `y` does not allow negative values and the first outcome for all series must be grater than 0.
-- `X_test` and `y_test` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y', 'y_hat_naive2']` respectively. The column `y_hat_naive2` contains predictions of a benchmark model (OWA will be calculated based on this predictions). You can use a custom benchmark using `y_hat_benchmark="benchmark_column"` argument of the fit method.
+The fit method receives `X_train`, `y_train` pandas dataframes in long format, optinally `X_test` and `y_test` to compute out of sample performance.
+- `X_train` must contain the columns `['unique_id', 'ds', 'x']`
+- `y_train` must contain the columns `['unique_id', 'ds', 'y']`
+- `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against, by default `y_hat_naive2` is used.
+- The column `unique_id` is a time series identifier, the variable `ds` is a datetime column.
+- Column `x` is an exogenous categorical feature.
+- Column `y` is the target variable, this variable does not allow negative values and the first outcome for all series must be grater than 0.
+
+The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be **balanced**, ie.no *gaps* between dates for the frequency.
 
 
 <center>
