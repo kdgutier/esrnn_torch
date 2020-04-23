@@ -28,11 +28,11 @@ pip install ESRNN
 
 ### Input data
 
-The fit method receives `X_train`, `y_train` pandas dataframes in long format. Optionally `X_test` and `y_test` to compute out of sample performance.
-- `X_train` must contain the columns `['unique_id', 'ds', 'x']`
-- `y_train` must contain the columns `['unique_id', 'ds', 'y']`
-- `X_test` must contain the columns `['unique_id', 'ds', 'x']`
-- `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against  (default `'y_hat_naive2'`).
+The fit method receives `X_df`, `y_df` training pandas dataframes in long format. Optionally `X_test_df` and `y_test_df` to compute out of sample performance.
+- `X_df` must contain the columns `['unique_id', 'ds', 'x']`
+- `y_df` must contain the columns `['unique_id', 'ds', 'y']`
+- `X_test_df` must contain the columns `['unique_id', 'ds', 'x']`
+- `y_test_df` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against  (default `'y_hat_naive2'`).
 
 For all the above:
 - The column `'unique_id'` is a time series identifier, the column `'ds'` stands for the datetime.
@@ -45,7 +45,7 @@ The `X` and `y` dataframes must contain the same `'unique_id'`, `'ds'` columns a
 
 <center>
 
-|`X_train_df`|`y_train_df` |`X_test_df`| `y_test_df`|
+|`X_df`|`y_df` |`X_test_df`| `y_test_df`|
 |:-----------:|:-----------:|:-----------:|:-----------:|
 |<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="223">|
 
