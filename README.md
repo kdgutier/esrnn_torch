@@ -31,12 +31,15 @@ pip install ESRNN
 The fit method receives `X_train`, `y_train` pandas dataframes in long format. Optionally `X_test` and `y_test` to compute out of sample performance.
 - `X_train` must contain the columns `['unique_id', 'ds', 'x']`
 - `y_train` must contain the columns `['unique_id', 'ds', 'y']`
-- `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against, by default `y_hat_naive2` is used.
+- `X_test` must contain the columns `['unique_id', 'ds', 'x']`
+- `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against  (default `'y_hat_naive2'`).
+
+For all the above:
 - The column `unique_id` is a time series identifier, the column `ds` stands for the datetime.
 - Column `x` is an exogenous categorical feature.
-- Column `y` is the target variable, this variable **does not allow negative values** and the first outcome for all series must be **grater than 0**.
+- Column `y` is the target variable, this variable *does not allow negative values* and the first outcome for all series must be *grater than 0*.
 
-The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be **balanced**, ie.no *gaps* between dates for the frequency.
+The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be *balanced*, ie.no *gaps* between dates for the frequency.
 
 
 <center>
