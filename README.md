@@ -37,7 +37,7 @@ The fit method receives `X_df`, `y_df` training pandas dataframes in long format
 For all the above:
 - The column `'unique_id'` is a time series identifier, the column `'ds'` stands for the datetime.
 - Column `'x'` is an exogenous categorical feature.
-- Column `'y'` is the target variable, this variable 
+- Column `'y'` is the target variable.
 - Column `'y'` **does not allow negative values** and the first entry for all series must be **grater than 0**.
 
 The `X` and `y` dataframes must contain the same values for `'unique_id'`, `'ds'` columns and be **balanced**, ie.no *gaps* between dates for the frequency.
