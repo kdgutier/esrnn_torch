@@ -40,7 +40,7 @@ For all the above:
 - Column `'y'` is the target variable, this variable 
 - Column `'y'` **does not allow negative values** and the first entry for all series must be **grater than 0**.
 
-The `X` and `y` dataframes must contain the same `'unique_id'`, `'ds'` columns and be *balanced*, ie.no *gaps* between dates for the frequency.
+The `X` and `y` dataframes must contain the same values for `'unique_id'`, `'ds'` columns and be **balanced**, ie.no *gaps* between dates for the frequency.
 
 
 <center>
