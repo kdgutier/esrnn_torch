@@ -42,6 +42,8 @@ The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, 
 
 
 
+### M4 example
+
 
 ```python
 from ESRNN.m4_data import prepare_m4_data
