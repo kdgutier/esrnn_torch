@@ -21,11 +21,11 @@ from ESRNN.utils_evaluation import owa
 
 
 class ESRNN(object):
-  """ Exponential Smoothing Recursive Neural Network.
+  """ Exponential Smoothing Recurrent Neural Network.
 
   Pytorch Implementation of the M4 time series forecasting competition winner.
   Proposed by Smyl. The model uses a hybrid approach of Machine Learning and
-  statistical methods by combining recursive neural networks to model a common
+  statistical methods by combining recurrent neural networks to model a common
   trend with shared parameters across series, and multiplicative Holt-Winter
   exponential smoothing.
 
@@ -74,10 +74,10 @@ class ESRNN(object):
     Hourly [24, 168], Daily [7], Weekly [52], Monthly [12],
     Quarterly [4], Yearly [].
   input_size: int
-    input size of the recursive neural network, usually a
+    input size of the recurrent neural network, usually a
     multiple of seasonality
   output_size: int
-    output_size or forecast horizon of the recursive neural
+    output_size or forecast horizon of the recurrent neural
     network, usually multiple of seasonality
   random_seed: int
     random_seed for pseudo random pytorch initializer and
@@ -93,7 +93,7 @@ class ESRNN(object):
   cell_type: str
     Type of RNN cell, available GRU, LSTM, RNN, ResidualLSTM.
   state_hsize: int
-    dimension of hidden state of the recursive neural network
+    dimension of hidden state of the recurrent neural network
   dilations: int list
     each list represents one chunk of Dilated LSTMS, connected in
     standard ResNet fashion
@@ -140,6 +140,22 @@ class ESRNN(object):
 
   def train(self, dataloader, max_epochs,
             warm_start=False, shuffle=True, verbose=True):
+    """
+    Auxiliary function, pytorch train procedure for the ESRNN model
+
+    Parameters:
+    -------
+    dataloader: pytorch dataloader
+    max_epochs: int
+    warm_start: bool
+    shuffle: bool
+    verbose: bool
+    
+    Returns
+    -------
+    self : returns an instance of self.
+    """
+
     if self.mc.ensemble:
       self.esrnn_ensemble = [deepcopy(self.esrnn).to(self.mc.device)] * 5
 
@@ -231,13 +247,15 @@ class ESRNN(object):
 
   def per_series_evaluation(self, dataloader, criterion):
     """
-    Evaluate the model against data, with loss per series
-    Args:
-      mc: model parameters
-      model: the trained model
-      dataloader: a data loader
-      criterion: loss to evaluate
+    Auxiliary function, evaluate ESRNN model for training 
+    procedure supervision.
+
+    Parameters
+    ----------
+    dataloader: pytorch dataloader
+    criterion: pytorch test criterion
     """
+    
     with torch.no_grad():
       # Create fast dataloader
       if self.mc.n_series < self.mc.batch_size_test: new_batch_size = self.mc.n_series
@@ -256,12 +274,18 @@ class ESRNN(object):
 
   def model_evaluation(self, dataloader, criterion):
     """
-    Evaluate the model against data, with overall average loss
-    Args:
-      mc: model parameters
-      model: the trained model
-      dataloader: a data loader
-      criterion: loss to evaluate
+    Auxiliary function, evaluate ESRNN model for training 
+    procedure supervision.
+
+    Parameters
+    ----------
+    dataloader: pytorch dataloader
+    criterion: pytorch test criterion
+    
+    Returns
+    -------
+    model_loss: float
+      loss for train supervision purpose.
     """
     with torch.no_grad():
       # Create fast dataloader
@@ -282,16 +306,31 @@ class ESRNN(object):
 
   def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, y_hat_benchmark='y_hat_naive2', epoch=None):
     """
-    Evaluate the model against baseline Naive2 model in y_test_df
-    Args:
-      y_train_df: pandas df
-        panel with columns unique_id, ds, y
-      X_test_df: pandas df
-        panel with columns unique_id, ds, x
-      y_test_df: pandas df
-        panel with columns unique_id, ds, y and a column identifying benchmark predictions
-      y_hat_benchmark: str
-        columns name of benchmark predictions, default y_hat_naive2
+    Evaluate ESRNN model against benchmark in y_test_df
+
+    Parameters
+    ----------
+    y_train_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'y'
+    X_test_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'x'
+    y_test_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'y' and a column 
+      y_hat_benchmark identifying benchmark predictions
+    y_hat_benchmark: str
+      column name of benchmark predictions, default y_hat_naive2
+    
+    Returns
+    -------
+    model_owa : float
+      relative improvement of model with respect to benchmark, measured with 
+      the M4 overall weighted average.
+    smape: float
+      relative improvement of model with respect to benchmark, measured with 
+      the symmetric mean absolute percentage error.
+    mase: float
+      relative improvement of model with respect to benchmark, measured with 
+      the M4 mean absolute scaled error.
     """
     assert self._fitted, "Model not fitted yet"
 
@@ -318,6 +357,40 @@ class ESRNN(object):
 
   def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, y_hat_benchmark='y_hat_naive2',
           warm_start=False, shuffle=True, verbose=True):
+    """
+    Fit ESRNN model.
+
+    Parameters
+    ----------
+    X_df : pandas dataframe
+      Train dataframe in long format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'x' is a single exogenous variable
+    y_df : pandas dataframe
+      Train dataframe in long format with columns 'unique_id', 'ds' and 'y'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'y' is the column with the target values
+    X_test_df: pandas dataframe
+      Optional test dataframe with columns 'unique_id', 'ds' and 'x'.
+      If provided the fit procedure will evaluate the intermediate 
+      performance within training epochs.
+    y_test_df: pandas dataframe
+      Optional test dataframe with columns 'unique_id', 'ds' and 'x' and
+      y_hat_benchmark column.
+      If provided the fit procedure will evaluate the intermediate 
+      performance within training epochs.
+    y_hat_benchmark: str
+      Name of the benchmark model for the comparison of the relative
+      improvement of the model.
+    
+    Returns
+    -------
+    self : returns an instance of self.
+    """
+
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
@@ -368,19 +441,34 @@ class ESRNN(object):
                warm_start=warm_start, shuffle=shuffle, verbose=verbose)
 
   def instantiate_esrnn(self, exogenous_size, n_series):
+    """Auxiliary function used at beginning of train to instantiate ESRNN"""
     self.mc.exogenous_size = exogenous_size
     self.mc.n_series = n_series
     self.esrnn = _ESRNN(self.mc).to(self.mc.device)
 
   def predict(self, X_df, decomposition=False):
     """
-        Predictions for all stored time series
-    Returns:
-        Y_hat_panel : array-like (n_samples, 1).
-          Predicted values for models in Family for ids in Panel.
-        ds: Corresponding list of date stamps
-        unique_id: Corresponding list of unique_id
+    Predict using the ESRNN model.
+
+    Parameters
+    ----------
+    X_df : pandas dataframe
+      Dataframe in LONG format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'x' is a single exogenous variable
+
+    Returns
+    -------
+    Y_hat_panel : pandas dataframe
+      Dataframe in LONG format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' datetime columnn that matches the dates in X_df
+      - 'y_hat' is the column with the predicted target values
     """
+
     #print(9*'='+' Predicting ESRNN ' + 9*'=' + '\n')
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
@@ -444,6 +532,29 @@ class ESRNN(object):
     return Y_hat_panel
 
   def long_to_wide(self, X_df, y_df):
+    """
+    Auxiliary function to wrangle LONG format dataframes 
+    to a wide format compatible with ESRNN inputs.
+
+    Parameters
+    ----------
+    X_df : pandas dataframe
+      Dataframe in long format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'x' is a single exogenous variable
+    y_df : pandas dataframe
+      Dataframe in long format with columns 'unique_id', 'ds' and 'y'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'y' is the column with the target values
+    
+    Returns
+    -------
+    X: numpy array, shape (n_unique_ids, n_time)
+    y: numpy array, shape (n_unique_ids, n_time)
+    """
     data = X_df.copy()
     data['y'] = y_df['y'].copy()
     sorted_ds = np.sort(data['ds'].unique())
@@ -468,6 +579,7 @@ class ESRNN(object):
     return X, y
 
   def get_dir_name(self, root_dir=None):
+    """Auxiliary function to save ESRNN model"""
     if not root_dir:
       assert self.mc.root_dir
       root_dir = self.mc.root_dir
@@ -479,6 +591,7 @@ class ESRNN(object):
     return model_dir
 
   def save(self, model_dir=None, copy=None):
+    """Auxiliary function to save ESRNN model"""
     if copy is not None:
         self.mc.copy = copy
 
@@ -497,6 +610,7 @@ class ESRNN(object):
     torch.save({'model_state_dict': self.rnn.state_dict()}, rnn_filepath)
 
   def load(self, model_dir=None, copy=None):
+    """Auxiliary function to load ESRNN model"""
     if copy is not None:
       self.mc.copy = copy
 
