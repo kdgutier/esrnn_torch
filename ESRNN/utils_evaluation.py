@@ -112,6 +112,8 @@ def acf(data, k):
 class Naive:
   """
   Naive model.
+  This benchmark model produces a forecast that is equal to
+  the last observed value for a given time series.
   """
   def __init__(self):
     pass
@@ -130,6 +132,9 @@ class Naive:
 class SeasonalNaive:
   """
   Seasonal Naive model.
+  This benchmark model produces a forecast that is equal to
+  the last observed value of the same season for a given time 
+  series.
   """
   def __init__(self):
     pass
@@ -150,7 +155,11 @@ class SeasonalNaive:
 
 class Naive2:
   """
-  Naive2: Naive after deseasonalization.
+  Naive2 model.
+  Popular benchmark model for time series forecasting that automatically adapts
+  to the potential seasonality of a series based on an autocorrelation test.
+  If the series is seasonal the model composes the predictions of Naive and SeasonalNaive,
+  else the model predicts on the simple Naive.
   """
   def __init__(self, seasonality):
     self.seasonality = seasonality
@@ -172,25 +181,6 @@ class Naive2:
     y_hat = s_hat * r_hat
     return y_hat
 
-
-class RandomWalkDrift:
-  """
-  RandomWalkDrift: Random Walk with drift.
-  """
-  def __init__(self):
-    pass
-  
-  def fit(self, ts_init):
-    self.drift = (ts_init[-1] - ts_init[0])/(len(ts_init)-1)
-    self.naive = [ts_init[-1]]
-    return self
-
-  def predict(self, h):
-    naive = np.array(self.ts_naive * h)
-    drift = self.drift*np.array(range(1,h+1))
-    y_hat = naive + drift
-    return y_hat
-
 ########################
 # METRICS
 ########################
@@ -198,11 +188,18 @@ class RandomWalkDrift:
 def mse(y, y_hat):
   """
   Calculates Mean Squared Error.
+  
+  Parameters
+  ----------  
   y: numpy array
     actual test values
   y_hat: numpy array
     predicted values
-  return: MSE
+  
+  Returns
+  -------    
+  mse: float
+    mean squared error
   """
   y = np.reshape(y, (-1,))
   y_hat = np.reshape(y_hat, (-1,))
@@ -212,11 +209,18 @@ def mse(y, y_hat):
 def mape(y, y_hat):
   """
   Calculates Mean Absolute Percentage Error.
+
+  Parameters
+  ----------
   y: numpy array
     actual test values
   y_hat: numpy array
     predicted values
-  return: MAPE
+  
+  Returns
+  -------
+  mape: float
+    mean absolute percentage error
   """
   y = np.reshape(y, (-1,))
   y_hat = np.reshape(y_hat, (-1,))
@@ -226,11 +230,18 @@ def mape(y, y_hat):
 def smape(y, y_hat):
   """
   Calculates Symmetric Mean Absolute Percentage Error.
+
+  Parameters
+  ----------  
   y: numpy array
     actual test values
   y_hat: numpy array
     predicted values
-  return: sMAPE
+  
+  Returns
+  -------
+  smape: float
+    symmetric mean absolute percentage error
   """
   y = np.reshape(y, (-1,))
   y_hat = np.reshape(y_hat, (-1,))
@@ -240,6 +251,9 @@ def smape(y, y_hat):
 def mase(y, y_hat, y_train, seasonality):
   """
   Calculates Mean Absolute Scaled Error.
+
+  Parameters
+  ----------
   y: numpy array
     actual test values
   y_hat: numpy array
@@ -249,7 +263,11 @@ def mase(y, y_hat, y_train, seasonality):
   seasonality: int
     main frequency of the time series
     Quarterly 4, Daily 7, Monthly 12
-  return: MASE
+  
+  Returns
+  -------
+  mase: float
+    mean absolute scaled error
   """
   y_hat_naive = []
   for i in range(seasonality, len(y_train)):
