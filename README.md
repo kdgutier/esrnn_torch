@@ -6,7 +6,7 @@
 
 
 # Pytorch Implementation of the ES-RNN
-In this project we coded a pytorch class for the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility.
+Pytorch implementation of the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility. Developed by [Autonlab](https://www.autonlab.org/)’s members at Carnegie Mellon University.
 
 ## Installation Prerequisites
 * numpy==1.16.1
@@ -121,9 +121,9 @@ python -m ESRNN.m4_run --help
 ```
 
 ## Authors
-* **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier)
-* **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu)
-* **Federico Garza** - [FedericoGarza](https://github.com/FedericoGarza)
+* **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier) - [mail](kdgutier@cs.cmu.edu)
+* **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu) - [mail](cchallu@andrew.cmu.edu)
+* **Federico Garza** - [FedericoGarza](https://github.com/FedericoGarza) - [mail](fede.garza.ramirez@gmail.com)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE) file for details.

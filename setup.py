@@ -7,7 +7,7 @@ setuptools.setup(
     name="ESRNN",
     version="0.1.2",
     author="Kin Gutierrez, Cristian Challu, Federico Garza",
-    author_email="kin.gtz.olivares@gmail.com, cristianichallu@gmail.com, fede.garza.ramirez@gmail.com",
+    author_email="kdgutier@cs.cmu.edu, cchallu@andrew.cmu.edu, fede.garza.ramirez@gmail.com",
     description="Pytorch implementation of the ESRNN",
     long_description=long_description,
     long_description_content_type="text/markdown",
