@@ -28,13 +28,13 @@ pip install ESRNN
 
 ### Input data
 
-The fit method receives `X_train`, `y_train` pandas dataframes in long format, optinally `X_test` and `y_test` to compute out of sample performance.
+The fit method receives `X_train`, `y_train` pandas dataframes in long format. Optionally `X_test` and `y_test` to compute out of sample performance.
 - `X_train` must contain the columns `['unique_id', 'ds', 'x']`
 - `y_train` must contain the columns `['unique_id', 'ds', 'y']`
 - `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against, by default `y_hat_naive2` is used.
-- The column `unique_id` is a time series identifier, the variable `ds` is a datetime column.
+- The column `unique_id` is a time series identifier, the column `ds` stands for the datetime.
 - Column `x` is an exogenous categorical feature.
-- Column `y` is the target variable, this variable does not allow negative values and the first outcome for all series must be grater than 0.
+- Column `y` is the target variable, this variable **does not allow negative values** and the first outcome for all series must be **grater than 0**.
 
 The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be **balanced**, ie.no *gaps* between dates for the frequency.
 
@@ -43,7 +43,7 @@ The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be **balan
 
 |`X_train_df`|`y_train_df` |`X_test_df`| `y_test_df`|
 |:-----------:|:-----------:|:-----------:|:-----------:|
-|<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="220">|
+|<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="152"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="223">|
 
 </center>
 
