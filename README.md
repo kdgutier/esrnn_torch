@@ -39,7 +39,7 @@ For all the above:
 - Column `x` is an exogenous categorical feature.
 - Column `y` is the target variable, this variable *does not allow negative values* and the first outcome for all series must be *grater than 0*.
 
-The `X` and `y` datasets must contain the same `unique_ids`, `ds` and be *balanced*, ie.no *gaps* between dates for the frequency.
+The `X` and `y` dataframes must contain the same `'unique_id'`, `'ds'` and be *balanced*, ie.no *gaps* between dates for the frequency.
 
 
 <center>
