@@ -35,11 +35,11 @@ The fit method receives `X_train`, `y_train` pandas dataframes in long format. O
 - `y_test` must contain the columns `['unique_id', 'ds', 'y']` and a benchmark model to compare against  (default `'y_hat_naive2'`).
 
 For all the above:
-- The column `unique_id` is a time series identifier, the column `ds` stands for the datetime.
-- Column `x` is an exogenous categorical feature.
-- Column `y` is the target variable, this variable *does not allow negative values* and the first outcome for all series must be *grater than 0*.
-
-The `X` and `y` dataframes must contain the same `'unique_id'`, `'ds'` and be *balanced*, ie.no *gaps* between dates for the frequency.
+- The column `'unique_id'` is a time series identifier, the column `'ds'` stands for the datetime.
+- Column `'x'` is an exogenous categorical feature.
+- Column `'y'` is the target variable, this variable 
+- Column `'y'` **does not allow negative values** and the first entry for all series must be **grater than 0**.
+The `X` and `y` dataframes must contain the same `'unique_id'`, `'ds'` columns and be *balanced*, ie.no *gaps* between dates for the frequency.
 
 
 <center>
