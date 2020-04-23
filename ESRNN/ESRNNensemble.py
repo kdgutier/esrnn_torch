@@ -18,9 +18,99 @@ from ESRNN.ESRNN import ESRNN
 from ESRNN.utils_evaluation import owa
 
 class ESRNNensemble(object):
-  """ Exponential Smoothing Recursive Neural Network Ensemble.
-    n_models=1
-    n_top=1
+  """ Exponential Smoothing Recurrent Neural Network Ensemble
+
+  Pytorch Implementation of the M4 time series forecasting competition winner.
+  Proposed by Smyl. The model ensembles multiple ESRNNs that use a hybrid approach 
+  of Machine Learning and statistical methods by combining recurrent neural networks 
+  to model a common trend with shared parameters across series, and multiplicative 
+  Holt-Winter exponential smoothing.
+
+  Parameters
+  ----------
+  n_models: int
+    the number of ESRNNs in the ensemble.
+  n_top: int
+    the number of ESRNNs from the n_models pool, to which a 
+    particular time series gets assigned during fitting procedure.
+  max_epochs: int
+    maximum number of complete passes to train data during fit
+  freq_of_test: int
+    period for the diagnostic evaluation of the model.
+  learning_rate: float
+    size of the stochastic gradient descent steps
+  lr_scheduler_step_size: int
+    this step_size is the period for each learning rate decay
+  per_series_lr_multip: float
+    multiplier for per-series parameters smoothing and initial
+    seasonalities learning rate (default 1.0)
+  gradient_eps: float
+    term added to the Adam optimizer denominator to improve
+    numerical stability (default: 1e-8)
+  gradient_clipping_threshold: float
+    max norm of gradient vector, with all parameters treated
+    as a single vector
+  rnn_weight_decay: float
+    parameter to control classic L2/Tikhonov regularization
+    of the rnn parameters
+  noise_std: float
+    standard deviation of white noise added to input during
+    fit to avoid the model from memorizing the train data
+  level_variability_penalty: float
+    this parameter controls the strength of the penalization
+    to the wigglines of the level vector, induces smoothness
+    in the output
+  testing_percentile: float
+    This value is only for diagnostic evaluation.
+    In case of percentile predictions this parameter controls
+    for the value predicted, when forecasting point value,
+    the forecast is the median, so percentile=50.
+  training_percentile: float
+    To reduce the model's tendency to over estimate, the
+    training_percentile can be set to fit a smaller value
+    through the Pinball Loss.
+  batch_size: int
+    number of training examples for the stochastic gradient steps
+  seasonality: int list
+    list of seasonalities of the time series
+    Hourly [24, 168], Daily [7], Weekly [52], Monthly [12],
+    Quarterly [4], Yearly [].
+  input_size: int
+    input size of the recurrent neural network, usually a
+    multiple of seasonality
+  output_size: int
+    output_size or forecast horizon of the recurrent neural
+    network, usually multiple of seasonality
+  random_seed: int
+    random_seed for pseudo random pytorch initializer and
+    numpy random generator
+  exogenous_size: int
+    size of one hot encoded categorical variable, invariannt
+    per time series of the panel
+  min_inp_seq_length: int
+    description
+  max_periods: int
+    Parameter to chop longer series, to last max_periods,
+    max e.g. 40 years
+  cell_type: str
+    Type of RNN cell, available GRU, LSTM, RNN, ResidualLSTM.
+  state_hsize: int
+    dimension of hidden state of the recurrent neural network
+  dilations: int list
+    each list represents one chunk of Dilated LSTMS, connected in
+    standard ResNet fashion
+  add_nl_layer: bool
+    whether to insert a tanh() layer between the RNN stack and the
+    linear adaptor (output) layers
+  device: str
+    pytorch device either 'cpu' or 'cuda'
+  Notes
+  -----
+  **References:**
+  `M4 Competition Conclusions
+  <https://rpubs.com/fotpetr/m4competition>`__
+  `Original Dynet Implementation of ESRNN
+  <https://github.com/M4Competition/M4-methods/tree/master/118%20-%20slaweks17>`__
   """
   def __init__(self, n_models=1, n_top=1, max_epochs=15, batch_size=1, batch_size_test=128,
                freq_of_test=-1, learning_rate=1e-3, lr_scheduler_step_size=9, lr_decay=0.9,
@@ -54,6 +144,40 @@ class ESRNNensemble(object):
     self._fitted = False
 
   def fit(self, X_df, y_df, X_test_df=None, y_test_df=None, shuffle=True):
+    """
+    Fit ESRNN ensemble.
+
+    Parameters
+    ----------
+    X_df : pandas dataframe
+      Train dataframe in long format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'x' is a single exogenous variable
+    y_df : pandas dataframe
+      Train dataframe in long format with columns 'unique_id', 'ds' and 'y'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'y' is the column with the target values
+    X_test_df: pandas dataframe
+      Optional test dataframe with columns 'unique_id', 'ds' and 'x'.
+      If provided the fit procedure will evaluate the intermediate 
+      performance within training epochs.
+    y_test_df: pandas dataframe
+      Optional test dataframe with columns 'unique_id', 'ds' and 'x' and
+      y_hat_benchmark column.
+      If provided the fit procedure will evaluate the intermediate 
+      performance within training epochs.
+    shuffle: boolean
+      Name of the benchmark model for the comparison of the relative
+      improvement of the model.
+    
+    Returns
+    -------
+    self : returns an instance of self.
+    """
+
     # Transform long dfs to wide numpy
     assert type(X_df) == pd.core.frame.DataFrame
     assert type(y_df) == pd.core.frame.DataFrame
@@ -76,6 +200,7 @@ class ESRNNensemble(object):
     self.mc.n_series = len(self.unique_ids)
 
     # Set seeds
+    self.shuffle = shuffle
     torch.manual_seed(self.mc.random_seed)
     np.random.seed(self.mc.random_seed)
 
@@ -117,6 +242,18 @@ class ESRNNensemble(object):
     self.train()
 
   def train(self):
+    """
+    Auxiliary function, pytorch train procedure for the ESRNN ensemble
+
+    Parameters:
+    -------
+    self: instance of self.
+    
+    Returns
+    -------
+    self : returns an instance of self.
+    """
+
     # Initial performance matrix
     self.performance_matrix = np.ones((self.mc.n_series, self.n_models)) * self.big_float
     warm_start = False
@@ -140,7 +277,7 @@ class ESRNNensemble(object):
         # Train model with subset data
         dataloader = Iterator(mc = self.mc, X=self.X, y=self.y,
                                       weights=self.series_models_map[:, model_id])
-        esrnn.train(dataloader, max_epochs=1, warm_start=warm_start, shuffle=True, verbose=False)
+        esrnn.train(dataloader, max_epochs=1, warm_start=warm_start, shuffle=self.shuffle, verbose=False)
 
         # Compute model performance for each series
         dataloader = Iterator(mc=self.mc, X=self.X, y=self.y)
@@ -171,13 +308,27 @@ class ESRNNensemble(object):
 
   def predict(self, X_df):
     """
-        Predictions for all stored time series
-    Returns:
-        Y_hat_panel : array-like (n_samples, 1).
-          Predicted values for models in Family for ids in Panel.
-        ds: Corresponding list of date stamps
-        unique_id: Corresponding list of unique_id
+    Predict using the ESRNN ensemble.
+
+    Parameters
+    ----------
+    X_df : pandas dataframe
+      Dataframe in LONG format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' is a datetime column
+      - 'x' is a single exogenous variable
+
+    Returns
+    -------
+    Y_hat_panel : pandas dataframe
+      Dataframe in LONG format with columns 'unique_id', 'ds' 
+      and 'x'.
+      - 'unique_id' an identifier of each independent time series.
+      - 'ds' datetime columnn that matches the dates in X_df
+      - 'y_hat' is the column with the predicted target values
     """
+
     assert type(X_df) == pd.core.frame.DataFrame
     assert 'unique_id' in X_df
     assert self._fitted, "Model not fitted yet"
@@ -234,15 +385,33 @@ class ESRNNensemble(object):
 
   def evaluate_model_prediction(self, y_train_df, X_test_df, y_test_df, epoch=None):
     """
-    y_train_df: pandas df
-      panel with columns unique_id, ds, y
-    X_test_df: pandas df
-      panel with columns unique_id, ds, x
-    y_test_df: pandas df
-      panel with columns unique_id, ds, y, y_hat_naive2
-    model: python class
-      python class with predict method
+    Evaluate ESRNN model against benchmark in y_test_df
+
+    Parameters
+    ----------
+    y_train_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'y'
+    X_test_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'x'
+    y_test_df: pandas dataframe
+      panel with columns 'unique_id', 'ds', 'y' and a column 
+      y_hat_naive2 identifying benchmark predictions
+    epoch: int
+      the number of epoch to check early stopping results
+    
+    Returns
+    -------
+    model_owa : float
+      relative improvement of model with respect to benchmark, measured with 
+      the M4 overall weighted average.
+    smape: float
+      relative improvement of model with respect to benchmark, measured with 
+      the symmetric mean absolute percentage error.
+    mase: float
+      relative improvement of model with respect to benchmark, measured with 
+      the M4 mean absolute scaled error.
     """
+
     assert self._fitted, "Model not fitted yet"
 
     y_panel = y_test_df.filter(['unique_id', 'ds', 'y'])
