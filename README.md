@@ -34,16 +34,14 @@ The fit method receives four Pandas Dataframes, `X_train`, `y_train`, `X_test`, 
 - The outcome variable `y` does not allow negative values and the first outcome for all series must be grater than 0.
 - `X_test` and `y_test` must contain the columns `['unique_id', 'ds', 'x']` and  `['unique_id', 'ds', 'y', 'y_hat_naive2']` respectively. The column `y_hat_naive2` contains predictions of a benchmark model (OWA will be calculated based on this predictions). You can use a custom benchmark using `y_hat_benchmark="benchmark_column"` argument of the fit method.
 
-#### Input data example
 
-`X_train_df`| `y_train_df`
-:-----------:|:-----------:
-<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="200"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="200">
+<center>
 
-`X_test_df`| `y_test_df`
-:-----------:|:-----------:
-<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="200"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="295">
+|`X_train_df`|`y_train_df` |`X_test_df`| `y_test_df`|
+|:-----------:|:-----------:|:-----------:|:-----------:|
+|<img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_train.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_train.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/x_test.png" width="150"> | <img src="https://raw.githubusercontent.com/kdgutier/esrnn_torch/master/.github/images/y_test.png" width="220">|
 
+</center>
 
 
 ### M4 example
