@@ -131,9 +131,11 @@ python -m ESRNN.m4_run --help
 ```
 
 ## Authors
-* **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier) - [mail](kdgutier@cs.cmu.edu)
-* **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu) - [mail](cchallu@andrew.cmu.edu)
+This repository was developed with joint efforts from AutonLab researchers at Carnegie Mellon University and Orax data scientists.
+* **Kin Gutierrez** - [kdgutier](https://github.com/kdgutier)
+* **Cristian Challu** - [cristianchallu](https://github.com/cristianchallu)
 * **Federico Garza** - [FedericoGarza](https://github.com/FedericoGarza) - [mail](fede.garza.ramirez@gmail.com)
+* **Max Mergenthaler** - [mergenthaler](https://github.com/mergenthaler)
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/kdgutier/esrnn_torch/blob/master/LICENSE) file for details.
