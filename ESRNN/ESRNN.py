@@ -432,10 +432,21 @@ class ESRNN(object):
     n_series = self.train_dataloader.n_series
     self.instantiate_esrnn(exogenous_size, n_series)
 
-    # Infer freq of model
-    if self.mc.frequency is None:
-      self.mc.frequency = pd.infer_freq(X_df.head()['ds'])
-      print("Infered frequency: {}".format(self.mc.frequency))
+    # Validating frequencies
+    X_train_frequency = pd.infer_freq(X_df.head()['ds'])
+    y_train_frequency = pd.infer_freq(y_df.head()['ds'])
+    self.frequencies = [X_train_frequency, y_train_frequency]
+
+    if (X_test_df is not None) and (y_test_df is not None):
+        X_test_frequency = pd.infer_freq(X_test_df.head()['ds'])
+        y_test_frequency = pd.infer_freq(y_test_df.head()['ds'])
+        self.frequencies += [X_test_frequency, y_test_frequency]
+    
+    assert len(set(self.frequencies)) <= 1, \
+      "Match the frequencies of the dataframes {}".format(self.frequencies)
+
+    self.mc.frequency = self.frequencies[0]
+    print("Infered frequency: {}".format(self.mc.frequency))
 
     # Train model
     self._fitted = True
