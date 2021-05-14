@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ESRNN",
-    version="0.1.2",
+    version="0.1.3",
     author="Kin Gutierrez, Cristian Challu, Federico Garza",
     author_email="kdgutier@cs.cmu.edu, cchallu@andrew.cmu.edu, fede.garza.ramirez@gmail.com",
     description="Pytorch implementation of the ESRNN",
@@ -20,8 +20,8 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires =[
-        "numpy==1.16.1",
-        "pandas==0.25.2",
+        "numpy>=1.16.1",
+        "pandas>=0.25.2",
         "torch>=1.3.1"
     ],
     entry_points='''

@@ -9,8 +9,8 @@
 Pytorch implementation of the ES-RNN algorithm proposed by Smyl, winning submission of the M4 Forecasting Competition. The class wraps fit and predict methods to facilitate interaction with Machine Learning pipelines along with evaluation and data wrangling utility. Developed by [Autonlab](https://www.autonlab.org/)’s members at Carnegie Mellon University.
 
 ## Installation Prerequisites
-* numpy==1.16.1
-* pandas==0.25.2
+* numpy>=1.16.1
+* pandas>=0.25.2
 * pytorch>=1.3.1
 
 ## Installation
